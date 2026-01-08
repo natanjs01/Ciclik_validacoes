@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, formatPhone, formatCEP } from '@/lib/validators';
+import { getAssetPath } from '@/utils/assetPath';
 
 const signupSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -425,7 +426,7 @@ export default function Auth() {
         <div className="pt-8 pb-6 px-6">
           <div className="flex justify-center">
             <img 
-              src="/ciclik-logo-full.png" 
+              src={getAssetPath('ciclik-logo-full.png')}
               alt="Ciclik - Recicle e Ganhe" 
               className="h-24 w-auto object-contain"
             />

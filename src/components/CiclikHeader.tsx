@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/NotificationBell';
+import { getAssetPath } from '@/utils/assetPath';
 import {
   Sheet,
   SheetContent,
@@ -47,7 +48,7 @@ export default function CiclikHeader({
               </Button>
             )}
             <img 
-              src="/ciclik-logo-full.png" 
+              src={getAssetPath('ciclik-logo-full.png')}
               alt="Ciclik - Recicle e Ganhe" 
               className="h-10 md:h-12 w-auto object-contain cursor-pointer"
               onClick={() => navigate('/user')}

@@ -28,8 +28,9 @@ const PWAInstallPrompt = () => {
 
     // Registra o Service Worker
     if ('serviceWorker' in navigator) {
+      const baseUrl = import.meta.env.BASE_URL || '/';
       navigator.serviceWorker
-        .register('/service-worker.js')
+        .register(`${baseUrl}service-worker.js`)
         .then((registration) => {
           console.log('Service Worker registrado com sucesso:', registration);
         })

@@ -20,3 +20,12 @@ verify_jwt = false
 
 [functions.validar-expiracoes-entregas]
 verify_jwt = false
+
+[functions.processar-codigo-nota]
+verify_jwt = false
+
+[functions.ocr-nota-fiscal]
+verify_jwt = false
+
+[functions.buscar-produto-gtin]
+verify_jwt = false

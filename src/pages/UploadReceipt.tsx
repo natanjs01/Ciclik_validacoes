@@ -14,6 +14,7 @@ import CameraCapture from '@/components/CameraCapture';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import ProductList from '@/components/ProductList';
 import { confrontarProduto } from '@/utils/confrontarProduto';
+import { buscarItensDoCupom } from '@/utils/buscarItensCupom';
 
 type UploadMode = 'select' | 'file' | 'camera' | 'barcode' | 'qrcode';
 type EntryMode = 'automatic' | 'manual';
@@ -397,11 +398,78 @@ export default function UploadReceipt() {
 
       toast({
         title: 'Chave de Acesso Lida!',
-        description: `Nota Fiscal Modelo ${resultado.modelo} detectada. Verifique e corrija a data e valor da nota manualmente.`,
+        description: `Nota Fiscal Modelo ${resultado.modelo} detectada. Buscando itens...`,
         variant: 'default',
       });
 
       setUploadMode('select');
+      
+      // Buscar itens da nota usando a API Ciclik
+      try {
+        console.log('[UploadReceipt] Buscando itens da nota via API Ciclik...');
+        const itensCupom = await buscarItensDoCupom(result, 20000);
+        
+        console.log('[UploadReceipt] Itens encontrados:', itensCupom.length);
+        
+        if (itensCupom && itensCupom.length > 0) {
+          // Enriquecer itens com dados do banco Ciclik
+          const itensEnriquecidos = await Promise.all(
+            itensCupom.map(async (item) => {
+              if (item.ean && item.ean.length > 0) {
+                const result = await confrontarProduto(item.ean);
+                if (result.found && result.produto) {
+                  const pesoUnitario = result.produto.peso_medio_gramas || 0;
+                  const pesoTotal = pesoUnitario * 1; // Quantidade padrão 1
+                  
+                  return {
+                    nome: item.nome || result.produto.descricao,
+                    gtin: item.ean,
+                    quantidade: 1,
+                    valor_unitario: 0,
+                    reciclavel: result.produto.reciclavel,
+                    tipo_embalagem: result.produto.tipo_embalagem,
+                    peso_unitario_gramas: pesoUnitario,
+                    peso_total_estimado_gramas: pesoTotal,
+                    produto_cadastrado: true,
+                    produto_ciclik: result.produto
+                  };
+                }
+              }
+              // Se não encontrar no banco, usar dados básicos
+              return {
+                nome: item.nome,
+                gtin: item.ean,
+                quantidade: 1,
+                valor_unitario: 0,
+                produto_cadastrado: false,
+                reciclavel: true,
+                tipo_embalagem: 'misto'
+              };
+            })
+          );
+          
+          setItens(itensEnriquecidos);
+          
+          toast({
+            title: 'Itens Carregados!',
+            description: `${itensCupom.length} itens encontrados na nota. Verifique e corrija a data e valor.`,
+          });
+        } else {
+          toast({
+            title: 'Atenção',
+            description: 'Não foi possível buscar os itens. Verifique e corrija os dados manualmente.',
+            variant: 'default',
+          });
+        }
+      } catch (apiError) {
+        console.error('[UploadReceipt] Erro ao buscar itens:', apiError);
+        toast({
+          title: 'Itens não disponíveis',
+          description: 'Não foi possível buscar os itens automaticamente. Adicione manualmente.',
+          variant: 'default',
+        });
+      }
+      
       // Tentar consultar SEFAZ em background
       consultarSefazAutomatico(chaveAcesso, parsedData.uf).catch(err => {
         console.log('[UploadReceipt] SEFAZ não disponível:', err);

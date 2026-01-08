@@ -397,11 +397,15 @@ export default function UploadReceipt() {
 
       toast({
         title: 'Chave de Acesso Lida!',
-        description: `Nota Fiscal Modelo ${resultado.modelo} detectada. Consultando SEFAZ...`,
+        description: `Nota Fiscal Modelo ${resultado.modelo} detectada. Verifique e corrija a data e valor da nota manualmente.`,
+        variant: 'default',
       });
 
       setUploadMode('select');
-      await consultarSefazAutomatico(chaveAcesso, parsedData.uf);
+      // Tentar consultar SEFAZ em background
+      consultarSefazAutomatico(chaveAcesso, parsedData.uf).catch(err => {
+        console.log('[UploadReceipt] SEFAZ não disponível:', err);
+      });
       
     } catch (error) {
       console.error('[UploadReceipt] Erro ao processar chave de acesso:', error);

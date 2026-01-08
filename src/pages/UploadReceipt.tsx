@@ -57,6 +57,18 @@ export default function UploadReceipt() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: 'Autenticação Necessária',
+        description: 'Você precisa estar logado para enviar notas fiscais.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+    }
+  }, [user, navigate, toast]);
+
   // Calcular valor total automaticamente baseado nos itens
   useEffect(() => {
     if (entryMode === 'manual' && itens.length > 0 && !valorTotalManual) {
@@ -279,6 +291,19 @@ export default function UploadReceipt() {
   const handleScanResult = async (result: string) => {
     setScanning(true);
     console.log('[UploadReceipt] Resultado do scan:', result);
+    
+    // Verificar se o usuário está autenticado
+    if (!user) {
+      toast({
+        title: 'Autenticação Necessária',
+        description: 'Você precisa estar logado para escanear notas fiscais.',
+        variant: 'destructive',
+      });
+      setUploadMode('select');
+      setScanning(false);
+      navigate('/auth');
+      return;
+    }
     
     try {
       const { data: resultado, error } = await supabase.functions.invoke('processar-codigo-nota', {

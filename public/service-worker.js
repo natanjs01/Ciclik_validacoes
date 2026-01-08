@@ -1,22 +1,24 @@
-const CACHE_NAME = 'ciclik-v1';
+const CACHE_NAME = 'ciclik-v2';
 const BASE_PATH = '/Ciclik_validacoes/';
+
+// Lista mínima de recursos essenciais
 const urlsToCache = [
-  BASE_PATH,
   `${BASE_PATH}index.html`,
-  `${BASE_PATH}icon-192-white.png`,
-  `${BASE_PATH}icon-512-white.png`
 ];
 
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
+  console.log('[Service Worker] Instalando...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Cache aberto');
-        // Tenta cachear, mas não falha se algum recurso não existir
+        console.log('[Service Worker] Cache aberto');
+        // Não falha se não conseguir cachear
         return Promise.allSettled(
           urlsToCache.map(url => 
-            cache.add(url).catch(err => console.log('Falha ao cachear:', url, err))
+            cache.add(url)
+              .then(() => console.log('[Service Worker] Cacheado:', url))
+              .catch(err => console.warn('[Service Worker] Falha ao cachear:', url, err))
           )
         );
       })
@@ -26,12 +28,13 @@ self.addEventListener('install', (event) => {
 
 // Ativação do Service Worker
 self.addEventListener('activate', (event) => {
+  console.log('[Service Worker] Ativando...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Removendo cache antigo:', cacheName);
+            console.log('[Service Worker] Removendo cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -41,34 +44,31 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Interceptação de requisições
+// Interceptação de requisições - modo passivo (sempre busca da rede)
 self.addEventListener('fetch', (event) => {
+  // Ignora requisições que não são GET ou que são de outros domínios
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - retorna a resposta do cache
-        if (response) {
-          return response;
-        }
-        
-        // Clone da requisição
-        const fetchRequest = event.request.clone();
-        
-        return fetch(fetchRequest).then((response) => {
-          // Verifica se recebeu uma resposta válida
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone da resposta
+        // Se a resposta for bem-sucedida, cacheia para uso offline futuro
+        if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Em caso de erro de rede, tenta buscar do cache
+        return caches.match(event.request);
+      })
+  );
+});
         });
       })
   );

@@ -224,19 +224,35 @@ export default function UploadReceipt() {
     try {
       setProcessingOCR(true);
       
+      console.log('[UploadReceipt] Consultando SEFAZ:', { accessKey, uf });
+      
       const { data, error } = await supabase.functions.invoke('consultar-sefaz', {
         body: { chaveAcesso: accessKey, uf },
       });
+
+      console.log('[UploadReceipt] Resposta SEFAZ:', { data, error });
 
       if (error) throw error;
 
       if (data.success && data.data) {
         const notaData = data.data;
         
+        console.log('[UploadReceipt] Dados da nota SEFAZ:', {
+          numero: notaData.numero,
+          cnpj: notaData.cnpj,
+          dataEmissao: notaData.dataEmissao,
+          valorTotal: notaData.valorTotal,
+          quantidadeItens: notaData.itens?.length
+        });
+        
         if (notaData.numero) setNumeroNota(notaData.numero);
         if (notaData.cnpj) setCnpj(notaData.cnpj);
-        if (notaData.dataEmissao) setDataCompra(notaData.dataEmissao);
+        if (notaData.dataEmissao) {
+          console.log('[UploadReceipt] Atualizando data para:', notaData.dataEmissao);
+          setDataCompra(notaData.dataEmissao);
+        }
         if (notaData.valorTotal && notaData.valorTotal > 0) {
+          console.log('[UploadReceipt] Atualizando valor para:', notaData.valorTotal);
           setValorTotal(notaData.valorTotal.toString());
         }
 

@@ -11,12 +11,12 @@ interface ItemCupom {
 /**
  * Busca itens de um cupom a partir da URL/QR lido.
  * @param qrUrl - URL completa do QR Code da NFC-e
- * @param timeoutMs - Timeout em milissegundos (padrão: 20000)
+ * @param timeoutMs - Timeout em milissegundos (padrão: 60000 para Render cold start)
  * @returns Array de itens com nome e EAN
  */
 export async function buscarItensDoCupom(
   qrUrl: string,
-  timeoutMs: number = 20000
+  timeoutMs: number = 60000
 ): Promise<ItemCupom[]> {
   if (!qrUrl || typeof qrUrl !== "string") {
     throw new Error("URL do QR Code inválida.");
@@ -66,7 +66,7 @@ export async function buscarItensDoCupom(
   } catch (err) {
     // Diferencia erro de timeout
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("Tempo excedido ao consultar o backend (20s).");
+      throw new Error("Tempo excedido ao consultar o backend (60s). A API pode estar em modo sleep no Render.");
     }
     throw err;
   } finally {

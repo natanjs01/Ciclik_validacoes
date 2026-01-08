@@ -407,7 +407,12 @@ export default function UploadReceipt() {
       // Buscar itens da nota usando a API Ciclik
       try {
         console.log('[UploadReceipt] Buscando itens da nota via API Ciclik...');
-        const itensCupom = await buscarItensDoCupom(result, 20000);
+        toast({
+          title: 'Consultando Nota Fiscal',
+          description: 'Buscando itens da nota... Isso pode levar até 60 segundos.',
+        });
+        
+        const itensCupom = await buscarItensDoCupom(result, 60000); // 60s timeout para Render cold start
         
         console.log('[UploadReceipt] Itens encontrados:', itensCupom.length);
         

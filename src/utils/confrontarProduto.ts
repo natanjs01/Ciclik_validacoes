@@ -1,0 +1,38 @@
+import { supabase } from "@/integrations/supabase/client";
+import { ProdutoCiclik } from "@/types/produtos";
+
+export interface ConfrontacaoResult {
+  found: boolean;
+  produto?: ProdutoCiclik;
+}
+
+export async function confrontarProduto(gtin: string): Promise<ConfrontacaoResult> {
+  if (!gtin || gtin.trim() === '') {
+    return { found: false };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('produtos_ciclik')
+      .select('*')
+      .eq('gtin', gtin.trim())
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Not found
+        return { found: false };
+      }
+      console.error('Erro ao buscar produto:', error);
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      produto: data as ProdutoCiclik
+    };
+  } catch (error) {
+    console.error('Erro ao confrontar produto:', error);
+    return { found: false };
+  }
+}

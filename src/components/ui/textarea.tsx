@@ -1,0 +1,38 @@
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+/**
+ * DESIGN SYSTEM CICLIK — TEXTAREA
+ * 
+ * Border Radius: Arredondado (rounded-xl)
+ * Foco: Verde Ciclik (ring-primary)
+ * Tipografia: Kodchasan (font-body)
+ */
+
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-[100px] w-full rounded-xl border border-input bg-background px-4 py-3",
+          "font-body text-base text-foreground",
+          "placeholder:text-muted-foreground",
+          "transition-all duration-200",
+          "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          "resize-none",
+          "md:text-sm",
+          className,
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Textarea.displayName = "Textarea";
+
+export { Textarea };

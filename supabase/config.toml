@@ -1,0 +1,22 @@
+project_id = "csyfgvtcvbyzirdqvmfc"
+
+[functions.cdv-assistant]
+verify_jwt = false
+
+[functions.motor-uib]
+verify_jwt = false
+
+[functions.gerar-cdv-manual]
+verify_jwt = false
+
+[functions.consultar-sefaz]
+verify_jwt = false
+
+[functions.enviar-convite-cooperativa]
+verify_jwt = false
+
+[functions.enviar-convite-investidor]
+verify_jwt = false
+
+[functions.validar-expiracoes-entregas]
+verify_jwt = false

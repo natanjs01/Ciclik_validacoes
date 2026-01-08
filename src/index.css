@@ -1,0 +1,616 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+  ═══════════════════════════════════════════════════════════════════
+  DESIGN SYSTEM CICLIK — FONTE ÚNICA DE VERDADE
+  Extraído do Brandbook Oficial da Marca
+  ═══════════════════════════════════════════════════════════════════
+  
+  CORES OFICIAIS (NÃO MODIFICAR):
+  - Verde Ciclik: #95C11F (HSL: 76 72% 44%)
+  - Laranja Ciclik: #FBBB1A (HSL: 43 97% 54%)
+  - Fundo: Branco preferencial
+  
+  TIPOGRAFIA (NÃO MODIFICAR):
+  - Fredoka: títulos, botões, números, CTAs, textos em destaque
+  - Kodchasan: textos longos, descrições, conteúdos corridos
+  
+  ARQUÉTIPOS: Herói + Criador
+  SLOGAN: "Recicle e Ganhe"
+  TOM: Ação, protagonismo, conquista, pertencimento
+  
+  REGRAS VISUAIS:
+  - Linhas arredondadas (rounded)
+  - Design simples: "Menos é mais"
+  - Fundos claros preferenciais
+  - Máximo 3 etapas por fluxo
+  ═══════════════════════════════════════════════════════════════════
+*/
+
+@layer base {
+  :root {
+    /* ═══════════════════════════════════════════════════════════════
+       CORES BASE — Fundo claro e limpo (preferencial Brandbook)
+       ═══════════════════════════════════════════════════════════════ */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 12%;
+
+    /* Cards brancos — arredondados com sombra suave */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    /* ═══════════════════════════════════════════════════════════════
+       VERDE CICLIK OFICIAL: #95C11F
+       Uso: CTAs principais, ícones de reciclagem, sucesso
+       ═══════════════════════════════════════════════════════════════ */
+    --primary: 76 72% 44%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary — tons suaves de verde para backgrounds */
+    --secondary: 76 40% 96%;
+    --secondary-foreground: 76 60% 25%;
+
+    /* Muted — neutros muito suaves */
+    --muted: 76 10% 95%;
+    --muted-foreground: 0 0% 45%;
+
+    /* ═══════════════════════════════════════════════════════════════
+       LARANJA CICLIK OFICIAL: #FBBB1A
+       Uso: Destaques, ganhos, ícones de recompensa, alertas positivos
+       ═══════════════════════════════════════════════════════════════ */
+    --accent: 43 97% 54%;
+    --accent-foreground: 0 0% 12%;
+
+    /* Success = Verde Ciclik */
+    --success: 76 72% 44%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning = Laranja Ciclik */
+    --warning: 43 97% 54%;
+    --warning-foreground: 0 0% 12%;
+
+    /* Destructive — vermelho para erros */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Bordas suaves */
+    --border: 76 15% 90%;
+    --input: 76 15% 90%;
+    --ring: 76 72% 44%;
+
+    /* ═══════════════════════════════════════════════════════════════
+       RADIUS — Arredondado conforme Brandbook (linhas curvas)
+       ═══════════════════════════════════════════════════════════════ */
+    --radius: 1rem;
+
+    /* Cores para gráficos — derivadas da paleta oficial */
+    --chart-1: 76 72% 44%;
+    --chart-2: 43 97% 54%;
+    --chart-3: 76 50% 55%;
+    --chart-4: 43 80% 60%;
+    --chart-5: 76 40% 65%;
+
+    /* ═══════════════════════════════════════════════════════════════
+       GRADIENTES CICLIK
+       Verde para ação, Laranja para ganho/destaque
+       ═══════════════════════════════════════════════════════════════ */
+    --gradient-primary: linear-gradient(135deg, hsl(76, 72%, 44%), hsl(76, 72%, 38%));
+    --gradient-accent: linear-gradient(135deg, hsl(43, 97%, 54%), hsl(43, 97%, 48%));
+    --gradient-hero: linear-gradient(180deg, hsl(0, 0%, 100%), hsl(76, 30%, 97%));
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%), hsl(76, 20%, 99%));
+    --gradient-warm: linear-gradient(135deg, hsl(43, 97%, 54%), hsl(35, 95%, 52%));
+    
+    /* ═══════════════════════════════════════════════════════════════
+       SOMBRAS — Suaves e elegantes
+       ═══════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px hsl(76 20% 20% / 0.04);
+    --shadow-sm: 0 2px 8px hsl(76 20% 20% / 0.06);
+    --shadow-md: 0 4px 16px hsl(76 20% 20% / 0.08);
+    --shadow-lg: 0 8px 32px hsl(76 20% 20% / 0.1);
+    --shadow-xl: 0 16px 48px hsl(76 20% 20% / 0.12);
+    --shadow-glow-primary: 0 0 24px hsl(76 72% 44% / 0.35);
+    --shadow-glow-accent: 0 0 24px hsl(43 97% 54% / 0.35);
+
+    /* Transições suaves */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease;
+    --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .dark {
+    /* ═══════════════════════════════════════════════════════════════
+       DARK MODE — Tons de verde escuro (uso secundário)
+       Brandbook prefere fundo claro, dark mode é alternativo
+       ═══════════════════════════════════════════════════════════════ */
+    --background: 80 20% 8%;
+    --foreground: 76 15% 95%;
+
+    --card: 80 20% 10%;
+    --card-foreground: 76 15% 95%;
+
+    --popover: 80 20% 10%;
+    --popover-foreground: 76 15% 95%;
+
+    /* Verde Ciclik mais vibrante no dark */
+    --primary: 76 72% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 80 20% 14%;
+    --secondary-foreground: 76 40% 85%;
+
+    --muted: 80 20% 12%;
+    --muted-foreground: 76 15% 60%;
+
+    /* Laranja Ciclik mantido */
+    --accent: 43 97% 54%;
+    --accent-foreground: 0 0% 8%;
+
+    --success: 76 72% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 43 97% 54%;
+    --warning-foreground: 0 0% 8%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 80 20% 16%;
+    --input: 80 20% 16%;
+    --ring: 76 72% 50%;
+
+    /* Charts dark */
+    --chart-1: 76 72% 52%;
+    --chart-2: 43 97% 56%;
+    --chart-3: 76 55% 58%;
+    --chart-4: 43 85% 62%;
+    --chart-5: 76 45% 68%;
+
+    /* Gradientes dark */
+    --gradient-primary: linear-gradient(135deg, hsl(76, 72%, 50%), hsl(76, 72%, 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(43, 97%, 54%), hsl(43, 97%, 48%));
+    --gradient-hero: linear-gradient(180deg, hsl(80, 20%, 8%), hsl(80, 20%, 10%));
+    --gradient-card: linear-gradient(180deg, hsl(80, 20%, 10%), hsl(80, 20%, 12%));
+    --gradient-warm: linear-gradient(135deg, hsl(43, 97%, 54%), hsl(35, 95%, 52%));
+    
+    /* Sombras dark */
+    --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.2);
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.55);
+    --shadow-glow-primary: 0 0 32px hsl(76 72% 50% / 0.4);
+    --shadow-glow-accent: 0 0 32px hsl(43 97% 54% / 0.4);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TIPOGRAFIA BASE — Kodchasan para corpo
+     ═══════════════════════════════════════════════════════════════ */
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Kodchasan', system-ui, sans-serif;
+    font-weight: 400;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     HEADINGS — Fredoka para títulos (Brandbook oficial)
+     ═══════════════════════════════════════════════════════════════ */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fredoka', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+
+  /* Classes de tipografia específicas */
+  .font-display {
+    font-family: 'Fredoka', system-ui, sans-serif;
+  }
+
+  .font-body {
+    font-family: 'Kodchasan', system-ui, sans-serif;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCROLLBAR ESTILIZADA — Verde Ciclik
+     ═══════════════════════════════════════════════════════════════ */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: hsl(var(--muted));
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.4);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted));
+  }
+}
+
+@layer components {
+  /* ═══════════════════════════════════════════════════════════════
+     CARDS CICLIK
+     Arredondados, sombra suave, espaçamento generoso
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-card {
+    @apply bg-card rounded-2xl border border-border/60 overflow-hidden;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+  }
+
+  .ciclik-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .ciclik-card-elevated {
+    @apply bg-card rounded-2xl border border-border/40 overflow-hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BOTÕES CICLIK
+     Fredoka, arredondados, cores oficiais
+     Verbos de ação: Ganhar, Reciclar, Conquistar, Avançar, Ativar
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-btn {
+    @apply font-display font-semibold rounded-xl;
+    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: var(--transition-smooth);
+  }
+
+  .ciclik-btn-primary {
+    @apply ciclik-btn bg-primary text-primary-foreground;
+    @apply px-6 py-3;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ciclik-btn-primary:hover:not(:disabled) {
+    @apply brightness-105;
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .ciclik-btn-accent {
+    @apply ciclik-btn bg-accent text-accent-foreground;
+    @apply px-6 py-3;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ciclik-btn-accent:hover:not(:disabled) {
+    @apply brightness-105;
+    box-shadow: var(--shadow-glow-accent);
+  }
+
+  .ciclik-btn-outline {
+    @apply ciclik-btn bg-transparent border-2 border-primary text-primary;
+    @apply px-6 py-3;
+  }
+
+  .ciclik-btn-outline:hover:not(:disabled) {
+    @apply bg-primary/10;
+  }
+
+  .ciclik-btn-ghost {
+    @apply ciclik-btn bg-transparent text-foreground;
+    @apply px-4 py-2;
+  }
+
+  .ciclik-btn-ghost:hover:not(:disabled) {
+    @apply bg-muted;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     BADGES CICLIK
+     Arredondados (rounded-full), cores oficiais
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full;
+    @apply text-sm font-display font-medium;
+    @apply bg-primary/15 text-primary;
+  }
+
+  .ciclik-badge-accent {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full;
+    @apply text-sm font-display font-medium;
+    @apply bg-accent/20 text-accent-foreground;
+  }
+
+  .ciclik-badge-success {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full;
+    @apply text-sm font-display font-medium;
+    @apply bg-success/15 text-success;
+  }
+
+  .ciclik-badge-muted {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full;
+    @apply text-sm font-display font-medium;
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     INPUTS CICLIK
+     Arredondados, bordas suaves, foco verde
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-input {
+    @apply w-full rounded-xl border border-input bg-background px-4 py-3;
+    @apply text-foreground placeholder:text-muted-foreground;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
+    transition: var(--transition-fast);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TEXTOS GRADIENTE — Verde e Laranja Ciclik
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(76, 72%, 44%), hsl(76, 72%, 32%));
+  }
+
+  .ciclik-text-gradient-accent {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(43, 97%, 54%), hsl(35, 95%, 48%));
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ÍCONES CIRCULARES — Símbolo da folha/setas
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-icon-circle {
+    @apply flex items-center justify-center rounded-full;
+    @apply bg-primary/10 text-primary;
+  }
+
+  .ciclik-icon-circle-accent {
+    @apply flex items-center justify-center rounded-full;
+    @apply bg-accent/15 text-accent;
+  }
+
+  .ciclik-icon-circle-sm {
+    @apply w-8 h-8;
+  }
+
+  .ciclik-icon-circle-md {
+    @apply w-10 h-10;
+  }
+
+  .ciclik-icon-circle-lg {
+    @apply w-14 h-14;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     GLASSMORPHISM LEVE
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-glass {
+    @apply bg-white/90 backdrop-blur-md border border-white/30;
+  }
+
+  .dark .ciclik-glass {
+    @apply bg-card/90 backdrop-blur-md border-white/10;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     EFEITOS DE GLOW — Verde e Laranja
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-glow {
+    transition: var(--transition-smooth);
+  }
+
+  .ciclik-glow:hover {
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .ciclik-glow-accent:hover {
+    box-shadow: var(--shadow-glow-accent);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SEÇÕES E CONTAINERS
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-section {
+    @apply py-16 md:py-24;
+  }
+
+  .ciclik-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .ciclik-grid {
+    @apply grid gap-6 md:gap-8;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     HEADER CICLIK
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-header {
+    @apply bg-card/95 backdrop-blur-md border-b border-border/60;
+    @apply sticky top-0 z-50;
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ANIMAÇÕES CICLIK
+     Suaves, leves, feedback visual
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-fade-in {
+    animation: ciclikFadeIn 0.5s ease-out forwards;
+  }
+
+  @keyframes ciclikFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ciclik-slide-up {
+    animation: ciclikSlideUp 0.6s ease-out forwards;
+  }
+
+  @keyframes ciclikSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ciclik-scale-in {
+    animation: ciclikScaleIn 0.4s ease-out forwards;
+  }
+
+  @keyframes ciclikScaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Pulso suave para CTAs de destaque */
+  .ciclik-pulse {
+    animation: ciclikPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes ciclikPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(76 72% 44% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 12px hsl(76 72% 44% / 0);
+    }
+  }
+
+  .ciclik-pulse-accent {
+    animation: ciclikPulseAccent 2s ease-in-out infinite;
+  }
+
+  @keyframes ciclikPulseAccent {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(43 97% 54% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 12px hsl(43 97% 54% / 0);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ELEMENTOS DECORATIVOS — Folha/Setas Ciclik
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-leaf-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 10 Q45 25 30 40 Q15 25 30 10' fill='%2395C11F' fill-opacity='0.05'/%3E%3C/svg%3E");
+    background-size: 60px 60px;
+  }
+
+  .ciclik-divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PROGRESS BAR CICLIK
+     ═══════════════════════════════════════════════════════════════ */
+  .ciclik-progress {
+    @apply h-3 w-full overflow-hidden rounded-full bg-secondary;
+  }
+
+  .ciclik-progress-bar {
+    @apply h-full rounded-full bg-primary;
+    transition: width 0.5s ease-out;
+  }
+
+  .ciclik-progress-bar-accent {
+    @apply h-full rounded-full bg-accent;
+    transition: width 0.5s ease-out;
+  }
+}
+
+@layer utilities {
+  /* ═══════════════════════════════════════════════════════════════
+     UTILITÁRIOS DE ANIMAÇÃO
+     ═══════════════════════════════════════════════════════════════ */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+  }
+
+  @keyframes bounceSubtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Delays de animação */
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+  .animation-delay-700 { animation-delay: 700ms; }
+  .animation-delay-1000 { animation-delay: 1000ms; }
+
+  /* Texto balanceado */
+  .text-balance {
+    text-wrap: balance;
+  }
+}

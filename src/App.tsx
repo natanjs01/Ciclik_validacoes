@@ -159,7 +159,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <PWAInstallPrompt />
-      <BrowserRouter>
+      <BrowserRouter basename="/Ciclik_validacoes">
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>

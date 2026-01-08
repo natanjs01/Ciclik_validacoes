@@ -59,15 +59,21 @@ export default function UploadReceipt() {
 
   // Verificar autenticação ao carregar a página
   useEffect(() => {
-    if (!user) {
-      toast({
-        title: 'Autenticação Necessária',
-        description: 'Você precisa estar logado para enviar notas fiscais.',
-        variant: 'destructive',
-      });
-      navigate('/auth');
-    }
-  }, [user, navigate, toast]);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        toast({
+          title: 'Autenticação Necessária',
+          description: 'Você precisa estar logado para enviar notas fiscais.',
+          variant: 'destructive',
+        });
+        navigate('/auth');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
 
   // Calcular valor total automaticamente baseado nos itens
   useEffect(() => {
@@ -292,11 +298,20 @@ export default function UploadReceipt() {
     setScanning(true);
     console.log('[UploadReceipt] Resultado do scan:', result);
     
-    // Verificar se o usuário está autenticado
-    if (!user) {
+    // Verificar sessão ativa antes de processar
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    console.log('[UploadReceipt] Verificação de sessão:', {
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      user: session?.user?.email,
+      error: sessionError
+    });
+    
+    if (!session || !session.access_token) {
       toast({
-        title: 'Autenticação Necessária',
-        description: 'Você precisa estar logado para escanear notas fiscais.',
+        title: 'Sessão Expirada',
+        description: 'Sua sessão expirou. Por favor, faça login novamente.',
         variant: 'destructive',
       });
       setUploadMode('select');

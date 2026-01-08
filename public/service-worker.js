@@ -1,9 +1,10 @@
 const CACHE_NAME = 'ciclik-v1';
+const BASE_PATH = '/Ciclik_validacoes/';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/icon-192-white.png',
-  '/icon-512-white.png'
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}icon-192-white.png`,
+  `${BASE_PATH}icon-512-white.png`
 ];
 
 // Instalação do Service Worker
@@ -12,7 +13,12 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Cache aberto');
-        return cache.addAll(urlsToCache);
+        // Tenta cachear, mas não falha se algum recurso não existir
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => console.log('Falha ao cachear:', url, err))
+          )
+        );
       })
   );
   self.skipWaiting();

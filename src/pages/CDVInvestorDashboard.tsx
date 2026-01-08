@@ -120,7 +120,7 @@ const CDVInvestorDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-primary/5">
         <div className="flex flex-col items-center gap-4">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-12 animate-pulse" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-12 animate-pulse" />
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
@@ -135,7 +135,7 @@ const CDVInvestorDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img 
-                src="/ciclik-logo-full.png" 
+                src={getAssetPath('ciclik-logo-full.png')} 
                 alt="Ciclik" 
                 className="h-10 object-contain"
               />
@@ -339,7 +339,7 @@ const CDVInvestorDashboard = () => {
           {quotas.length === 0 && (
             <Card className="border-primary/10">
               <CardContent className="p-12 text-center">
-                <img src="/ciclik-logo.png" alt="Ciclik" className="h-16 mx-auto mb-6 opacity-50" />
+                <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-16 mx-auto mb-6 opacity-50" />
                 <h3 className="text-xl font-display font-bold mb-2">Nenhuma quota adquirida</h3>
                 <p className="text-muted-foreground font-body mb-6">
                   Comece seu investimento ambiental adquirindo sua primeira quota CDV
@@ -354,7 +354,7 @@ const CDVInvestorDashboard = () => {
 
         {/* Footer com marca */}
         <footer className="mt-16 pt-8 border-t border-border/50 text-center">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-8 mx-auto mb-3 opacity-60" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-8 mx-auto mb-3 opacity-60" />
           <p className="text-xs text-muted-foreground font-body">
             © {new Date().getFullYear()} Ciclik - Digital Verde. Todos os direitos reservados.
           </p>

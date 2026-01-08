@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { getAssetPath } from '@/utils/assetPath';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -229,7 +230,7 @@ export default function UserDashboard() {
               {/* Logo e Saudação */}
               <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
                 <img 
-                  src="/ciclik-logo-full.png" 
+                  src={getAssetPath('ciclik-logo-full.png')}
                   alt="Ciclik - Recicle e Ganhe" 
                   className="h-12 md:h-16 w-auto object-contain flex-shrink-0 cursor-pointer"
                   onClick={() => navigate('/user')}

@@ -97,7 +97,7 @@ const CDVValidate = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-primary/5">
         <div className="flex flex-col items-center gap-4">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-12 animate-pulse" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-12 animate-pulse" />
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
@@ -110,7 +110,7 @@ const CDVValidate = () => {
         {/* Header com marca */}
         <div className="absolute top-0 left-0 right-0 p-4">
           <div className="max-w-2xl mx-auto flex justify-center">
-            <img src="/ciclik-logo-full.png" alt="Ciclik" className="h-10 object-contain opacity-60" />
+            <img src={getAssetPath('ciclik-logo-full.png')} alt="Ciclik" className="h-10 object-contain opacity-60" />
           </div>
         </div>
         
@@ -136,7 +136,7 @@ const CDVValidate = () => {
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/ciclik-logo-full.png" alt="Ciclik" className="h-9 object-contain" />
+              <img src={getAssetPath('ciclik-logo-full.png')} alt="Ciclik" className="h-9 object-contain" />
               <div className="h-6 w-px bg-border/50" />
               <div className="flex items-center gap-1.5">
                 <Shield className="w-4 h-4 text-primary" />
@@ -271,7 +271,7 @@ const CDVValidate = () => {
 
         {/* Rodapé com marca */}
         <div className="text-center mt-8 pt-6 border-t border-border/50">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-7 mx-auto mb-3 opacity-60" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-7 mx-auto mb-3 opacity-60" />
           <p className="text-xs text-muted-foreground font-body">
             Verificado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </p>

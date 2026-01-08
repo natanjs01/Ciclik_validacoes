@@ -1,6 +1,8 @@
 /**
  * Gera uma imagem de conquista personalizada com Canvas
  */
+import { getAssetPath } from './assetPath';
+
 export async function gerarImagemConquista(
   conquista: string,
   nivel: string,
@@ -26,7 +28,7 @@ export async function gerarImagemConquista(
     // Carregar logo da Ciclik
     const logo = new Image();
     logo.crossOrigin = 'anonymous';
-    logo.src = '/ciclik-logo-full.png';
+    logo.src = getAssetPath('ciclik-logo-full.png');
     
     logo.onload = () => {
       // Desenhar logo no topo centralizada

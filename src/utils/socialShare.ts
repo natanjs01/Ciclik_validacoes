@@ -1,4 +1,5 @@
 // Utilitários para compartilhamento social
+import { getAssetPath } from './assetPath';
 
 export type ShareEventType = 
   | 'missao_concluida'
@@ -86,5 +87,5 @@ export function abrirInstagram(): void {
  * Gera uma imagem de conquista
  */
 export function getImagemConquista(): string {
-  return '/ciclik-logo-full.png';
+  return getAssetPath('ciclik-logo-full.png');
 }

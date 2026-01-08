@@ -195,7 +195,7 @@ const CDVCertificate = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-primary/5">
         <div className="flex flex-col items-center gap-4">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-12 animate-pulse" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-12 animate-pulse" />
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
@@ -206,7 +206,7 @@ const CDVCertificate = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-primary/5">
         <Card className="p-8 text-center border-primary/10">
-          <img src="/ciclik-logo.png" alt="Ciclik" className="h-12 mx-auto mb-4 opacity-50" />
+          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-12 mx-auto mb-4 opacity-50" />
           <Award className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-display font-bold mb-2">Certificado não encontrado</h2>
           <Button onClick={() => navigate("/cdv/investor")} className="font-display">Voltar</Button>
@@ -238,7 +238,7 @@ const CDVCertificate = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/ciclik-logo-full.png" alt="Ciclik" className="h-9 object-contain" />
+              <img src={getAssetPath('ciclik-logo-full.png')} alt="Ciclik" className="h-9 object-contain" />
               <div className="h-6 w-px bg-border/50" />
               <div className="flex items-center gap-1.5">
                 <Shield className="w-4 h-4 text-primary" />
@@ -453,7 +453,7 @@ const CDVCertificate = () => {
               <div className="mt-3 pt-3 border-t">
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground font-body">
                   <div className="flex items-center gap-2">
-                    <img src="/ciclik-logo.png" alt="Ciclik" className="h-4 opacity-60" />
+                    <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-4 opacity-60" />
                     <span>Certificado de Impacto Ambiental</span>
                   </div>
                   <span>ciclik.com.br/validate/{certificate.id.slice(0, 8)}</span>

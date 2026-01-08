@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAssetPath } from '@/utils/assetPath';
 import { supabase } from '@/integrations/supabase/client';
+import { getAssetPath } from '@/utils/assetPath';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, Minus, 
@@ -8,8 +10,11 @@ import {
   TreePine, Droplets, Zap, CloudOff, Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getAssetPath } from '@/utils/assetPath';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { getAssetPath } from '@/utils/assetPath';
 import { formatWeight } from '@/lib/formatters';
+import { getAssetPath } from '@/utils/assetPath';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -402,7 +407,7 @@ export default function EnvironmentalReportModal({ open, onOpenChange }: Environ
             {/* Watermark - Logo Ciclik grande e centralizada */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
               <img 
-                src="/ciclik-logo.png" 
+                src={getAssetPath('ciclik-logo.png')} 
                 alt="" 
                 className="w-72 h-72 opacity-[0.04] object-contain"
               />
@@ -412,7 +417,7 @@ export default function EnvironmentalReportModal({ open, onOpenChange }: Environ
             <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0 relative z-20">
               <div className="flex items-center gap-3">
                 <img 
-                  src="/ciclik-logo.png" 
+                  src={getAssetPath('ciclik-logo.png')} 
                   alt="Ciclik" 
                   className="h-10 w-10"
                 />

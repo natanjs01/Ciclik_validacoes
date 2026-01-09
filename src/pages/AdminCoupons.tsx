@@ -174,11 +174,11 @@ Rappi,SUSTENTA25,25.00,100.00,2025-06-30,15`;
 
   const getStatusBadge = (status: string) => {
     const badges: any = {
-      'disponivel': <Badge className="bg-success">Disponível</Badge>,
-      'reservado': <Badge className="bg-warning">Reservado</Badge>,
-      'usado': <Badge variant="secondary">Usado</Badge>
+      'disponivel': <Badge className="bg-success text-white">Disponível</Badge>,
+      'reservado': <Badge className="bg-warning text-white">Reservado</Badge>,
+      'usado': <Badge variant="secondary" className="text-white">Usado</Badge>
     };
-    return badges[status] || <Badge>{status}</Badge>;
+    return badges[status] || <Badge className="text-white">{status}</Badge>;
   };
 
   const filterByStatus = (status: string) => {

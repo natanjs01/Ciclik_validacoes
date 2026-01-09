@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
+import { getAssetPath } from '@/utils/assetPath';
 
 export default function EmailConfirm() {
   const [searchParams] = useSearchParams();
@@ -182,12 +183,9 @@ export default function EmailConfirm() {
         <CardHeader>
           <div className="flex justify-center mb-4">
             <img 
-              src={`${import.meta.env.BASE_URL}ciclik-logo.png`}
-              alt="Ciclik Logo" 
-              className="h-12"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              src={getAssetPath('ciclik-logo-full.png')}
+              alt="Ciclik - Recicle e Ganhe" 
+              className="h-20 w-auto object-contain"
             />
           </div>
         </CardHeader>

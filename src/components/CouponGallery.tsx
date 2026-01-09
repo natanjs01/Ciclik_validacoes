@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Gift, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MobileTooltip } from '@/components/ui/mobile-tooltip';
 import { formatCurrency } from '@/lib/formatters';
 
 interface Cupom {
@@ -132,21 +132,18 @@ export default function CouponGallery({
               </span>
               
               {/* Points info - with tooltip */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className={`text-[10px] sm:text-xs mt-0.5 cursor-help ${canRedeem ? 'text-primary/70' : 'text-muted-foreground'}`}>
-                      {canRedeem ? `${cupom.pontos_necessarios} pts` : `-${missing} pts`}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs max-w-[180px]">
-                    {canRedeem 
-                      ? `Custo: ${cupom.pontos_necessarios} pontos` 
-                      : `Faltam ${missing} pontos para resgatar este cupom`
-                    }
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MobileTooltip
+                content={
+                  canRedeem 
+                    ? `Custo: ${cupom.pontos_necessarios} pontos` 
+                    : `Faltam ${missing} pontos para resgatar este cupom`
+                }
+                className="text-xs max-w-[180px]"
+              >
+                <span className={`text-[10px] sm:text-xs mt-0.5 cursor-help ${canRedeem ? 'text-primary/70' : 'text-muted-foreground'}`}>
+                  {canRedeem ? `${cupom.pontos_necessarios} pts` : `-${missing} pts`}
+                </span>
+              </MobileTooltip>
             </div>
 
             {/* Redeem button for eligible */}

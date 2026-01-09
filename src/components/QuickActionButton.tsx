@@ -1,12 +1,7 @@
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { MobileTooltip } from '@/components/ui/mobile-tooltip';
 
 interface QuickActionButtonProps {
   icon: LucideIcon;
@@ -61,19 +56,14 @@ export function QuickActionButton({
 
   if (tooltipContent) {
     return (
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {buttonContent}
-          </TooltipTrigger>
-          <TooltipContent 
-            side="bottom" 
-            className="max-w-[200px] text-center bg-popover border border-border shadow-lg"
-          >
-            {tooltipContent}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <MobileTooltip 
+        content={tooltipContent}
+        side="bottom"
+        className="max-w-[200px] text-center bg-popover border border-border shadow-lg"
+        delayDuration={300}
+      >
+        {buttonContent}
+      </MobileTooltip>
     );
   }
 

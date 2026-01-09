@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { LucideIcon, Info } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileTooltip } from '@/components/ui/mobile-tooltip';
 
@@ -28,7 +28,7 @@ export function QuickActionButton({
     <motion.button
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center gap-1.5 group relative',
+        'flex flex-col items-center gap-1.5 group',
         tourClass,
         className
       )}
@@ -51,25 +51,21 @@ export function QuickActionButton({
       <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
         {label}
       </span>
-      
-      {/* Ícone de informação para tooltip */}
-      {tooltipContent && (
-        <MobileTooltip 
-          content={tooltipContent}
-          side="bottom"
-          className="max-w-[200px] text-center bg-popover border border-border shadow-lg text-xs"
-          delayDuration={200}
-        >
-          <div 
-            className="absolute -top-1 -right-1 bg-primary/10 rounded-full p-0.5 cursor-help hover:bg-primary/20 transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Info className="h-3 w-3 text-primary" />
-          </div>
-        </MobileTooltip>
-      )}
     </motion.button>
   );
+
+  if (tooltipContent) {
+    return (
+      <MobileTooltip 
+        content={tooltipContent}
+        side="bottom"
+        className="max-w-[200px] text-center bg-popover border border-border shadow-lg"
+        delayDuration={300}
+      >
+        {buttonContent}
+      </MobileTooltip>
+    );
+  }
 
   return buttonContent;
 }

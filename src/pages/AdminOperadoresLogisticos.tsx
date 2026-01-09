@@ -19,6 +19,36 @@ import { appUrl } from '@/lib/appUrl';
 
 type TipoOperador = 'cooperativa' | 'rota_ciclik' | 'operador_parceiro';
 
+// Função para formatar número no padrão brasileiro
+const formatBrazilianNumber = (value: string): string => {
+  // Remove tudo exceto números e vírgula
+  let cleaned = value.replace(/[^\d,]/g, '');
+  
+  // Garante apenas uma vírgula
+  const parts = cleaned.split(',');
+  if (parts.length > 2) {
+    cleaned = parts[0] + ',' + parts.slice(1).join('');
+  }
+  
+  // Separa inteiro e decimal
+  const [integerPart, decimalPart] = cleaned.split(',');
+  
+  // Formata a parte inteira com pontos de milhares
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  
+  // Retorna com até 2 casas decimais
+  if (decimalPart !== undefined) {
+    return `${formattedInteger},${decimalPart.substring(0, 2)}`;
+  }
+  
+  return formattedInteger;
+};
+
+// Função para converter de formato brasileiro para número
+const parseBrazilianNumber = (value: string): string => {
+  return value.replace(/\./g, '').replace(',', '.');
+};
+
 export default function AdminOperadoresLogisticos() {
   const [operadores, setOperadores] = useState<any[]>([]);
   const [selectedOp, setSelectedOp] = useState<any>(null);
@@ -1008,11 +1038,14 @@ export default function AdminOperadoresLogisticos() {
                 <Label htmlFor="capacidade">Capacidade Mensal (toneladas)</Label>
                 <Input
                   id="capacidade"
-                  type="number"
-                  value={formData.capacidade_mensal_ton}
-                  onChange={(e) => setFormData({ ...formData, capacidade_mensal_ton: e.target.value })}
-                  placeholder="0.0"
-                  step="0.1"
+                  type="text"
+                  value={formatBrazilianNumber(formData.capacidade_mensal_ton)}
+                  onChange={(e) => {
+                    const formatted = formatBrazilianNumber(e.target.value);
+                    const parsed = parseBrazilianNumber(formatted);
+                    setFormData({ ...formData, capacidade_mensal_ton: parsed });
+                  }}
+                  placeholder="0,00"
                 />
               </div>
 

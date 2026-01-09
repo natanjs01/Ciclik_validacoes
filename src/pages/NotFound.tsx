@@ -162,7 +162,7 @@ const NotFound = () => {
             transition={{ delay: 0.7 }}
           >
             <img
-              src="/ciclik-logo.png"
+              src={`${import.meta.env.BASE_URL}ciclik-logo.png`}
               alt="Ciclik"
               className="h-8 mx-auto opacity-50 hover:opacity-100 transition-opacity"
             />

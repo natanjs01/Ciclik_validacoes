@@ -182,7 +182,7 @@ export default function EmailConfirm() {
         <CardHeader>
           <div className="flex justify-center mb-4">
             <img 
-              src="/logo-ciclik.svg" 
+              src={`${import.meta.env.BASE_URL}ciclik-logo.png`}
               alt="Ciclik Logo" 
               className="h-12"
               onError={(e) => {

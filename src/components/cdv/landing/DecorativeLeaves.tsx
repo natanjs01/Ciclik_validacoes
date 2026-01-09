@@ -41,7 +41,7 @@ export function DecorativeLeaves({
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
       <img 
-        src="/folhas-ciclik.png" 
+        src={`${import.meta.env.BASE_URL}folhas-ciclik.png`}
         alt=""
         aria-hidden="true"
         className={`${sizeClasses[size]} object-contain`}

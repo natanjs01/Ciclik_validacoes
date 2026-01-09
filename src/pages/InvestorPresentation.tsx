@@ -160,7 +160,7 @@ const InvestorPresentation = () => {
             className="mb-6"
           >
             <img 
-              src="/ciclik-logo-full.png" 
+              src={`${import.meta.env.BASE_URL}ciclik-logo-full.png`}
               alt="Ciclik" 
               className="h-16 md:h-20 mx-auto"
             />

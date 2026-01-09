@@ -58,7 +58,7 @@ export default function CDVLandingInvestor() {
           {/* Logo oficial Ciclik - integrado ao layout */}
           <div className="flex items-center">
             <img 
-              src="/logo-with-slogan.png" 
+              src={`${import.meta.env.BASE_URL}logo-with-slogan.png`}
               alt="Ciclik - Recicle e Ganhe" 
               className="h-10 md:h-12 w-auto object-contain"
               style={{ 
@@ -154,7 +154,7 @@ export default function CDVLandingInvestor() {
             {/* Logo & Description */}
             <div className="md:col-span-2">
               <img 
-                src="/logo-with-slogan.png" 
+                src={`${import.meta.env.BASE_URL}logo-with-slogan.png`}
                 alt="Ciclik - Recicle e Ganhe" 
                 className="h-14 w-auto object-contain mb-5"
               />

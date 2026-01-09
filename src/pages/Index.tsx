@@ -53,7 +53,7 @@ const Index = () => {
           className="mb-8"
         >
           <img 
-            src="/ciclik-logo-full.png" 
+            src={`${import.meta.env.BASE_URL}ciclik-logo-full.png`}
             alt="Ciclik" 
             className="h-24 md:h-32 mx-auto"
           />

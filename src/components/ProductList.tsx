@@ -234,7 +234,7 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                         className="w-full"
                       />
                     </div>
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-7">
                       <Label className="text-xs mb-1 block">Produto</Label>
                       <Input
                         value={item.nome}
@@ -255,6 +255,7 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                         className="w-full"
                       />
                     </div>
+                    {/* CAMPOS DE VALORES OCULTOS - TODO: Melhorar visualização
                     <div className="md:col-span-2">
                       <Label className="text-xs mb-1 block">Preço Unit.</Label>
                       <Input
@@ -279,6 +280,7 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                         className="w-full"
                       />
                     </div>
+                    */}
                     <div className="md:col-span-1">
                       <Label className="text-xs mb-1 block">Recicl.</Label>
                       <div className="flex items-center gap-2 h-10">

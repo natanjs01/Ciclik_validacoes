@@ -504,7 +504,7 @@ export default function UserDashboard() {
                   <Progress value={scoreProgress} className="h-2 rounded-full" />
                   {pontosCalculados <= 1000 && (
                     <p className="text-[10px] text-muted-foreground text-right">
-                      {getNextLevelInfo(pontosCalculados).pontosRestantes} pts para {getNextLevelInfo(pontosCalculados).proximoNivel}
+                      Próximo: {getNextLevelInfo(pontosCalculados).pontosRestantes} pontos para atingir o próximo nível
                     </p>
                   )}
                 </div>

@@ -99,7 +99,10 @@ export default function MissionContent() {
       });
     }
 
-    const percentualAcerto = (correctCount / questions.length) * 100;
+    // Proteger contra divisão por zero que causaria Infinity%
+    const percentualAcerto = questions.length > 0 
+      ? (correctCount / questions.length) * 100 
+      : 0;
     setScore(percentualAcerto);
     setQuizResults(results);
     setCurrentStep('review');
@@ -191,7 +194,10 @@ export default function MissionContent() {
   if (!mission) return null;
 
   const currentQuestion = questions[currentQuestionIndex];
-  const quizProgress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  // Proteger contra divisão por zero que causaria Infinity%
+  const quizProgress = questions.length > 0 
+    ? ((currentQuestionIndex + 1) / questions.length) * 100 
+    : 0;
 
   const steps = [
     { id: 'video', label: 'Vídeo', icon: Video, completed: currentStep === 'quiz' || currentStep === 'review' },

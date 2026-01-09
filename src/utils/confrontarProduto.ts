@@ -7,11 +7,17 @@ export interface ConfrontacaoResult {
 }
 
 export async function confrontarProduto(gtin: string): Promise<ConfrontacaoResult> {
-  if (!gtin || gtin.trim() === '') {
+  if (!gtin || gtin.trim() === '' || gtin.trim() === 'SEM GTIN') {
     return { found: false };
   }
 
   try {
+    // TODO: Verificar permissões RLS da tabela produtos_ciclik
+    // Temporariamente desabilitado devido a erro 406 (Not Acceptable)
+    console.log('Busca de produtos temporariamente desabilitada. GTIN:', gtin);
+    return { found: false };
+    
+    /* CÓDIGO COMENTADO ATÉ RESOLVER PERMISSÕES RLS
     const { data, error } = await supabase
       .from('produtos_ciclik')
       .select('*')
@@ -31,6 +37,7 @@ export async function confrontarProduto(gtin: string): Promise<ConfrontacaoResul
       found: true,
       produto: data as ProdutoCiclik
     };
+    */
   } catch (error) {
     console.error('Erro ao confrontar produto:', error);
     return { found: false };

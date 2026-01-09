@@ -718,10 +718,11 @@ export default function UploadReceipt() {
         return;
       }
     } else {
-      if (!file) {
+      // No modo automático, validar se há itens (QR Code já preencheu)
+      if (itens.length === 0) {
         toast({
           title: 'Erro',
-          description: 'Selecione uma imagem primeiro',
+          description: 'Escaneie um QR Code ou adicione itens primeiro',
           variant: 'destructive',
         });
         return;
@@ -854,15 +855,34 @@ export default function UploadReceipt() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* ========================================
+                TABS DE MODO DE ENTRADA COMENTADAS
+                (Manual será melhorado no futuro)
+                ======================================== */}
+            
+            {/* TODO: Melhorar funcionalidade de entrada Manual
             <Tabs value={entryMode} onValueChange={(v) => setEntryMode(v as EntryMode)}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="automatic">Automático (OCR)</TabsTrigger>
                 <TabsTrigger value="manual">Manual</TabsTrigger>
               </TabsList>
+            */}
+
+              {/* Forçando modo automático (OCR) */}
+              <Tabs value="automatic" onValueChange={(v) => setEntryMode(v as EntryMode)}>
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="automatic">Escanear QR Code da Nota Fiscal</TabsTrigger>
+              </TabsList>
 
               <TabsContent value="automatic" className="space-y-6 mt-6">
                 {uploadMode === 'select' && !file && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 max-w-md mx-auto">
+                    {/* ========================================
+                        MÉTODOS DE UPLOAD COMENTADOS 
+                        (Serão melhorados no futuro)
+                        ======================================== */}
+                    
+                    {/* TODO: Melhorar funcionalidade de Importar Arquivo
                     <Button
                       variant="outline"
                       className="h-32 flex flex-col gap-2"
@@ -871,6 +891,9 @@ export default function UploadReceipt() {
                       <FileUp className="h-8 w-8" />
                       <span className="text-sm">Importar Arquivo</span>
                     </Button>
+                    */}
+                    
+                    {/* TODO: Melhorar funcionalidade de Tirar Foto
                     <Button
                       variant="outline"
                       className="h-32 flex flex-col gap-2"
@@ -879,6 +902,9 @@ export default function UploadReceipt() {
                       <Camera className="h-8 w-8" />
                       <span className="text-sm">Tirar Foto</span>
                     </Button>
+                    */}
+                    
+                    {/* TODO: Melhorar funcionalidade de Código de Barras
                     <Button
                       variant="outline"
                       className="h-32 flex flex-col gap-2"
@@ -887,13 +913,16 @@ export default function UploadReceipt() {
                       <Scan className="h-8 w-8" />
                       <span className="text-sm">Código de Barras</span>
                     </Button>
+                    */}
+                    
+                    {/* MÉTODO ATIVO: QR Code */}
                     <Button
                       variant="outline"
                       className="h-32 flex flex-col gap-2"
                       onClick={() => setUploadMode('qrcode')}
                     >
                       <QrCode className="h-8 w-8" />
-                      <span className="text-sm">QR Code</span>
+                      <span className="text-sm">Escanear QR Code</span>
                     </Button>
                   </div>
                 )}
@@ -1022,6 +1051,11 @@ export default function UploadReceipt() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* ========================================
+                      CAMPO VALOR TOTAL OCULTO
+                      (Será melhorado no futuro)
+                      ======================================== */}
+                  {/* TODO: Melhorar visualização de valores
                   <div className="space-y-2">
                     <Label htmlFor="valor">Valor Total (R$)</Label>
                     <Input
@@ -1031,6 +1065,7 @@ export default function UploadReceipt() {
                       onChange={(e) => handleValorTotalChange(e.target.value)}
                     />
                   </div>
+                  */}
 
                   <div className="space-y-2">
                     <Label htmlFor="cnpj">CNPJ do Estabelecimento</Label>
@@ -1304,6 +1339,7 @@ export default function UploadReceipt() {
                     <div className="flex items-center justify-between">
                       <Label>Materiais Adicionados ({itens.length})</Label>
                       <div className="flex flex-col items-end gap-1">
+                        {/* TOTAL DE VALORES OCULTO - TODO: Melhorar visualização de valores
                         {calcularTotalItens() > 0 && (
                           <span className="text-sm text-muted-foreground">
                             Total: R$ {calcularTotalItens().toLocaleString('pt-BR', {
@@ -1312,6 +1348,7 @@ export default function UploadReceipt() {
                             })}
                           </span>
                         )}
+                        */}
                         {(() => {
                           const pesoTotal = itens.reduce((acc, item) => 
                             acc + (item.peso_total_estimado_gramas || 0), 0
@@ -1440,6 +1477,7 @@ export default function UploadReceipt() {
                                     />
                                   </div>
 
+                                  {/* CAMPO VALOR UNITÁRIO OCULTO - TODO: Melhorar visualização de valores
                                   <div className="space-y-2">
                                     <Label htmlFor={`edit-valor-${index}`} className="text-xs">
                                       Valor Unitário (R$)
@@ -1454,6 +1492,7 @@ export default function UploadReceipt() {
                                       })}
                                     />
                                   </div>
+                                  */}
                                 </div>
                               </div>
 
@@ -1498,11 +1537,13 @@ export default function UploadReceipt() {
                                       • Qtd: {item.quantidade.toLocaleString('pt-BR')}
                                     </span>
                                   )}
+                                  {/* VALOR UNITÁRIO OCULTO - TODO: Melhorar visualização de valores
                                   {item.valor_unitario && (
                                     <span className="text-xs text-muted-foreground">
                                       • R$ {item.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   )}
+                                  */}
                                   {item.peso_total_estimado_gramas && (
                                     <span className="text-xs font-medium text-primary">
                                       • Peso: {item.peso_total_estimado_gramas.toLocaleString('pt-BR')}g
@@ -1550,7 +1591,7 @@ export default function UploadReceipt() {
                 <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
                   <p className="font-medium mb-1">Campos obrigatórios:</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Valor Total</li>
+                    <li>Escanear QR Code da Nota Fiscal</li>
                     <li>Data da Compra</li>
                     <li>Pelo menos um Material Reciclável</li>
                   </ul>
@@ -1559,7 +1600,7 @@ export default function UploadReceipt() {
               
               <Button
                 onClick={handleUpload}
-                disabled={uploading || (entryMode === 'automatic' && !file)}
+                disabled={uploading || itens.length === 0}
                 className="w-full"
                 size="lg"
               >

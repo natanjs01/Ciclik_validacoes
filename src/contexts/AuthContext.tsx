@@ -27,15 +27,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
+      .eq('user_id', userId);
 
     if (error) {
       console.error('Erro ao buscar role do usuário', error);
       return null;
     }
 
-    return data?.role || null;
+    // Se não houver roles, retorna null
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    // Se tiver apenas uma role, retorna ela
+    if (data.length === 1) {
+      return data[0].role;
+    }
+
+    // Se tiver múltiplas roles, priorizar nesta ordem:
+    // admin > investidor > cooperativa > empresa > vendedor > usuario
+    const rolePriority = ['admin', 'investidor', 'cooperativa', 'empresa', 'vendedor', 'usuario'];
+    
+    for (const priorityRole of rolePriority) {
+      if (data.some((r: any) => r.role === priorityRole)) {
+        return priorityRole;
+      }
+    }
+
+    // Fallback: retorna a primeira role encontrada
+    return data[0].role;
   };
 
   const fetchProfile = async (userId: string) => {

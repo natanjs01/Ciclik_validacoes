@@ -5,11 +5,10 @@ import {
   Building2, TreePine, BarChart3, Target, CheckCircle2,
   ArrowRight, ArrowLeft, ChevronDown, Globe, Shield, TrendingUp, 
   FileCheck, QrCode, LineChart, Coins, Calendar, Lock, Clock,
-  BadgeCheck, PieChart, Zap, Eye, Heart, Gift
+  BadgeCheck, PieChart, Zap, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
 // Importar imagens ODS como módulos ES6 para funcionamento em produção
@@ -113,7 +112,7 @@ const InvestorPresentation = () => {
         </Button>
       </motion.div>
 
-      {/* ===== SLIDE 1: HERO PARA INVESTIDORES ===== */}
+      {/* Slide 1: Hero para Investidores */}
       <AnimatedSlide id="hero" className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 relative">
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(15)].map((_, i) => (
@@ -187,7 +186,7 @@ const InvestorPresentation = () => {
           </motion.p>
 
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10"
+            className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -198,899 +197,972 @@ const InvestorPresentation = () => {
               { value: "QR Code", label: "Validação Pública" },
             ].map((item, i) => (
               <div key={i} className="bg-card/80 backdrop-blur p-4 rounded-xl border">
-                <div className="text-3xl font-display font-bold text-primary mb-2">{item.value}</div>
-                <div className="text-sm text-muted-foreground">{item.label}</div>
+                <div className="text-2xl font-display font-bold text-primary">{item.value}</div>
+                <div className="text-xs text-muted-foreground">{item.label}</div>
               </div>
             ))}
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
-          >
-            <Button 
-              size="lg" 
-              className="text-lg px-8"
-              onClick={() => scrollToNext('o-que-e-cdv')}
-            >
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Ver Detalhes do Investimento
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8"
-              onClick={() => navigate('/auth')}
-            >
-              <FileCheck className="w-5 h-5 mr-2" />
-              Solicitar Proposta
-            </Button>
-          </motion.div>
-
-          <motion.button
-            onClick={() => scrollToNext('o-que-e-cdv')}
-            className="text-muted-foreground hover:text-foreground transition-colors mt-8"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <ChevronDown className="w-8 h-8 mx-auto" />
-          </motion.button>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 2: O QUE É O CDV ===== */}
-      <AnimatedSlide id="o-que-e-cdv" className="bg-gradient-to-br from-background to-primary/5">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <Shield className="w-5 h-5 mr-2" />
-              Certificação Blockchain
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              O que é o <span className="text-primary">CDV?</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Um ativo digital que comprova investimento real em reciclagem e educação ambiental
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Card Principal do CDV */}
-            <Card className="p-8 border-2 border-primary/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <QrCode className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-display font-bold">1 CDV =</h3>
-                  <p className="text-primary font-bold text-xl">256 UIBs</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold">Unidades de Impacto de Base (UIB)</p>
-                    <p className="text-sm text-muted-foreground">Cada UIB representa uma ação mensurável de impacto ambiental</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold">Certificação Digital</p>
-                    <p className="text-sm text-muted-foreground">Registro permanente e imutável em blockchain</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold">Validação Pública</p>
-                    <p className="text-sm text-muted-foreground">QR Code permite auditoria transparente por qualquer pessoa</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Composição do CDV */}
-            <Card className="p-8 bg-gradient-to-br from-card to-primary/5">
-              <h3 className="text-2xl font-display font-bold mb-6">Composição de 256 UIBs</h3>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Recycle className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Reciclagem</p>
-                      <p className="text-sm text-muted-foreground">180 UIBs</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">70%</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                      <GraduationCap className="w-6 h-6 text-secondary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Educação Ambiental</p>
-                      <p className="text-sm text-muted-foreground">51 UIBs</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-secondary">20%</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                      <ShoppingCart className="w-6 h-6 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Consumo Consciente</p>
-                      <p className="text-sm text-muted-foreground">25 UIBs</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-accent">10%</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <motion.div className="text-center">
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => scrollToNext('como-funciona')}
-            >
-              Como Funciona na Prática
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </motion.div>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 3: COMO FUNCIONA ===== */}
-      <AnimatedSlide id="como-funciona" className="bg-gradient-to-br from-secondary/5 to-background">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <Zap className="w-5 h-5 mr-2" />
-              Processo Simplificado
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Como Funciona o <span className="text-primary">Investimento</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              4 passos simples para gerar impacto real e associar sua marca a ações sustentáveis
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Passo 1 */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="p-6 border-2 border-primary/20 h-full">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl flex-shrink-0">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-display font-bold mb-2">Compra do CDV</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Sua empresa adquire CDVs (lotes de 256 UIBs) diretamente da Ciclik. 
-                      Recebe certificação digital com QR Code único.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        <Coins className="w-3 h-3 mr-1" />
-                        Valor Fixo
-                      </Badge>
-                      <Badge variant="outline">
-                        <FileCheck className="w-3 h-3 mr-1" />
-                        Certificado
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Passo 2 */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="p-6 border-2 border-primary/20 h-full">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl flex-shrink-0">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-display font-bold mb-2">Distribuição de UIBs</h3>
-                    <p className="text-muted-foreground mb-4">
-                      As 256 UIBs são creditadas na sua conta institucional. Você decide como 
-                      distribuir entre clientes, parceiros ou campanhas específicas.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        <Users className="w-3 h-3 mr-1" />
-                        Flexível
-                      </Badge>
-                      <Badge variant="outline">
-                        <Target className="w-3 h-3 mr-1" />
-                        Estratégico
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Passo 3 */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="p-6 border-2 border-primary/20 h-full">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl flex-shrink-0">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-display font-bold mb-2">Ações Reais</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Cidadãos usam suas UIBs para reciclar, estudar e fazer compras conscientes. 
-                      Cada ação gera impacto mensurável e rastreável.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        <Recycle className="w-3 h-3 mr-1" />
-                        Reciclagem
-                      </Badge>
-                      <Badge variant="outline">
-                        <GraduationCap className="w-3 h-3 mr-1" />
-                        Educação
-                      </Badge>
-                      <Badge variant="outline">
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                        Consumo
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Passo 4 */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="p-6 border-2 border-primary/20 h-full">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl flex-shrink-0">
-                    4
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-display font-bold mb-2">Relatórios & Transparência</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Receba relatórios completos de impacto: kg reciclados, pessoas educadas, 
-                      compras conscientes. Use para ESG, marketing e prestação de contas.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        <BarChart3 className="w-3 h-3 mr-1" />
-                        Relatórios
-                      </Badge>
-                      <Badge variant="outline">
-                        <Eye className="w-3 h-3 mr-1" />
-                        Transparente
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-
-          <motion.div className="text-center">
-            <Button 
-              size="lg" 
-              onClick={() => scrollToNext('beneficios')}
-            >
-              Ver Benefícios para sua Empresa
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </motion.div>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 4: BENEFÍCIOS PARA EMPRESAS ===== */}
-      <AnimatedSlide id="beneficios" className="bg-gradient-to-br from-primary/5 to-background">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Vantagens Estratégicas
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Benefícios para sua <span className="text-primary">Empresa</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Investimento em CDV vai além do impacto ambiental
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[
-              {
-                icon: TrendingUp,
-                title: "Relatórios ESG Reais",
-                description: "Dados concretos e auditáveis para seus relatórios de sustentabilidade. Não é greenwashing, é impacto mensurável.",
-                color: "text-primary"
-              },
-              {
-                icon: Heart,
-                title: "Engajamento de Marca",
-                description: "Associe sua marca a ações reais de sustentabilidade. Construa reputação positiva com evidências tangíveis.",
-                color: "text-destructive"
-              },
-              {
-                icon: Users,
-                title: "Fidelização de Clientes",
-                description: "Ofereça UIBs como recompensa. Clientes engajados em causas ambientais são mais fiéis à marca.",
-                color: "text-secondary"
-              },
-              {
-                icon: FileCheck,
-                title: "Compliance Ambiental",
-                description: "Demonstre conformidade com regulamentações ambientais através de certificações digitais verificáveis.",
-                color: "text-primary"
-              },
-              {
-                icon: Globe,
-                title: "Visibilidade ODS",
-                description: "Contribua diretamente para 6 Objetivos de Desenvolvimento Sustentável da ONU com comprovação.",
-                color: "text-accent"
-              },
-              {
-                icon: BadgeCheck,
-                title: "Selo de Transparência",
-                description: "QR Code público permite que qualquer pessoa valide o impacto real do seu investimento.",
-                color: "text-primary"
-              },
-            ].map((benefit, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Card className="p-6 h-full border-2 border-border hover:border-primary/50 transition-colors">
-                  <benefit.icon className={`w-12 h-12 ${benefit.color} mb-4`} />
-                  <h3 className="text-xl font-display font-bold mb-2">{benefit.title}</h3>
-                  <p className="text-muted-foreground">{benefit.description}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          <Card className="p-8 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20">
-            <div className="text-center">
-              <Gift className="w-16 h-16 text-primary mx-auto mb-4" />
-              <h3 className="text-2xl font-display font-bold mb-4">Bônus Exclusivo para Investidores</h3>
-              <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Empresas investidoras recebem acesso prioritário ao dashboard institucional, 
-                materiais de marketing personalizados e suporte dedicado da equipe Ciclik.
-              </p>
-              <Button 
-                size="lg"
-                onClick={() => scrollToNext('ods')}
-              >
-                Ver Alinhamento com ODS
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 5: ALINHAMENTO ODS ===== */}
-      <AnimatedSlide id="ods" className="bg-gradient-to-br from-background to-accent/5">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <Globe className="w-5 h-5 mr-2" />
-              Objetivos de Desenvolvimento Sustentável
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Alinhado com <span className="text-primary">6 ODS</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Seu investimento contribui diretamente para metas globais da ONU
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[
-              { num: 8, title: "Trabalho Decente e Crescimento Econômico", desc: "Geramos renda para catadores e educadores" },
-              { num: 9, title: "Indústria, Inovação e Infraestrutura", desc: "Tecnologia blockchain e inovação em reciclagem" },
-              { num: 10, title: "Redução das Desigualdades", desc: "Inclusão social através da economia circular" },
-              { num: 11, title: "Cidades e Comunidades Sustentáveis", desc: "Infraestrutura de reciclagem urbana" },
-              { num: 12, title: "Consumo e Produção Responsáveis", desc: "Educação para consumo consciente" },
-              { num: 13, title: "Ação Contra a Mudança Global do Clima", desc: "Redução de emissões através da reciclagem" },
-            ].map((ods, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Card className="p-6 h-full border-2 border-border hover:border-primary/50 transition-colors overflow-hidden">
-                  <div className="relative mb-4">
-                    <img 
-                      src={odsImages[ods.num]} 
-                      alt={`ODS ${ods.num}`}
-                      className="w-full h-24 object-contain"
-                    />
-                  </div>
-                  <h3 className="text-lg font-display font-bold mb-2">ODS {ods.num}</h3>
-                  <p className="text-sm font-semibold mb-2">{ods.title}</p>
-                  <p className="text-sm text-muted-foreground">{ods.desc}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div className="text-center">
-            <Button 
-              size="lg" 
-              onClick={() => scrollToNext('casos')}
-            >
-              Ver Casos de Uso
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </motion.div>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 6: CASOS DE USO ===== */}
-      <AnimatedSlide id="casos" className="bg-gradient-to-br from-secondary/5 to-background">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <Target className="w-5 h-5 mr-2" />
-              Aplicações Práticas
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              <span className="text-primary">Casos de Uso</span> Reais
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Como empresas podem usar CDVs para gerar impacto e engajamento
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Caso 1: Programa de Fidelidade */}
-            <Card className="p-8 border-2 border-primary/20">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Award className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-display font-bold">Programa de Fidelidade Verde</h3>
-                  <Badge variant="outline" className="mt-2">Varejo & E-commerce</Badge>
-                </div>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Ofereça UIBs como recompensa em compras. Clientes podem usar para reciclar, 
-                estudar ou trocar por descontos. Aumente fidelização e associe marca à sustentabilidade.
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>1 UIB a cada R$ 50 em compras</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>Cliente usa UIBs na plataforma Ciclik</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>Você recebe relatórios de impacto</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Caso 2: Campanhas de Marketing */}
-            <Card className="p-8 border-2 border-secondary/20">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <Users className="w-8 h-8 text-secondary" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-display font-bold">Campanhas de Engajamento</h3>
-                  <Badge variant="outline" className="mt-2">Marketing & Branding</Badge>
-                </div>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Crie campanhas onde clientes ganham UIBs ao interagir com sua marca. 
-                Transforme ações de marketing em impacto ambiental mensurável.
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-secondary" />
-                  <span>Sorteio de lotes de UIBs</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-secondary" />
-                  <span>Ações nas redes sociais</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-secondary" />
-                  <span>Eventos e ativações de marca</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Caso 3: Responsabilidade Social Corporativa */}
-            <Card className="p-8 border-2 border-accent/20">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-accent" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-display font-bold">Programas de RSC</h3>
-                  <Badge variant="outline" className="mt-2">Responsabilidade Social</Badge>
-                </div>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Distribua UIBs para comunidades carentes. Permita que famílias gerem renda 
-                através da reciclagem e tenham acesso à educação ambiental.
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                  <span>Inclusão social através da reciclagem</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                  <span>Educação ambiental gratuita</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                  <span>Impacto social comprovado</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Caso 4: Compensação de Pegada */}
-            <Card className="p-8 border-2 border-primary/20">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <TreePine className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-display font-bold">Compensação Ambiental</h3>
-                  <Badge variant="outline" className="mt-2">Eventos & Logística</Badge>
-                </div>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                Compense a pegada de carbono de eventos, entregas ou operações. 
-                Cada CDV representa ações concretas de reciclagem e educação.
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>Eventos carbono neutro</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>Entregas sustentáveis</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>Relatório de compensação</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <motion.div className="text-center">
-            <Button 
-              size="lg" 
-              onClick={() => scrollToNext('pricing')}
-            >
-              Ver Modelos de Investimento
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </motion.div>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 7: MODELOS DE INVESTIMENTO ===== */}
-      <AnimatedSlide id="pricing" className="bg-gradient-to-br from-primary/5 to-background">
-        <div className="max-w-6xl mx-auto">
-          <motion.div className="text-center mb-12">
-            <Badge className="mb-4 text-lg px-4 py-2">
-              <Coins className="w-5 h-5 mr-2" />
-              Modelos Flexíveis
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Modelos de <span className="text-primary">Investimento</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Escolha o modelo que melhor se adapta às necessidades da sua empresa
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {/* Starter */}
-            <motion.div
-              whileHover={{ scale: 1.05, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="p-8 border-2 border-border h-full">
-                <div className="text-center mb-6">
-                  <Badge className="mb-4">Starter</Badge>
-                  <div className="text-4xl font-display font-bold text-foreground mb-2">
-                    10 CDVs
-                  </div>
-                  <p className="text-muted-foreground">2.560 UIBs</p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Certificação digital com QR Code</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Relatórios mensais de impacto</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Dashboard institucional</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Suporte por email</span>
-                  </li>
-                </ul>
-                <Button variant="outline" className="w-full" onClick={() => navigate('/auth')}>
-                  Solicitar Proposta
-                </Button>
-              </Card>
-            </motion.div>
-
-            {/* Growth (Destacado) */}
-            <motion.div
-              whileHover={{ scale: 1.05, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="p-8 border-2 border-primary shadow-2xl shadow-primary/20 h-full relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-bold rounded-bl-lg">
-                  Mais Popular
-                </div>
-                <div className="text-center mb-6 mt-6">
-                  <Badge className="mb-4 bg-primary text-primary-foreground">Growth</Badge>
-                  <div className="text-4xl font-display font-bold text-foreground mb-2">
-                    50 CDVs
-                  </div>
-                  <p className="text-muted-foreground">12.800 UIBs</p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Tudo do Starter, mais:</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Relatórios semanais personalizados</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Materiais de marketing personalizados</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Suporte prioritário</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Selo de parceiro oficial</span>
-                  </li>
-                </ul>
-                <Button className="w-full" onClick={() => navigate('/auth')}>
-                  Solicitar Proposta
-                </Button>
-              </Card>
-            </motion.div>
-
-            {/* Enterprise */}
-            <motion.div
-              whileHover={{ scale: 1.05, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="p-8 border-2 border-border h-full">
-                <div className="text-center mb-6">
-                  <Badge className="mb-4">Enterprise</Badge>
-                  <div className="text-4xl font-display font-bold text-foreground mb-2">
-                    100+ CDVs
-                  </div>
-                  <p className="text-muted-foreground">25.600+ UIBs</p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Tudo do Growth, mais:</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Gerente de conta dedicado</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Integrações via API</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">White label customizado</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">SLA garantido</span>
-                  </li>
-                </ul>
-                <Button variant="outline" className="w-full" onClick={() => navigate('/auth')}>
-                  Falar com Especialista
-                </Button>
-              </Card>
-            </motion.div>
-          </div>
-
-          <Card className="p-8 bg-gradient-to-r from-accent/10 to-primary/10 border-2 border-accent/20">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-8 h-8 text-accent" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl font-display font-bold mb-2">Valores sob Consulta</h3>
-                <p className="text-muted-foreground">
-                  Entre em contato para receber uma proposta personalizada com valores e condições especiais 
-                  de acordo com o volume de investimento e necessidades da sua empresa.
-                </p>
-              </div>
-              <Button 
-                size="lg"
-                className="flex-shrink-0"
-                onClick={() => scrollToNext('cta-final')}
-              >
-                Solicitar Proposta
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </AnimatedSlide>
-
-      {/* ===== SLIDE 8: CTA FINAL ===== */}
-      <AnimatedSlide id="cta-final" className="bg-gradient-to-br from-primary/10 via-background to-accent/10 relative">
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.1, 0.3, 0.1],
-              }}
-              transition={{
-                duration: 5 + Math.random() * 3,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            >
-              <Leaf className="w-8 h-8 text-primary/20" />
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.8, type: "spring" }}
-            className="mb-8"
-          >
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <Leaf className="w-12 h-12 text-primary" />
-            </div>
-          </motion.div>
-
-          <motion.h2
-            className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            Pronto para fazer a <span className="text-primary">diferença real?</span>
-          </motion.h2>
-
-          <motion.p
-            className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Junte-se às empresas que estão transformando investimento ambiental 
-            em impacto mensurável e transparente.
-          </motion.p>
-
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Button 
               size="lg" 
-              className="text-lg px-8"
-              onClick={() => navigate('/auth')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-display text-lg px-8"
+              onClick={() => navigate('/investidor')}
             >
-              <FileCheck className="w-5 h-5 mr-2" />
-              Solicitar Proposta Agora
+              <Coins className="w-5 h-5 mr-2" />
+              Quero Investir
             </Button>
             <Button 
-              variant="outline" 
               size="lg" 
-              className="text-lg px-8"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              variant="outline"
+              className="font-display text-lg px-8"
+              onClick={() => scrollToNext('oque')}
             >
-              <Eye className="w-5 h-5 mr-2" />
-              Rever Apresentação
+              Saiba Mais
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </motion.div>
 
           <motion.div
-            className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            onClick={() => scrollToNext('oque')}
           >
-            {[
-              { icon: Shield, text: "100% Auditável" },
-              { icon: LineChart, text: "Impacto Mensurável" },
-              { icon: BadgeCheck, text: "Certificação Digital" },
-            ].map((item, i) => (
-              <div 
-                key={i}
-                className="flex items-center gap-3 p-4 bg-card/80 backdrop-blur rounded-xl border"
-              >
-                <item.icon className="w-6 h-6 text-primary flex-shrink-0" />
-                <span className="font-semibold">{item.text}</span>
-              </div>
-            ))}
+            <ChevronDown className="w-8 h-8 text-muted-foreground" />
           </motion.div>
         </div>
       </AnimatedSlide>
+
+      {/* Slide 2: O que é o CDV */}
+      <AnimatedSlide id="oque" className="bg-card">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <motion.span 
+              className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full font-display text-sm mb-4"
+              whileInView={{ scale: [0.8, 1] }}
+            >
+              O Produto
+            </motion.span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+              Como funciona o <span className="text-primary">CDV</span>?
+            </h2>
+            <p className="text-lg text-muted-foreground font-body max-w-3xl mx-auto">
+              A Ciclik desenvolve <strong>projetos de sustentabilidade</strong> que geram impacto ambiental 
+              real, rastreável e auditável. Cada projeto é dividido em <strong>quotas</strong> que podem 
+              ser adquiridas por investidores.
+            </p>
+          </div>
+
+          {/* Lógica das Quotas */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <motion.div
+              className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 rounded-3xl border"
+              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: -30 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-xl">Cada Quota = R$ 2.000</h3>
+                  <p className="text-sm text-muted-foreground">Investimento mínimo por quota</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-muted-foreground font-body">
+                  Cada quota adquirida dá direito a <strong>1 CDV</strong> que será emitido quando 
+                  o projeto gerar o impacto correspondente:
+                </p>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { icon: Recycle, value: "250 kg", label: "Resíduos Reciclados" },
+                    { icon: GraduationCap, value: "5 horas", label: "Educação Ambiental" },
+                    { icon: ShoppingCart, value: "1 estudo", label: "Recicla­bilidade" },
+                    { icon: Users, value: "~134", label: "Pessoas Impactadas" },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      className="text-center p-4 bg-background/80 rounded-xl"
+                      whileInView={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                      <item.icon className="w-6 h-6 text-primary mx-auto mb-2" />
+                      <div className="text-lg font-display font-bold">{item.value}</div>
+                      <div className="text-xs text-muted-foreground hyphens-auto" lang="pt-BR">{item.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="bg-card p-8 rounded-3xl border shadow-lg"
+              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: 30 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-secondary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-xl">Exemplo: Projeto 1.000 Quotas</h3>
+                  <p className="text-sm text-muted-foreground">Valor total: R$ 2.000.000</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="font-body">Resíduos Reciclados</span>
+                  <span className="font-display font-bold text-primary">250 toneladas</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="font-body">Educação Ambiental</span>
+                  <span className="font-display font-bold text-primary">5.000 horas</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="font-body">Estudos de Reciclabilidade</span>
+                  <span className="font-display font-bold text-primary">1.000 produtos</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <span className="font-display font-semibold">CDVs Emitidos</span>
+                  <span className="font-display font-bold text-2xl text-primary">1.000</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-ciclik-orange/10 rounded-lg border border-ciclik-orange/30">
+                  <span className="font-display font-semibold">Pessoas Impactadas</span>
+                  <span className="font-display font-bold text-2xl text-ciclik-orange">~134 mil</span>
+                </div>
+              </div>
+
+              {/* Métricas do Ecossistema Ciclik */}
+              <div className="mt-6 p-4 bg-gradient-to-r from-primary/5 to-ciclik-orange/5 rounded-xl border border-primary/10">
+                <p className="text-xs text-muted-foreground text-center mb-3 font-body">
+                  📊 Ecossistema Ciclik Atual
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center">
+                    <div className="text-lg font-display font-bold text-primary">+4 mil</div>
+                    <div className="text-xs text-muted-foreground">CDVs Ativos</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-display font-bold text-primary">382 ton</div>
+                    <div className="text-xs text-muted-foreground">Reciclado</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-display font-bold text-primary">800h</div>
+                    <div className="text-xs text-muted-foreground">Educação</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Fluxo do Investidor */}
+          <div className="bg-muted/30 p-8 rounded-3xl">
+            <h3 className="text-xl font-display font-bold text-center mb-8">
+              Jornada do Investidor
+            </h3>
+            <div className="grid md:grid-cols-4 gap-6">
+              {[
+                { step: 1, icon: Eye, title: "Escolha o Projeto", desc: "Analise os projetos Ciclik disponíveis e seus impactos" },
+                { step: 2, icon: Coins, title: "Adquira Quotas", desc: "Invista R$ 2.000 por quota no projeto escolhido" },
+                { step: 3, icon: Clock, title: "Acompanhe", desc: "Monitore o progresso do impacto em tempo real no dashboard" },
+                { step: 4, icon: Award, title: "Receba seu CDV", desc: "Certificado emitido quando o impacto for gerado e auditado" },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="relative text-center"
+                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-display font-bold">
+                    {item.step}
+                  </div>
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <item.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <h4 className="font-display font-semibold mb-2">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground font-body">{item.desc}</p>
+                  {i < 3 && (
+                    <div className="hidden md:block absolute top-8 -right-3">
+                      <ArrowRight className="w-6 h-6 text-primary/30" />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* LIR - Lei de Incentivo à Reciclagem */}
+          <motion.div
+            className="mt-12 p-6 bg-gradient-to-br from-ciclik-green/10 to-ciclik-green/5 rounded-2xl border border-ciclik-green/30"
+            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+          >
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="p-4 bg-ciclik-green rounded-2xl shrink-0">
+                <FileCheck className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-center md:text-left">
+                <h4 className="font-display font-bold text-xl text-ciclik-green mb-2">
+                  💰 Incentivo Fiscal via LIR
+                </h4>
+                <p className="text-muted-foreground font-body">
+                  CDVs podem ser adquiridos por meio da <strong className="text-foreground">Lei de Incentivo à Reciclagem (LIR)</strong>, 
+                  utilizando um percentual do <strong className="text-foreground">Imposto de Renda devido</strong>. 
+                  Consulte a disponibilidade de projetos aprovados pelo <strong className="text-foreground">Ministério do Meio Ambiente</strong>.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+          {/* ODS - Objetivos de Desenvolvimento Sustentável */}
+          <motion.div
+            className="mt-12 p-8 bg-gradient-to-br from-ciclik-green/5 to-transparent rounded-2xl border"
+            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+          >
+            <div className="text-center mb-8">
+              <h4 className="font-display font-bold text-2xl mb-3">
+                🌍 Alinhamento com a Agenda 2030
+              </h4>
+              <p className="text-muted-foreground font-body max-w-2xl mx-auto">
+                Os CDVs Ciclik contribuem diretamente para 6 Objetivos de Desenvolvimento 
+                Sustentável da ONU.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+              {[
+                { num: 8, name: "Trabalho Decente e Crescimento Econômico" },
+                { num: 9, name: "Indústria, Inovação e Infraestrutura" },
+                { num: 10, name: "Redução das Desigualdades" },
+                { num: 11, name: "Cidades e Comunidades Sustentáveis" },
+                { num: 12, name: "Consumo e Produção Responsáveis" },
+                { num: 13, name: "Ação Contra a Mudança Global do Clima" },
+              ].map((ods, i) => (
+                <motion.div
+                  key={ods.num}
+                  className="group relative"
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ scale: 1.1, zIndex: 10 }}
+                >
+                  <img 
+                    src={odsImages[ods.num]}
+                    alt={`ODS ${ods.num}: ${ods.name}`}
+                    className="w-full rounded-lg shadow-md"
+                  />
+                  <div className="absolute inset-0 bg-black/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                    <p className="text-white text-xs font-body text-center">{ods.name}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Destaque */}
+          <motion.div
+            className="mt-8 p-6 bg-gradient-to-r from-primary to-primary/80 rounded-2xl text-primary-foreground text-center"
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+          >
+            <p className="text-lg font-display font-semibold">
+              💡 O CDV é emitido apenas quando o impacto ambiental é <strong>efetivamente gerado</strong>, 
+              <strong> rastreado</strong> e <strong>auditado</strong> — garantindo total transparência e credibilidade.
+            </p>
+          </motion.div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide 3: Como Funciona */}
+      <AnimatedSlide id="como" className="bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <motion.span 
+              className="inline-block px-4 py-2 bg-secondary/10 text-secondary-foreground rounded-full font-display text-sm mb-4"
+              whileInView={{ scale: [0.8, 1] }}
+            >
+              O Processo
+            </motion.span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+              Como o <span className="text-primary">Impacto</span> é Gerado?
+            </h2>
+            <p className="text-lg text-muted-foreground font-body max-w-2xl mx-auto">
+              Cada ação de um cidadão no ecossistema Ciclik gera UIBs rastreáveis 
+              que são atribuídas ao seu CDV.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6 mb-12">
+            {[
+              { 
+                step: 1, 
+                icon: Users, 
+                title: "Usuário Age", 
+                desc: "Recicla, estuda ou registra compras no app Ciclik"
+              },
+              { 
+                step: 2, 
+                icon: BarChart3, 
+                title: "UIB Gerada", 
+                desc: "Sistema registra a Unidade de Impacto Base" 
+              },
+              { 
+                step: 3, 
+                icon: Target, 
+                title: "Atribuição", 
+                desc: "UIB é vinculada ao seu CDV em maturação" 
+              },
+              { 
+                step: 4, 
+                icon: FileCheck, 
+                title: "Certificado", 
+                desc: "Ao completar 256 UIBs, certificado é emitido" 
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                className="relative"
+                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                transition={{ delay: i * 0.15 }}
+              >
+                <div className="bg-card p-6 rounded-2xl border shadow-lg h-full text-center">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 font-display font-bold">
+                    {item.step}
+                  </div>
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-display font-semibold mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground font-body">{item.desc}</p>
+                </div>
+                {i < 3 && (
+                  <div className="hidden md:block absolute top-1/2 -right-3 w-6">
+                    <ArrowRight className="w-6 h-6 text-primary/30" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Fórmula Visual */}
+          <motion.div
+            className="bg-card p-8 rounded-2xl border shadow-lg max-w-3xl mx-auto"
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+          >
+            <h3 className="text-center font-display font-bold mb-6">Fórmula do CDV</h3>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="bg-primary/10 p-4 rounded-xl text-center">
+                <Recycle className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="font-display font-bold">250 kg</div>
+                <div className="text-xs text-muted-foreground">Resíduos</div>
+              </div>
+              <span className="text-2xl font-bold text-muted-foreground">+</span>
+              <div className="bg-blue-500/10 p-4 rounded-xl text-center">
+                <GraduationCap className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <div className="font-display font-bold">5 horas</div>
+                <div className="text-xs text-muted-foreground">Educação</div>
+              </div>
+              <span className="text-2xl font-bold text-muted-foreground">+</span>
+              <div className="bg-secondary/10 p-4 rounded-xl text-center">
+                <ShoppingCart className="w-8 h-8 text-secondary mx-auto mb-2" />
+                <div className="font-display font-bold">1 produto</div>
+                <div className="text-xs text-muted-foreground">Mapeado</div>
+              </div>
+              <span className="text-2xl font-bold text-muted-foreground">=</span>
+              <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-xl text-center text-primary-foreground">
+                <Award className="w-8 h-8 mx-auto mb-2" />
+                <div className="font-display font-bold">1 CDV</div>
+                <div className="text-xs opacity-80">256 UIBs</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide 4: Benefícios para Empresas */}
+      <AnimatedSlide id="beneficios" className="bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <motion.span 
+              className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full font-display text-sm mb-4"
+              whileInView={{ scale: [0.8, 1] }}
+            >
+              Vantagens
+            </motion.span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+              Por que investir em <span className="text-primary">CDV</span>?
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { 
+                icon: Shield, 
+                title: "Compliance ESG", 
+                desc: "Atenda requisitos regulatórios e de investidores com impacto comprovado",
+                color: "primary"
+              },
+              { 
+                icon: BadgeCheck, 
+                title: "Marketing Autêntico", 
+                desc: "Comunique sustentabilidade com dados reais, não promessas vazias",
+                color: "secondary"
+              },
+              { 
+                icon: QrCode, 
+                title: "Validação Pública", 
+                desc: "Qualquer pessoa pode verificar seu impacto via QR Code",
+                color: "primary"
+              },
+              { 
+                icon: LineChart, 
+                title: "Dashboard em Tempo Real", 
+                desc: "Acompanhe o progresso do seu CDV a qualquer momento",
+                color: "blue-500"
+              },
+              { 
+                icon: Globe, 
+                title: "Impacto Local", 
+                desc: "Apoie cooperativas e comunidades brasileiras diretamente",
+                color: "primary"
+              },
+              { 
+                icon: TrendingUp, 
+                title: "Valorização de Marca", 
+                desc: "Diferenciação competitiva com selo Ciclik - Digital Verde",
+                color: "secondary"
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                className="bg-card p-6 rounded-2xl border shadow-lg"
+                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              >
+                <div className={`w-14 h-14 bg-${item.color}/10 rounded-xl flex items-center justify-center mb-4`}>
+                  <item.icon className={`w-7 h-7 text-${item.color}`} />
+                </div>
+                <h3 className="text-lg font-display font-semibold mb-2">{item.title}</h3>
+                <p className="text-muted-foreground font-body text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide 5: Dashboard Preview */}
+      <AnimatedSlide id="dashboard" className="bg-card">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: -30 }}
+            >
+              <motion.span 
+                className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full font-display text-sm mb-4"
+                whileInView={{ scale: [0.8, 1] }}
+              >
+                Sua Experiência
+              </motion.span>
+              <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+                Dashboard do <span className="text-primary">Investidor</span>
+              </h2>
+              <p className="text-lg text-muted-foreground font-body mb-8">
+                Acompanhe em tempo real o progresso dos seus CDVs, visualize métricas 
+                de impacto e emita certificados quando estiverem completos.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  { icon: PieChart, text: "Progresso detalhado por tipo de impacto" },
+                  { icon: Eye, text: "Visibilidade total das UIBs atribuídas" },
+                  { icon: Calendar, text: "Acompanhamento do período de maturação" },
+                  { icon: FileCheck, text: "Emissão automática de certificados" },
+                  { icon: QrCode, text: "QR Codes para validação pública" },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex items-center gap-4"
+                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="font-body">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="relative"
+              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              transition={{ delay: 0.3 }}
+            >
+              {/* Mock Dashboard */}
+              <div className="bg-muted/50 p-6 rounded-3xl border shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <img src={`${import.meta.env.BASE_URL}ciclik-logo.png`} alt="Ciclik" className="h-6" />
+                    <span className="font-display font-semibold">Meu Portfólio</span>
+                  </div>
+                  <div className="px-3 py-1 bg-primary/10 rounded-full text-sm text-primary font-medium">
+                    3 CDVs Ativos
+                  </div>
+                </div>
+
+                {/* Progress Bars */}
+                <div className="space-y-4 mb-6">
+                  {[
+                    { label: "Resíduos", progress: 78, color: "bg-primary", value: "585 kg" },
+                    { label: "Educação", progress: 92, color: "bg-blue-500", value: "13,8 h" },
+                    { label: "Produtos", progress: 100, color: "bg-[#FBBB1A]", value: "3" },
+                  ].map((item, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium font-body">{item.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-display font-semibold text-foreground">{item.value}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            item.progress === 100 
+                              ? 'bg-primary/20 text-primary font-semibold' 
+                              : 'text-muted-foreground bg-muted'
+                          }`}>
+                            {item.progress}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
+                        <motion.div
+                          className={`h-full ${item.color} rounded-full shadow-sm`}
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${item.progress}%` }}
+                          transition={{ duration: 1.2, delay: i * 0.15, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Stats Cards - valores destacados com ícones */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-xl text-center border border-primary/20">
+                    <div className="text-xl font-display font-bold text-primary">
+                      585 kg
+                    </div>
+                    <div className="text-xs text-muted-foreground font-body">Total Reciclado</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-4 rounded-xl text-center border border-blue-500/20">
+                    <div className="text-xl font-display font-bold text-blue-600">
+                      13,8 h
+                    </div>
+                    <div className="text-xs text-muted-foreground font-body">Educação</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-ciclik-orange/10 to-ciclik-orange/5 p-4 rounded-xl text-center border border-ciclik-orange/20">
+                    <div className="text-xl font-display font-bold text-ciclik-orange">
+                      3
+                    </div>
+                    <div className="text-xs text-muted-foreground font-body">Produtos</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -z-10 -top-4 -left-4 w-full h-full bg-primary/10 rounded-3xl" />
+            </motion.div>
+          </div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide 6: Certificado */}
+      <AnimatedSlide id="certificado" className="bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <motion.span 
+              className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full font-display text-sm mb-4"
+              whileInView={{ scale: [0.8, 1] }}
+            >
+              O Resultado
+            </motion.span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+              Seu <span className="text-primary">Certificado</span> Digital
+            </h2>
+            <p className="text-lg text-muted-foreground font-body max-w-2xl mx-auto">
+              Ao completar 100% das metas, seu certificado é emitido automaticamente 
+              com validação pública via QR Code.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Mock Certificate */}
+            <motion.div
+              className="bg-card p-8 rounded-3xl border shadow-2xl"
+              whileInView={{ opacity: 1, rotateY: 0 }}
+              initial={{ opacity: 0, rotateY: -15 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="border-b pb-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <img src={`${import.meta.env.BASE_URL}ciclik-logo.png`} alt="Ciclik" className="h-10" />
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Certificado Nº</div>
+                    <div className="font-mono text-sm">CDV-2025-00142</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-display font-bold mb-2">Certificado Digital Verde</h3>
+                <p className="text-sm text-muted-foreground">Ciclik - Digital Verde</p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-xl mb-6">
+                <div className="text-center mb-4">
+                  <div className="text-sm text-muted-foreground">Empresa Certificada</div>
+                  <div className="font-display font-bold text-lg">Sua Empresa LTDA</div>
+                  <div className="text-xs text-muted-foreground">CNPJ: 00.000.000/0001-00</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center p-3 bg-primary/5 rounded-lg">
+                  <Recycle className="w-6 h-6 text-primary mx-auto mb-1" />
+                  <div className="font-bold">250 kg</div>
+                  <div className="text-xs text-muted-foreground">Reciclados</div>
+                </div>
+                <div className="text-center p-3 bg-blue-500/5 rounded-lg">
+                  <GraduationCap className="w-6 h-6 text-blue-500 mx-auto mb-1" />
+                  <div className="font-bold">5 horas</div>
+                  <div className="text-xs text-muted-foreground">Educação</div>
+                </div>
+                <div className="text-center p-3 bg-secondary/5 rounded-lg">
+                  <TreePine className="w-6 h-6 text-secondary mx-auto mb-1" />
+                  <div className="font-bold">425 kg</div>
+                  <div className="text-xs text-muted-foreground">CO₂ Evitado</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  <div>Emitido em: 05/01/2026</div>
+                  <div>Válido permanentemente</div>
+                </div>
+                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                  <QrCode className="w-12 h-12 text-muted-foreground" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Features */}
+            <div className="space-y-6">
+              {[
+                { 
+                  icon: Lock, 
+                  title: "Imutável e Permanente", 
+                  desc: "Uma vez emitido, o certificado é permanente e não pode ser alterado" 
+                },
+                { 
+                  icon: QrCode, 
+                  title: "Validação Pública", 
+                  desc: "Qualquer pessoa pode escanear o QR Code e verificar a autenticidade" 
+                },
+                { 
+                  icon: Globe, 
+                  title: "Compartilhável", 
+                  desc: "Link público para incluir em relatórios, sites e materiais de marketing" 
+                },
+                { 
+                  icon: FileCheck, 
+                  title: "Download em PDF", 
+                  desc: "Baixe o certificado em alta resolução para impressão ou arquivo" 
+                },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="flex gap-4"
+                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  transition={{ delay: i * 0.15 }}
+                >
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-semibold mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground font-body">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide: Projetos Aprovados MMA/LIR */}
+      <AnimatedSlide id="projetos-lir" className="bg-background">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <motion.span 
+              className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full font-display text-sm mb-4"
+              whileInView={{ scale: [0.8, 1] }}
+            >
+              Aprovados pelo MMA
+            </motion.span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+              Projetos <span className="text-primary">LIR</span> Disponíveis
+            </h2>
+            <p className="text-lg text-muted-foreground font-body max-w-3xl mx-auto">
+              Projetos aprovados pelo Ministério do Meio Ambiente elegíveis para captação 
+              via Lei de Incentivo à Reciclagem (Lei nº 14.260/2021)
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Projeto 1 - Ciclik Gamificação */}
+            <motion.div
+              className="bg-card p-8 rounded-3xl border shadow-lg"
+              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Recycle className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 mb-1">
+                    MMA e ILZB
+                  </Badge>
+                  <h3 className="font-display font-bold text-xl">
+                    Ciclik Gamificação
+                  </h3>
+                </div>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Valor Total</span>
+                  <span className="font-display font-bold text-lg">R$ 1.200.000,00</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Quotas</span>
+                  <span className="font-display font-bold text-primary">600</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Vigência</span>
+                  <span className="font-display font-semibold">10/02/2026 - 10/02/2027</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground font-body">Valor por Quota</span>
+                  <span className="font-display font-semibold">R$ 2.000,00</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted/50 rounded-xl mb-4 min-h-[88px] flex items-center">
+                <p className="text-sm text-muted-foreground font-body">
+                  Solução que combina tecnologia, economia circular, educação ambiental e justiça social — 
+                  com impacto direto na valorização dos catadores, no fortalecimento das cadeias de reciclagem 
+                  e na regeneração dos territórios.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                <div className="p-2 bg-primary/5 rounded-lg text-center">
+                  <div className="font-semibold">150.000 kg</div>
+                  <div className="text-muted-foreground">Resíduos</div>
+                </div>
+                <div className="p-2 bg-primary/5 rounded-lg text-center">
+                  <div className="font-semibold">3.000 min</div>
+                  <div className="text-muted-foreground">Educação</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="w-4 h-4 text-primary" />
+                <span>Aprovado pelo Ministério do Meio Ambiente</span>
+              </div>
+            </motion.div>
+
+            {/* Projeto 2 - Ciclik Conecta */}
+            <motion.div
+              className="bg-card p-8 rounded-3xl border shadow-lg"
+              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-[#FBBB1A]/10 rounded-xl flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-[#FBBB1A]" />
+                </div>
+                <div>
+                  <Badge variant="outline" className="bg-[#FBBB1A]/5 text-[#FBBB1A] border-[#FBBB1A]/20 mb-1">
+                    MMA e ILZB
+                  </Badge>
+                  <h3 className="font-display font-bold text-xl">
+                    Ciclik Conecta
+                  </h3>
+                </div>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Valor Total</span>
+                  <span className="font-display font-bold text-lg">R$ 3.000.000,00</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Quotas</span>
+                  <span className="font-display font-bold text-[#FBBB1A]">1.500</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-muted-foreground font-body">Vigência</span>
+                  <span className="font-display font-semibold">31/12/2025 - 31/12/2027</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground font-body">Valor por Quota</span>
+                  <span className="font-display font-semibold">R$ 2.000,00</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted/50 rounded-xl mb-4 min-h-[88px] flex items-center">
+                <p className="text-sm text-muted-foreground font-body">
+                  Implantação de rotas inteligentes de coletas seletivas por meio do programa de 
+                  fidelidade ambiental da Ciclik em parceria com cooperativas selecionadas.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                <div className="p-2 bg-[#FBBB1A]/10 rounded-lg text-center">
+                  <div className="font-semibold">375.000 kg</div>
+                  <div className="text-muted-foreground">Resíduos</div>
+                </div>
+                <div className="p-2 bg-[#FBBB1A]/10 rounded-lg text-center">
+                  <div className="font-semibold">7.500 min</div>
+                  <div className="text-muted-foreground">Educação</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="w-4 h-4 text-[#FBBB1A]" />
+                <span>Aprovado pelo Ministério do Meio Ambiente</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Info LIR */}
+          <motion.div
+            className="mt-12 p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-ciclik-orange/5 rounded-2xl border border-primary/10"
+            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+          >
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                <FileCheck className="w-8 h-8 text-primary" />
+              </div>
+              <div className="text-center md:text-left">
+                <h4 className="font-display font-bold text-lg mb-2">
+                  Lei de Incentivo à Reciclagem (LIR)
+                </h4>
+                <p className="text-sm text-muted-foreground font-body">
+                  Empresas podem deduzir até <strong>1% do IRPJ</strong> ao investir em projetos 
+                  aprovados pelo MMA, transformando tributos em impacto ambiental real e certificado.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Slide 7: Call to Action */}
+      <AnimatedSlide id="cta" className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            whileInView={{ scale: [0.8, 1] }}
+            className="mb-8"
+          >
+            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto">
+              <Award className="w-12 h-12" />
+            </div>
+          </motion.div>
+
+          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">
+            Pronto para Certificar
+            <br />o Impacto da sua Empresa?
+          </h2>
+
+          <p className="text-xl text-primary-foreground/80 font-body mb-8 max-w-2xl mx-auto">
+            Junte-se às empresas que já estão comprovando seu compromisso 
+            ambiental com o Certificado Digital Verde.
+          </p>
+
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="bg-white text-primary hover:bg-white/90 font-display text-lg px-8"
+              onClick={() => navigate('/investidor')}
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Investir Agora
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="border-white text-white hover:bg-white/10 font-display text-lg px-8"
+              onClick={() => navigate('/investidor#projetos')}
+            >
+              <Eye className="w-5 h-5 mr-2" />
+              Ver Projetos Disponíveis
+            </Button>
+          </div>
+
+          <motion.div 
+            className="mt-16 pt-8 border-t border-white/20"
+            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+          >
+            <p className="text-primary-foreground/60 font-body text-sm mb-4">
+              Dúvidas? Fale com nossa equipe comercial
+            </p>
+            <p className="font-display text-lg">comercial@ciclik.com.br</p>
+          </motion.div>
+        </div>
+      </AnimatedSlide>
+
+      {/* Footer */}
+      <footer className="bg-card py-8 px-4 border-t">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <img src={`${import.meta.env.BASE_URL}ciclik-logo.png`} alt="Ciclik" className="h-8" />
+          <p className="text-sm text-muted-foreground font-body">
+            © {new Date().getFullYear()} Ciclik. Todos os direitos reservados.
+          </p>
+          <div className="flex gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/apresentacao')}>
+              Apresentação Geral
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              Voltar ao App
+            </Button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

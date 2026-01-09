@@ -44,6 +44,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { appUrl } from '@/lib/appUrl';
 
 interface Quota {
   id: string;
@@ -388,7 +389,7 @@ const AdminCDVQuotas = () => {
             cep: '00000-000',
             role: 'investidor'
           },
-          emailRedirectTo: `${window.location.origin}/cdv/investor`
+          emailRedirectTo: appUrl('/cdv/investor')
         }
       });
 
@@ -420,7 +421,7 @@ const AdminCDVQuotas = () => {
       // Gerar link de reset de senha
       const { data: resetData, error: resetError } = await supabase.auth.resetPasswordForEmail(
         investidor.email,
-        { redirectTo: `${window.location.origin}/reset-password` }
+  { redirectTo: appUrl('/reset-password') }
       );
 
       if (resetError) {
@@ -433,7 +434,7 @@ const AdminCDVQuotas = () => {
           email: investidor.email,
           razaoSocial: investidor.razao_social,
           nomeResponsavel: investidor.nome_responsavel,
-          resetLink: `${window.location.origin}/reset-password`,
+          resetLink: appUrl('/reset-password'),
           idInvestidor: investidorId
         }
       });

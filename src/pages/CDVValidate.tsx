@@ -20,6 +20,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import QRCode from "qrcode";
+import { appUrl } from '@/lib/appUrl';
 
 interface CertificateData {
   id: string;
@@ -75,7 +76,7 @@ const CDVValidate = () => {
       setCertificate(quota as CertificateData);
       setIsValid(quota.status === 'pronto' || quota.status === 'certificado_emitido');
       
-      const validationUrl = `${window.location.origin}/cdv/validate/${id}`;
+      const validationUrl = appUrl(`/cdv/validate/${id}`);
       const qr = await QRCode.toDataURL(validationUrl, {
         width: 200,
         margin: 2,

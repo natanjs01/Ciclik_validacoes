@@ -39,16 +39,22 @@ export default function AdminUsers() {
   }, [searchTerm, users]);
 
   const loadUsers = async () => {
+    // Buscar apenas profiles com dados válidos
+    // Filtrar usuários que têm email e nome preenchidos (indicadores de registro completo)
     const { data, error } = await supabase
       .from('profiles')
       .select(`
         *,
         user_roles (role)
       `)
+      .not('email', 'is', null)
+      .not('nome', 'is', null)
+      .neq('email', '')
+      .neq('nome', '')
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('❌ [AdminUsers] Erro ao carregar:', error);
+      console.error('❌ [AdminUsers] Erro ao carregar profiles:', error);
       toast({
         title: 'Erro ao carregar usuários',
         description: error.message,
@@ -57,10 +63,48 @@ export default function AdminUsers() {
       return;
     }
     
-    if (data) {
-      setUsers(data);
-      setFilteredUsers(data);
-    }
+    // Filtrar apenas usuários com CPF ou CNPJ preenchido (usuários reais cadastrados)
+    // Remove validação de tamanho pois pode ter máscara (pontos/traços)
+    const validUsers = data?.filter(user => 
+      (user.tipo_pessoa === 'PF' && user.cpf && user.cpf.trim().length > 0) ||
+      (user.tipo_pessoa === 'PJ' && user.cnpj && user.cnpj.trim().length > 0)
+    ) || [];
+    
+    // Remover duplicatas: manter apenas o registro mais recente por email/CPF/CNPJ
+    const uniqueUsers = validUsers.reduce((acc: any[], current) => {
+      // Usar email como chave primária de identificação
+      const identifier = current.tipo_pessoa === 'PF' ? current.cpf : current.cnpj;
+      
+      // Verificar se já existe um usuário com o mesmo identificador
+      const existingIndex = acc.findIndex(user => {
+        const existingId = user.tipo_pessoa === 'PF' ? user.cpf : user.cnpj;
+        return existingId === identifier || user.email === current.email;
+      });
+      
+      if (existingIndex === -1) {
+        // Não existe: adicionar
+        acc.push(current);
+      } else {
+        // Existe: manter o mais recente (maior data de criação)
+        const existing = acc[existingIndex];
+        const existingDate = new Date(existing.created_at || existing.data_cadastro);
+        const currentDate = new Date(current.created_at || current.data_cadastro);
+        
+        if (currentDate > existingDate) {
+          acc[existingIndex] = current;
+        }
+      }
+      
+      return acc;
+    }, []);
+    
+    console.log('✅ [AdminUsers] Total de profiles no banco:', data?.length);
+    console.log('✅ [AdminUsers] Usuários válidos (com documento):', validUsers.length);
+    console.log('✅ [AdminUsers] Usuários únicos (sem duplicatas):', uniqueUsers.length);
+    console.log('📊 [AdminUsers] Duplicatas removidas:', validUsers.length - uniqueUsers.length);
+    
+    setUsers(uniqueUsers);
+    setFilteredUsers(uniqueUsers);
   };
 
   const updateUserScore = async (userId: string, newScore: number) => {

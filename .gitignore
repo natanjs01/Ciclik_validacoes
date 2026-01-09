@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Diretório de referência - não deve ser versionado
+eco-champion-circle-main_referencia_não_alterar_nada/
+
+# Arquivos de documentação de diagnóstico temporários
+DIAGNOSTICO_*.md
+DIAGNOSTICO_*.sql
+CORRECOES_APLICADAS.md
+CORRECAO_*.md
+PROBLEMA_RESOLVIDO.md
+SOLUCAO_*.md
+ANALISE_*.md
+
+# Arquivos SQL de teste
+TESTE_*.sql
+INSERIR_*_TESTE.sql
+CORRIGIR_*.sql
+VERIFICAR_*.sql
+VALIDAR_*.sql
+APLICAR_NO_SUPABASE.sql

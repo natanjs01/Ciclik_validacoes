@@ -7,6 +7,7 @@ import { Share2, Copy, Users, Gift, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
+import { appUrl } from '@/lib/appUrl';
 
 interface ReferralSectionProps {
   codigoIndicacao: string;
@@ -65,7 +66,7 @@ export default function ReferralSection({ codigoIndicacao, userId }: ReferralSec
     setLoading(false);
   };
 
-  const shareUrl = `${window.location.origin}/auth?ref=${codigoIndicacao}`;
+  const shareUrl = appUrl(`/auth?ref=${codigoIndicacao}`);
   const whatsappMessage = encodeURIComponent(
     `🌱 Junte-se a mim no Ciclik - Digital Verde!\n\n` +
     `Use meu código de indicação: ${codigoIndicacao}\n\n` +

@@ -1,6 +1,12 @@
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface QuickActionButtonProps {
   icon: LucideIcon;
@@ -10,6 +16,7 @@ interface QuickActionButtonProps {
   bgColor?: string;
   className?: string;
   tourClass?: string;
+  tooltipContent?: React.ReactNode;
 }
 
 export function QuickActionButton({
@@ -20,8 +27,9 @@ export function QuickActionButton({
   bgColor = 'bg-primary/10',
   className,
   tourClass,
+  tooltipContent,
 }: QuickActionButtonProps) {
-  return (
+  const buttonContent = (
     <motion.button
       onClick={onClick}
       className={cn(
@@ -50,6 +58,26 @@ export function QuickActionButton({
       </span>
     </motion.button>
   );
+
+  if (tooltipContent) {
+    return (
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {buttonContent}
+          </TooltipTrigger>
+          <TooltipContent 
+            side="bottom" 
+            className="max-w-[200px] text-center bg-popover border border-border shadow-lg"
+          >
+            {tooltipContent}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return buttonContent;
 }
 
 export default QuickActionButton;

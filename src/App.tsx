@@ -53,6 +53,8 @@ import CDVInvestorDashboard from "./pages/CDVInvestorDashboard";
 import CDVCertificate from "./pages/CDVCertificate";
 import CDVValidate from "./pages/CDVValidate";
 import AdminCDV from "./pages/AdminCDV";
+import AdminRotasColeta from "./pages/AdminRotasColeta";
+import AdminInteresses from "./pages/AdminInteresses";
 import NotFound from "./pages/NotFound";
 import SupabaseTest from "./pages/SupabaseTest";
 import EmailConfirm from "./pages/EmailConfirm";
@@ -137,6 +139,8 @@ function AppRoutes() {
       <Route path="/admin/points-audit" element={<ProtectedRoute allowedRoles={['admin']}><AdminPointsAudit /></ProtectedRoute>} />
       <Route path="/admin/delivery-promises" element={<ProtectedRoute allowedRoles={['admin']}><AdminDeliveryPromises /></ProtectedRoute>} />
       <Route path="/admin/cdv" element={<ProtectedRoute allowedRoles={['admin']}><AdminCDV /></ProtectedRoute>} />
+      <Route path="/admin/rotas" element={<ProtectedRoute allowedRoles={['admin']}><AdminRotasColeta /></ProtectedRoute>} />
+      <Route path="/admin/interesses" element={<ProtectedRoute allowedRoles={['admin']}><AdminInteresses /></ProtectedRoute>} />
       
       {/* CDV Routes */}
       <Route path="/cdv" element={<CDVLanding />} />

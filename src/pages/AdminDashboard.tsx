@@ -16,7 +16,9 @@ import {
   BarChart3,
   FileText,
   HelpCircle,
-  Package
+  Package,
+  Route,
+  Target
 } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import TourGuide from '@/components/TourGuide';
@@ -77,8 +79,43 @@ export default function AdminDashboard() {
   }, []);
 
   const loadStats = async () => {
-    const [usuarios, missoes, cupons, cooperativas, empresas, entregas] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    // Buscar usuários válidos (com documentos completos)
+    const { data: allProfiles } = await supabase
+      .from('profiles')
+      .select('id, tipo_pessoa, cpf, cnpj, email, created_at, data_cadastro')
+      .not('email', 'is', null)
+      .not('nome', 'is', null);
+    
+    const validUsers = allProfiles?.filter(user => 
+      (user.tipo_pessoa === 'PF' && user.cpf && user.cpf.length >= 11) ||
+      (user.tipo_pessoa === 'PJ' && user.cnpj && user.cnpj.length >= 14)
+    ) || [];
+
+    // Remover duplicatas: manter apenas o registro mais recente por email/CPF/CNPJ
+    const uniqueUsers = validUsers.reduce((acc: any[], current) => {
+      const identifier = current.tipo_pessoa === 'PF' ? current.cpf : current.cnpj;
+      
+      const existingIndex = acc.findIndex(user => {
+        const existingId = user.tipo_pessoa === 'PF' ? user.cpf : user.cnpj;
+        return existingId === identifier || user.email === current.email;
+      });
+      
+      if (existingIndex === -1) {
+        acc.push(current);
+      } else {
+        const existing = acc[existingIndex];
+        const existingDate = new Date(existing.created_at || existing.data_cadastro);
+        const currentDate = new Date(current.created_at || current.data_cadastro);
+        
+        if (currentDate > existingDate) {
+          acc[existingIndex] = current;
+        }
+      }
+      
+      return acc;
+    }, []);
+
+    const [missoes, cupons, cooperativas, empresas, entregas] = await Promise.all([
       supabase.from('missoes').select('id', { count: 'exact', head: true }),
       supabase.from('cupons').select('id', { count: 'exact', head: true }),
       supabase.from('cooperativas').select('id', { count: 'exact', head: true }),
@@ -87,7 +124,7 @@ export default function AdminDashboard() {
     ]);
 
     setStats({
-      usuarios: usuarios.count || 0,
+      usuarios: uniqueUsers.length,
       missoes: missoes.count || 0,
       cupons: cupons.count || 0,
       cooperativas: cooperativas.count || 0,
@@ -124,6 +161,20 @@ export default function AdminDashboard() {
       icon: Recycle,
       color: 'success',
       path: '/admin/operadores-logisticos'
+    },
+    {
+      title: 'Gestão de Rotas de Coleta',
+      description: 'Configurar rotas, áreas e adesões',
+      icon: Route,
+      color: 'primary',
+      path: '/admin/rotas'
+    },
+    {
+      title: 'Interesses por Funcionalidade',
+      description: 'Demanda de usuários por localidade',
+      icon: Target,
+      color: 'warning',
+      path: '/admin/interesses'
     },
     {
       title: 'Gestão de Empresas',

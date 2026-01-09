@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserPoints } from '@/hooks/useUserPoints';
 import { formatNumber } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -202,6 +203,135 @@ export default function UserDashboard() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
+
+  // Componente de tooltip para Nota Fiscal
+  const NotaFiscalTooltip = ({ userId, userCity, userState }: { userId?: string; userCity?: string; userState?: string }) => {
+    const [registering, setRegistering] = useState(false);
+    const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+    useEffect(() => {
+      // Verificar se já registrou interesse
+      const checkInterest = async () => {
+        if (!userId) return;
+        const { data } = await supabase
+          .from('interesses_funcionalidades')
+          .select('id')
+          .eq('id_usuario', userId)
+          .eq('funcionalidade', 'nota_fiscal')
+          .maybeSingle();
+        setAlreadyRegistered(!!data);
+      };
+      checkInterest();
+    }, [userId]);
+
+    const handleRegisterInterest = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (registering || alreadyRegistered) return;
+      
+      setRegistering(true);
+      try {
+        const { error } = await supabase
+          .from('interesses_funcionalidades')
+          .insert({
+            id_usuario: userId || null,
+            funcionalidade: 'nota_fiscal',
+            estado: userState || null,
+            cidade: userCity || null,
+          });
+        
+        if (error) throw error;
+        setAlreadyRegistered(true);
+        toast.success('Interesse registrado! Obrigado pelo feedback.');
+      } catch (error) {
+        console.error('Erro ao registrar interesse:', error);
+        toast.error('Erro ao registrar interesse');
+      } finally {
+        setRegistering(false);
+      }
+    };
+
+    return (
+      <div className="text-xs space-y-1.5">
+        <p className="font-medium">📍 Disponível apenas na Bahia</p>
+        {alreadyRegistered ? (
+          <p className="text-primary">✓ Interesse registrado!</p>
+        ) : (
+          <button
+            onClick={handleRegisterInterest}
+            disabled={registering}
+            className="text-primary underline hover:text-primary/80 transition-colors"
+          >
+            {registering ? 'Registrando...' : 'Clique aqui se deseja no seu estado'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // Componente de tooltip para Entregar
+  const EntregarTooltip = ({ userId, userCity, userState }: { userId?: string; userCity?: string; userState?: string }) => {
+    const [registering, setRegistering] = useState(false);
+    const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+    useEffect(() => {
+      const checkInterest = async () => {
+        if (!userId) return;
+        const { data } = await supabase
+          .from('interesses_funcionalidades')
+          .select('id')
+          .eq('id_usuario', userId)
+          .eq('funcionalidade', 'entrega_reciclaveis')
+          .maybeSingle();
+        setAlreadyRegistered(!!data);
+      };
+      checkInterest();
+    }, [userId]);
+
+    const handleRegisterInterest = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (registering || alreadyRegistered) return;
+      
+      setRegistering(true);
+      try {
+        const { error } = await supabase
+          .from('interesses_funcionalidades')
+          .insert({
+            id_usuario: userId || null,
+            funcionalidade: 'entrega_reciclaveis',
+            estado: userState || null,
+            cidade: userCity || null,
+          });
+        
+        if (error) throw error;
+        setAlreadyRegistered(true);
+        toast.success('Interesse registrado! Obrigado pelo feedback.');
+      } catch (error) {
+        console.error('Erro ao registrar interesse:', error);
+        toast.error('Erro ao registrar interesse');
+      } finally {
+        setRegistering(false);
+      }
+    };
+
+    return (
+      <div className="text-xs space-y-1.5">
+        <p className="font-medium">📍 Disponível apenas em Salvador/BA</p>
+        {alreadyRegistered ? (
+          <p className="text-primary">✓ Interesse registrado!</p>
+        ) : (
+          <button
+            onClick={handleRegisterInterest}
+            disabled={registering}
+            className="text-primary underline hover:text-primary/80 transition-colors"
+          >
+            {registering ? 'Registrando...' : 'Clique aqui se deseja na sua cidade'}
+          </button>
+        )}
+      </div>
+    );
   };
 
   if (!profile) return null;
@@ -423,6 +553,7 @@ export default function UserDashboard() {
                 tourClass="tour-missions"
                 bgColor="bg-amber-500/10"
                 iconColor="text-amber-500"
+                tooltipContent={<p className="text-xs font-medium">🇧🇷 Disponível em todo o Brasil</p>}
               />
               <QuickActionButton
                 icon={FileText}
@@ -430,6 +561,9 @@ export default function UserDashboard() {
                 onClick={() => navigate('/upload-receipt')}
                 bgColor="bg-blue-500/10"
                 iconColor="text-blue-500"
+                tooltipContent={
+                  <NotaFiscalTooltip userId={user?.id} userCity={profile?.cidade} userState={profile?.uf} />
+                }
               />
               <QuickActionButton
                 icon={Recycle}
@@ -438,6 +572,9 @@ export default function UserDashboard() {
                 tourClass="tour-deliver"
                 bgColor="bg-primary/10"
                 iconColor="text-primary"
+                tooltipContent={
+                  <EntregarTooltip userId={user?.id} userCity={profile?.cidade} userState={profile?.uf} />
+                }
               />
               <QuickActionButton
                 icon={Gift}
@@ -446,6 +583,7 @@ export default function UserDashboard() {
                 tourClass="tour-coupons"
                 bgColor="bg-pink-500/10"
                 iconColor="text-pink-500"
+                tooltipContent={<p className="text-xs font-medium">🇧🇷 Disponível em todo o Brasil</p>}
               />
               <QuickActionButton
                 icon={TrendingUp}
@@ -453,6 +591,7 @@ export default function UserDashboard() {
                 onClick={() => navigate('/delivery-history')}
                 bgColor="bg-purple-500/10"
                 iconColor="text-purple-500"
+                tooltipContent={<p className="text-xs font-medium">🇧🇷 Disponível em todo o Brasil</p>}
               />
             </div>
           </motion.div>

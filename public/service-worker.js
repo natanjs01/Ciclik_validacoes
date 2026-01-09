@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ciclik-v1';
+const CACHE_NAME = 'ciclik-v2'; // Incrementado para forçar atualização
 const BASE_PATH = '/Ciclik_validacoes/';
 const urlsToCache = [
   BASE_PATH,
@@ -44,32 +44,27 @@ self.addEventListener('activate', (event) => {
 // Interceptação de requisições
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
+    // ESTRATÉGIA: Network First (busca da rede primeiro, cache como fallback)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - retorna a resposta do cache
-        if (response) {
+        // Verifica se recebeu uma resposta válida
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
         
-        // Clone da requisição
-        const fetchRequest = event.request.clone();
+        // Clone da resposta para cachear
+        const responseToCache = response.clone();
         
-        return fetch(fetchRequest).then((response) => {
-          // Verifica se recebeu uma resposta válida
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone da resposta
-          const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
-        });
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        
+        return response;
+      })
+      .catch(() => {
+        // Se falhar a requisição de rede, tenta buscar do cache
+        return caches.match(event.request);
       })
   );
 });

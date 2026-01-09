@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, formatPhone, formatCEP } from '@/lib/validators';
+import { appUrl } from '@/lib/appUrl';
 import { getAssetPath } from '@/utils/assetPath';
 
 const signupSchema = z.object({
@@ -229,15 +230,29 @@ export default function Auth() {
 
       console.log('📤 [CADASTRO] Criando usuário via signUp...');
       
-      // 1. Criar usuário no auth.users
+      // 1. Criar usuário no auth.users com TODOS os dados no raw_user_meta_data
+      // O trigger handle_new_user irá criar automaticamente o profile e role
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: validatedData.email,
         password: validatedData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+          emailRedirectTo: appUrl('/auth/confirm'),
           data: {
             nome: validatedData.nome,
+            email: validatedData.email,
+            telefone: validatedData.telefone,
             tipo_pessoa: tipoPessoa,
+            cpf: tipoPessoa === 'PF' ? formData.cpf : null,
+            cnpj: tipoPessoa === 'PJ' ? formData.cnpj : null,
+            tipo_pj: tipoPessoa === 'PJ' ? formData.tipo_pj : null,
+            cep: validatedData.cep,
+            logradouro: formData.logradouro || null,
+            bairro: formData.bairro || null,
+            cidade: formData.cidade || null,
+            uf: formData.uf || null,
+            numero: formData.numero || null,
+            complemento: formData.complemento || null,
+            codigo_indicador: formData.codigo_indicador || null,
             role: 'usuario'
           }
         }
@@ -253,45 +268,7 @@ export default function Auth() {
       }
 
       console.log('✅ [CADASTRO] Usuário criado:', authData.user.id);
-      
-      // 2. Aguardar persistência
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      console.log('📞 [CADASTRO] Chamando função de registro segura via RPC...');
-
-      // 3. Chamar função de registro via RPC (BYPASSA RLS COM SECURITY DEFINER)
-      const { data: rpcData, error: rpcError } = await supabase.rpc('registrar_usuario_completo', {
-        p_user_id: authData.user.id,
-        p_nome: validatedData.nome,
-        p_email: validatedData.email,
-        p_telefone: validatedData.telefone,
-        p_tipo_pessoa: tipoPessoa,
-        p_cpf: tipoPessoa === 'PF' ? formData.cpf : null,
-        p_cnpj: tipoPessoa === 'PJ' ? formData.cnpj : null,
-        p_tipo_pj: tipoPessoa === 'PJ' ? formData.tipo_pj : null,
-        p_cep: validatedData.cep,
-        p_logradouro: formData.logradouro || null,
-        p_bairro: formData.bairro || null,
-        p_cidade: formData.cidade || null,
-        p_uf: formData.uf || null,
-        p_numero: formData.numero || null,
-        p_complemento: formData.complemento || null,
-        p_codigo_indicador: formData.codigo_indicador || null,
-      });
-
-      if (rpcError) {
-        console.error('❌ [CADASTRO] Erro ao chamar função RPC:', rpcError);
-        throw new Error(`Erro ao criar profile: ${rpcError.message}`);
-      }
-
-      console.log('✅ [CADASTRO] Resposta da função RPC:', rpcData);
-
-      // 4. Verificar resposta da função
-      if (!rpcData || !rpcData.success) {
-        throw new Error(rpcData?.error || 'Erro ao criar profile e role');
-      }
-
-      console.log('✅ [CADASTRO] Profile, role e indicação criados com sucesso!');
+      console.log('✅ [CADASTRO] Trigger handle_new_user irá criar profile e role automaticamente!');
 
       toast({
         title: '📧 Verifique seu Email!',

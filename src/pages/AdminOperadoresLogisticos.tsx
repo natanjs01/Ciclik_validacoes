@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { validateCNPJ, formatCNPJ, formatPhone, formatCEP } from '@/lib/validators';
+import { appUrl } from '@/lib/appUrl';
 
 type TipoOperador = 'cooperativa' | 'rota_ciclik' | 'operador_parceiro';
 
@@ -210,34 +211,32 @@ export default function AdminOperadoresLogisticos() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         editEmailValue,
         {
-          redirectTo: `${window.location.origin}/reset-password`
+          redirectTo: appUrl('/reset-password')
         }
       );
 
       if (resetError) throw resetError;
 
+      // Edge Function desabilitada temporariamente (problema de CORS)
+      /*
       const { error: emailError } = await supabase.functions.invoke('enviar-convite-cooperativa', {
         body: {
           email: editEmailValue,
           nomeFantasia: selectedOp.nome_fantasia,
-          resetLink: `${window.location.origin}/reset-password`,
+          resetLink: appUrl('/reset-password'),
           idCooperativa: selectedOp.id
         }
       });
 
       if (emailError) {
         console.error('Erro ao enviar email:', emailError);
-        toast({
-          title: 'Email atualizado',
-          description: 'Email atualizado, mas houve um erro ao enviar o convite',
-          variant: 'destructive'
-        });
-      } else {
-        toast({
-          title: 'Sucesso!',
-          description: `Email atualizado e convite enviado para ${editEmailValue}`
-        });
       }
+      */
+
+      toast({
+        title: 'Sucesso! ✅',
+        description: `Email atualizado para ${editEmailValue} e link de reset enviado.`
+      });
 
       setIsEditEmailDialogOpen(false);
       setEditEmailValue('');
@@ -316,16 +315,9 @@ export default function AdminOperadoresLogisticos() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Falha ao criar usuário');
 
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'cooperativa'
-        });
-
-      if (roleError) {
-        console.error('Erro ao criar role:', roleError);
-      }
+      // Aguardar o trigger handle_new_user criar o profile e role
+      // (pequeno delay para garantir que o trigger complete)
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const { data: opData, error: opError } = await supabase
         .from('cooperativas')
@@ -371,11 +363,14 @@ export default function AdminOperadoresLogisticos() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         formData.email,
         {
-          redirectTo: `${window.location.origin}/reset-password`
+          redirectTo: appUrl('/reset-password')
         }
       );
 
       if (!resetError) {
+        // Edge Function desabilitada temporariamente (problema de CORS)
+        // TODO: Corrigir CORS na Edge Function enviar-convite-cooperativa
+        /*
         try {
           const { error: emailError } = await supabase.functions.invoke('enviar-convite-cooperativa', {
             body: {
@@ -388,20 +383,16 @@ export default function AdminOperadoresLogisticos() {
 
           if (emailError) {
             console.error('Erro ao enviar email de convite:', emailError);
-            toast({
-              title: 'Operador criado',
-              description: 'Operador cadastrado, mas houve um erro ao enviar o email de convite',
-              variant: 'destructive'
-            });
-          } else {
-            toast({
-              title: 'Operador criado e convite enviado!',
-              description: `Email de convite enviado para ${formData.email}`
-            });
           }
         } catch (emailError) {
           console.error('Erro ao enviar email:', emailError);
         }
+        */
+        
+        toast({
+          title: 'Operador criado com sucesso! ✅',
+          description: `Email de reset de senha enviado para ${formData.email}. O operador deve verificar a caixa de entrada.`
+        });
       } else {
         toast({
           title: 'Operador criado!',

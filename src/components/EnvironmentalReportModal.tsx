@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAssetPath } from '@/utils/assetPath';
 import { supabase } from '@/integrations/supabase/client';
-import { getAssetPath } from '@/utils/assetPath';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, Minus, 
@@ -10,11 +9,8 @@ import {
   TreePine, Droplets, Zap, CloudOff, Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getAssetPath } from '@/utils/assetPath';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { getAssetPath } from '@/utils/assetPath';
 import { formatWeight } from '@/lib/formatters';
-import { getAssetPath } from '@/utils/assetPath';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';

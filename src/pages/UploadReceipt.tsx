@@ -298,10 +298,11 @@ export default function UploadReceipt() {
           setItens(itensEnriquecidos);
         }
 
-        toast({
-          title: 'Dados da SEFAZ obtidos!',
-          description: 'Os dados da nota fiscal foram consultados na SEFAZ e preenchidos automaticamente.',
-        });
+        // NOTIFICAÇÃO COMENTADA: Substituída pelo ProcessingModal
+        // toast({
+        //   title: 'Dados da SEFAZ obtidos!',
+        //   description: 'Os dados da nota fiscal foram consultados na SEFAZ e preenchidos automaticamente.',
+        // });
       }
     } catch (error) {
       console.error('Erro ao consultar SEFAZ:', error);
@@ -417,10 +418,12 @@ export default function UploadReceipt() {
       // Buscar itens da nota usando a API Ciclik
       try {
         console.log('[UploadReceipt] Buscando itens da nota via API Ciclik...');
-        toast({
-          title: 'Consultando Nota Fiscal',
-          description: 'Buscando itens da nota... Isso pode levar até 60 segundos.',
-        });
+        
+        // NOTIFICAÇÃO COMENTADA: Substituída pelo ProcessingModal
+        // toast({
+        //   title: 'Consultando Nota Fiscal',
+        //   description: 'Buscando itens da nota... Isso pode levar até 60 segundos.',
+        // });
         
         const itensCupom = await buscarItensDoCupom(result, 60000); // 60s timeout para Render cold start
         
@@ -466,10 +469,11 @@ export default function UploadReceipt() {
           
           setItens(itensEnriquecidos);
           
-          toast({
-            title: 'Itens Carregados!',
-            description: `${itensCupom.length} itens encontrados na nota. Verifique e corrija a data e valor.`,
-          });
+          // NOTIFICAÇÃO COMENTADA: Substituída pelo ProcessingModal que já mostra o contador de itens
+          // toast({
+          //   title: 'Itens Carregados!',
+          //   description: `${itensCupom.length} itens encontrados na nota. Verifique e corrija a data e valor.`,
+          // });
         } else {
           toast({
             title: 'Atenção',

@@ -1,53 +1,131 @@
-# Welcome to your Lovable project
+# 🌱 Ciclik - Plataforma de Reciclagem Gamificada
 
-## How can I edit this code?
+## 📋 Sobre o Projeto
 
-There are several ways of editing your application.
+Ciclik é uma plataforma web progressiva (PWA) que gamifica o processo de reciclagem, incentivando usuários a adotarem práticas sustentáveis através de um sistema de pontos, níveis e missões educativas.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Tecnologias Utilizadas
 
-**Use your preferred IDE**
+- **Frontend**: React 18 com TypeScript
+- **Estilização**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Build Tool**: Vite
+- **Gerenciador de Pacotes**: Bun / npm
+- **PWA**: Service Worker + Manifest
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📦 Estrutura do Projeto
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+ciclik-projeto/
+├── src/
+│   ├── components/     # Componentes reutilizáveis
+│   ├── pages/          # Páginas da aplicação
+│   ├── contexts/       # Context API (Auth, Profile)
+│   ├── hooks/          # Custom hooks
+│   ├── utils/          # Funções utilitárias
+│   └── types/          # Definições TypeScript
+├── supabase/
+│   └── migrations/     # Migrations do banco de dados
+└── public/             # Assets estáticos
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Instalação e Execução
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Pré-requisitos
+- Node.js 18+ ou Bun
+- Conta no Supabase
 
-**Use GitHub Codespaces**
+### Passos
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/natanjs01/Ciclik_validacoes.git
+   cd ciclik-projeto
+   ```
 
-## What technologies are used for this project?
+2. **Instale as dependências**
+   ```bash
+   bun install
+   # ou
+   npm install
+   ```
 
-This project is built with:
+3. **Configure as variáveis de ambiente**
+   
+   Crie um arquivo `.env.local` na raiz do projeto:
+   ```env
+   VITE_SUPABASE_URL=sua_url_do_supabase
+   VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+   ```
 
-- Vite
-- TypeScript
+4. **Execute as migrations do Supabase**
+   ```bash
+   supabase db push
+   ```
+
+5. **Inicie o servidor de desenvolvimento**
+   ```bash
+   bun run dev
+   # ou
+   npm run dev
+   ```
+
+6. **Acesse a aplicação**
+   
+   Abra [http://localhost:5173](http://localhost:5173) no navegador
+
+## 🏗️ Build para Produção
+
+```bash
+bun run build
+# ou
+npm run build
+```
+
+Os arquivos otimizados serão gerados na pasta `dist/`.
+
+## 🌟 Funcionalidades Principais
+
+- ✅ Cadastro e autenticação de usuários (PF e PJ)
+- ✅ Upload de notas fiscais via QR Code
+- ✅ Sistema de pontos e níveis
+- ✅ Missões educativas sobre reciclagem
+- ✅ Dashboard com estatísticas de reciclagem
+- ✅ Sistema de cooperativas e pontos de coleta
+- ✅ PWA com suporte offline
+
+## 📱 Progressive Web App (PWA)
+
+O Ciclik pode ser instalado como aplicativo no dispositivo do usuário, oferecendo:
+- Funcionalidade offline
+- Notificações push
+- Experiência semelhante a um app nativo
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Para contribuir:
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 👥 Equipe
+
+Desenvolvido com 💚 pela equipe Ciclik
+
+## 📞 Contato
+
+Para dúvidas ou sugestões, entre em contato através do repositório no GitHub.
+
+---
+
+**Nota**: Este é um projeto em desenvolvimento ativo. Algumas funcionalidades podem estar em fase de testes
 - React
 - shadcn-ui
 - Tailwind CSS

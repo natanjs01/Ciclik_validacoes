@@ -404,6 +404,20 @@ const AdminCDVQuotas = () => {
 
       console.log("Usuário auth criado:", authData.user.id);
 
+      // Aguardar o trigger handle_new_user criar o profile e role
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Confirmar email automaticamente para usuários criados pelo admin
+      // Isso evita o envio do email de confirmação (já será enviado o de redefinição de senha)
+      try {
+        await supabase.rpc('confirmar_email_usuario', {
+          usuario_id: authData.user.id
+        });
+      } catch (rpcError) {
+        console.error('Erro ao confirmar email automaticamente:', rpcError);
+        // Continua mesmo se falhar (o usuário ainda pode confirmar manualmente)
+      }
+
       // Atualizar id_user do investidor com o novo usuário
       await supabase
         .from("cdv_investidores")

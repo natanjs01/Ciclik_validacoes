@@ -146,7 +146,7 @@ function AppRoutes() {
       
       {/* CDV Routes */}
       <Route path="/cdv" element={<CDVLanding />} />
-      <Route path="/investidor" element={<CDVLandingInvestor />} />
+      <Route path="/cdv-investidor" element={<CDVLandingInvestor />} />
       <Route path="/apresentacao" element={<InstitutionalPresentation />} />
       <Route path="/apresentacao-investidor" element={<InvestorPresentation />} />
       <Route path="/cdv/investor" element={<ProtectedRoute allowedRoles={['investidor']}><CDVInvestorDashboard /></ProtectedRoute>} />

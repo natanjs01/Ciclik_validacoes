@@ -19,8 +19,9 @@ interface MobileTooltipProps {
 /**
  * Tooltip com suporte completo para mobile e desktop
  * 
- * - Desktop: Abre com hover, fecha ao remover mouse
- * - Mobile: Abre com toque longo (pressionar e segurar), fecha ao soltar ou tocar fora
+ * - Desktop: Abre com hover, fecha ao clicar fora ou abrir outro tooltip
+ * - Mobile: Abre com toque longo (pressionar e segurar), fecha ao tocar fora
+ * - Permite clicar em links dentro do tooltip
  * 
  * @example
  * <MobileTooltip content="Informação útil">
@@ -65,22 +66,14 @@ export function MobileTooltip({
     clearTimer();
   }, [clearTimer]);
 
-  // Cancela se mover o dedo (scroll)
-  const handleTouchMove = useCallback(() => {
-    isTouching.current = false;
-    clearTimer();
-  }, [clearTimer]);
-
   return (
     <TooltipProvider delayDuration={delayDuration}>
       <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
         <TooltipTrigger
           asChild={asChild}
           onMouseEnter={() => setTooltipOpen(true)}
-          onMouseLeave={() => setTooltipOpen(false)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onTouchMove={handleTouchMove}
         >
           {children}
         </TooltipTrigger>

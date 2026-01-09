@@ -11,10 +11,12 @@ import { FAQSection } from '@/components/cdv/landing/FAQSection';
 import { CTAFinalSection } from '@/components/cdv/landing/CTAFinalSection';
 import { DecorativeLeaves } from '@/components/cdv/landing/DecorativeLeaves';
 import { Button } from '@/components/ui/button';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 export default function CDVLandingInvestor() {
+  const navigate = useNavigate();
   const ctaRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -55,6 +57,17 @@ export default function CDVLandingInvestor() {
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          {/* Botão Voltar */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/apresentacao')}
+            className="font-display font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-full gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+          
           {/* Logo oficial Ciclik - integrado ao layout */}
           <div className="flex items-center">
             <img 
@@ -67,28 +80,9 @@ export default function CDVLandingInvestor() {
               }}
             />
           </div>
-          <nav className="hidden md:flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              className="font-display font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-full"
-              onClick={() => document.getElementById('projetos')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Projetos
-            </Button>
-            <Button 
-              variant="ghost" 
-              className="font-display font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-full"
-              onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              FAQ
-            </Button>
-          </nav>
-          <Button 
-            onClick={scrollToCTA}
-            className="font-display font-semibold bg-primary hover:brightness-105 rounded-full px-6 shadow-sm"
-          >
-            Investir Agora
-          </Button>
+          
+          {/* Espaçador para centralizar o logo */}
+          <div className="w-20" />
         </div>
       </motion.header>
 
@@ -96,6 +90,13 @@ export default function CDVLandingInvestor() {
       <main>
         {/* Hero */}
         <HeroSection onCtaClick={scrollToCTA} />
+
+        {/* CTA com Formulário - Logo após Hero */}
+        <div ref={ctaRef} className="relative">
+          <DecorativeLeaves position="bottom-left" size="lg" opacity={0.12} rotate={15} flip />
+          <DecorativeLeaves position="top-right" size="md" opacity={0.1} rotate={-25} />
+          <CTAFinalSection />
+        </div>
 
         {/* Ecosystem - com folhas decorativas */}
         <div className="relative">
@@ -133,18 +134,12 @@ export default function CDVLandingInvestor() {
           <SocialProofSection />
         </div>
 
-        {/* FAQ - com folhas decorativas */}
+        {/* FAQ */}
         <div id="faq" className="relative">
           <DecorativeLeaves position="top-right" size="md" opacity={0.08} rotate={-20} />
           <FAQSection />
         </div>
 
-        {/* Final CTA */}
-        <div ref={ctaRef} className="relative">
-          <DecorativeLeaves position="bottom-left" size="lg" opacity={0.12} rotate={15} flip />
-          <DecorativeLeaves position="top-right" size="md" opacity={0.1} rotate={-25} />
-          <CTAFinalSection />
-        </div>
       </main>
 
       {/* Footer - Estilo Ciclik */}

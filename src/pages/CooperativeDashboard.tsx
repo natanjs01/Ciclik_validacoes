@@ -126,10 +126,15 @@ export default function CooperativeDashboard() {
 
     if (!coopData) return;
 
-    const { data: entregas } = await supabase
+    const { data: entregas, error } = await supabase
       .from('entregas_reciclaveis')
       .select('*')
       .eq('id_cooperativa', coopData.id);
+
+    if (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+      return;
+    }
 
     const pendentes = entregas?.filter(e => e.status_promessa === 'ativa').length || 0;
     const emColeta = entregas?.filter(e => e.status_promessa === 'em_coleta').length || 0;
@@ -181,12 +186,18 @@ export default function CooperativeDashboard() {
 
     if (!coopData) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('entregas_reciclaveis')
       .select('*')
       .eq('id_cooperativa', coopData.id)
       .eq('status_promessa', 'ativa')
-      .order('data_geracao', { ascending: false });
+      .order('data_geracao', { ascending: false, nullsFirst: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Erro ao carregar entregas previstas:', error);
+      return;
+    }
 
     if (data) {
       setEntregasPrevistas(data);
@@ -204,12 +215,18 @@ export default function CooperativeDashboard() {
 
     if (!coopData) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('entregas_reciclaveis')
       .select('*')
       .eq('id_cooperativa', coopData.id)
       .eq('status_promessa', 'em_coleta')
-      .order('data_recebimento', { ascending: false });
+      .order('data_recebimento', { ascending: false, nullsFirst: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Erro ao carregar entregas em coleta:', error);
+      return;
+    }
 
     if (data) {
       setEntregasEmColeta(data);

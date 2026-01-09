@@ -1,12 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { HeroSection } from '@/components/cdv/landing/HeroSection';
-import { EcosystemSection } from '@/components/cdv/landing/EcosystemSection';
-import { HowCDVWorks } from '@/components/cdv/landing/HowCDVWorks';
-import { ImpactMetrics } from '@/components/cdv/landing/ImpactMetrics';
-import { BenefitsSection } from '@/components/cdv/landing/BenefitsSection';
-import { ProjectsCatalog } from '@/components/cdv/landing/ProjectsCatalog';
-import { SocialProofSection } from '@/components/cdv/landing/SocialProofSection';
 import { FAQSection } from '@/components/cdv/landing/FAQSection';
 import { CTAFinalSection } from '@/components/cdv/landing/CTAFinalSection';
 import { DecorativeLeaves } from '@/components/cdv/landing/DecorativeLeaves';
@@ -98,41 +92,7 @@ export default function CDVLandingInvestor() {
           <CTAFinalSection />
         </div>
 
-        {/* Ecosystem - com folhas decorativas */}
-        <div className="relative">
-          <DecorativeLeaves position="top-right" size="lg" opacity={0.12} rotate={-15} />
-          <EcosystemSection />
-        </div>
 
-        {/* How CDV Works - com folhas decorativas */}
-        <div className="relative">
-          <DecorativeLeaves position="center-left" size="md" opacity={0.1} rotate={45} flip />
-          <HowCDVWorks />
-        </div>
-
-        {/* Impact Metrics */}
-        <div className="relative">
-          <DecorativeLeaves position="bottom-right" size="lg" opacity={0.08} rotate={-30} />
-          <ImpactMetrics />
-        </div>
-
-        {/* Benefits - com folhas decorativas */}
-        <div className="relative">
-          <DecorativeLeaves position="top-left" size="md" opacity={0.1} rotate={20} />
-          <BenefitsSection />
-        </div>
-
-        {/* Projects Catalog */}
-        <div id="projetos" className="relative">
-          <DecorativeLeaves position="center-right" size="lg" opacity={0.08} rotate={-45} flip />
-          <ProjectsCatalog onInvestClick={handleInvestClick} />
-        </div>
-
-        {/* Social Proof */}
-        <div className="relative">
-          <DecorativeLeaves position="bottom-left" size="md" opacity={0.1} rotate={30} />
-          <SocialProofSection />
-        </div>
 
         {/* FAQ */}
         <div id="faq" className="relative">

@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Video, CheckCircle, XCircle, Check } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FileText, Video, CheckCircle, XCircle, Check, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import { getYouTubeEmbedUrl } from '@/utils/youtube';
 import CiclikHeader from '@/components/CiclikHeader';
+import { useEducationMonthlyLimit } from '@/hooks/useEducationMonthlyLimit';
 
 type Step = 'video' | 'quiz' | 'review';
 
@@ -30,8 +32,11 @@ export default function MissionContent() {
     userAnswer: string;
     isCorrect: boolean;
   }>>([]);
+  const [earnedPoints, setEarnedPoints] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { canEarnPoints, MONTHLY_LIMIT } = useEducationMonthlyLimit();
 
   useEffect(() => {
     loadMissionData();
@@ -99,7 +104,7 @@ export default function MissionContent() {
       });
     }
 
-    // Proteger contra divisão por zero que causaria Infinity%
+    // Proteger contra divisão por zero
     const percentualAcerto = questions.length > 0 
       ? (correctCount / questions.length) * 100 
       : 0;
@@ -108,73 +113,121 @@ export default function MissionContent() {
     setCurrentStep('review');
 
     try {
-      // Salvar respostas
+      // Salvar respostas do quiz
       const { error: answersError } = await supabase
         .from('respostas_quiz')
         .upsert(quizAnswers, { onConflict: 'id_usuario,id_questao' });
 
       if (answersError) throw answersError;
 
-    // Se acertou 80% ou mais, completar a missão e conceder créditos
-    if (percentualAcerto >= 80) {
-      // Conceder créditos da missão
-      const { data: pontosData } = await supabase.rpc('conceder_pontos_missao', {
-        p_usuario_id: user.id,
-        p_missao_id: mission.id
-      });
+      // Se acertou 80% ou mais, completar a missão e conceder créditos
+      if (percentualAcerto >= 80) {
+        // Verificar limite mensal de educação
+        const limitResult = await canEarnPoints(user.id, mission.pontos);
+        
+        let pontosGanhos = 0;
+        
+        if (limitResult.canEarn) {
+          pontosGanhos = limitResult.pointsToEarn;
+          
+          // Registrar conclusão da missão (permite múltiplas)
+          const { error: missionError } = await supabase
+            .from('missoes_usuarios')
+            .insert({
+              id_usuario: user.id,
+              id_missao: mission.id,
+              percentual_acerto: percentualAcerto,
+              quiz_completo: true,
+            });
 
-      if (pontosData?.success) {
-        toast({
-          title: 'Missão Concluída! 🎉',
-          description: `Você ganhou +${pontosData.pontos_concedidos} pontos! Score total: ${pontosData.score_total} pontos`,
-          duration: 7000
-        });
-      }
+          if (missionError) {
+            console.error('Erro ao registrar missão:', missionError);
+          }
 
-      // Registrar conclusão da missão
-      const { error: missionError } = await supabase
-        .from('missoes_usuarios')
-        .insert({
-          id_usuario: user.id,
-          id_missao: mission.id,
-          percentual_acerto: percentualAcerto,
-            quiz_completo: true,
+          // Atualizar pontos do perfil manualmente
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              score_verde: (profile?.score_verde || 0) + pontosGanhos,
+              missoes_concluidas: (profile?.missoes_concluidas || 0) + 1,
+            })
+            .eq('id', user.id);
+
+          if (profileError) throw profileError;
+
+          // Registrar impacto de educação para CDV (REGRA: 1 hora = 1 UIB)
+          const duracaoMinutos = mission.duracao_minutos || 10;
+          const duracaoHoras = duracaoMinutos / 60;
+          
+          const { error: impactoError } = await supabase
+            .from('impacto_bruto')
+            .insert({
+              tipo: 'educacao',
+              valor_bruto: duracaoHoras,
+              id_usuario: user.id,
+              id_missao: mission.id,
+              data_hora: new Date().toISOString(),
+              descricao_origem: `Missão concluída - ${mission.titulo} (${duracaoMinutos} min)`,
+              processado: false
+            });
+
+          if (impactoError) {
+            console.error('Erro ao registrar educação no impacto_bruto:', impactoError);
+          }
+
+          await refreshProfile();
+
+          setEarnedPoints(pontosGanhos);
+          
+          if (limitResult.message) {
+            toast({
+              title: 'Missão Concluída! 🎉',
+              description: limitResult.message,
+              duration: 7000
+            });
+          } else {
+            toast({
+              title: 'Missão concluída! 🎉',
+              description: `Você acertou ${percentualAcerto.toFixed(0)}% e ganhou ${pontosGanhos} pontos verdes!`,
+            });
+          }
+        } else {
+          // Limite atingido - não pontua mas ainda registra a conclusão para UIB
+          setLimitReached(true);
+          setEarnedPoints(0);
+          
+          // Ainda registra a missão para contabilizar
+          await supabase
+            .from('missoes_usuarios')
+            .insert({
+              id_usuario: user.id,
+              id_missao: mission.id,
+              percentual_acerto: percentualAcerto,
+              quiz_completo: true,
+            });
+
+          // Ainda registra impacto para UIB
+          const duracaoMinutos = mission.duracao_minutos || 10;
+          const duracaoHoras = duracaoMinutos / 60;
+          
+          await supabase
+            .from('impacto_bruto')
+            .insert({
+              tipo: 'educacao',
+              valor_bruto: duracaoHoras,
+              id_usuario: user.id,
+              id_missao: mission.id,
+              data_hora: new Date().toISOString(),
+              descricao_origem: `Missão concluída (limite atingido) - ${mission.titulo} (${duracaoMinutos} min)`,
+              processado: false
+            });
+
+          toast({
+            title: 'Limite mensal atingido! 📚',
+            description: limitResult.message,
+            duration: 10000
           });
-
-        if (missionError) throw missionError;
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            score_verde: (profile?.score_verde || 0) + mission.pontos,
-            missoes_concluidas: (profile?.missoes_concluidas || 0) + 1,
-          })
-          .eq('id', user.id);
-
-        if (profileError) throw profileError;
-
-        // Register education hours in CDV stock
-        const { error: estoqueError } = await supabase
-          .from('estoque_educacao')
-          .insert({
-            id_usuario: user.id,
-            id_missao: mission.id,
-            minutos_assistidos: mission.duracao_minutos || 10,
-            modulo: mission.titulo,
-            data: new Date().toISOString(),
-            status: 'disponivel'
-          });
-
-        if (estoqueError) {
-          console.error('Erro ao registrar educação no estoque CDV:', estoqueError);
         }
-
-        await refreshProfile();
-
-        toast({
-          title: 'Missão concluída! 🎉',
-          description: `Você acertou ${percentualAcerto.toFixed(0)}% e ganhou ${mission.pontos} pontos verdes!`,
-        });
       } else {
         toast({
           title: 'Quiz incompleto',
@@ -213,6 +266,18 @@ export default function MissionContent() {
       <CiclikHeader showBackButton backTo="/missions" />
       
       <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-6">
+
+        {/* Alerta de Limite Mensal */}
+        {limitReached && (
+          <Alert variant="destructive" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+              <strong>Limite mensal atingido!</strong> Você já conquistou {MONTHLY_LIMIT} pontos com educação este mês.
+              Continue assistindo para acumular UIBs (Unidades de Impacto Bruto) para o CDV, 
+              mas pontos extras só serão creditados no próximo mês.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Progress Indicator */}
         <Card>

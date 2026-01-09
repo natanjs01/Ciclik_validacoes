@@ -37,17 +37,20 @@ export function MobileTooltip({
 }: MobileTooltipProps) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
+  const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setTooltipOpen(!tooltipOpen);
+  };
+
   return (
     <TooltipProvider delayDuration={delayDuration}>
       <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
         <TooltipTrigger
           asChild={asChild}
-          onClick={(e) => {
-            e.stopPropagation();
-            setTooltipOpen(!tooltipOpen);
-          }}
           onMouseEnter={() => setTooltipOpen(true)}
           onMouseLeave={() => setTooltipOpen(false)}
+          onClick={handleInteraction}
+          onTouchEnd={handleInteraction}
         >
           {children}
         </TooltipTrigger>

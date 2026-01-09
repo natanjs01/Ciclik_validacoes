@@ -64,7 +64,7 @@ const InstitutionalPresentation = () => {
         <div className="max-w-5xl mx-auto text-center relative z-10">
           {/* Logo */}
           <motion.img
-            src={`${import.meta.env.BASE_URL}ciclik-logo-full.png`}
+            src={`${import.meta.env.BASE_URL}logo-with-slogan.png`}
             alt="Ciclik"
             className="h-24 mx-auto mb-8"
             initial={{ opacity: 0, y: -20 }}

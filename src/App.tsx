@@ -55,6 +55,8 @@ import CDVValidate from "./pages/CDVValidate";
 import AdminCDV from "./pages/AdminCDV";
 import AdminRotasColeta from "./pages/AdminRotasColeta";
 import AdminInteresses from "./pages/AdminInteresses";
+import InstitutionalPresentation from "./pages/InstitutionalPresentation";
+import InvestorPresentation from "./pages/InvestorPresentation";
 import NotFound from "./pages/NotFound";
 import SupabaseTest from "./pages/SupabaseTest";
 import EmailConfirm from "./pages/EmailConfirm";
@@ -91,7 +93,7 @@ function AppRoutes() {
       <Route path="/auth/confirm" element={<EmailConfirm />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
+      <Route path="/" element={<InstitutionalPresentation />} />
       
       {/* User Routes */}
       <Route path="/user" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><UserDashboard /></ProtectedRoute>} />
@@ -145,6 +147,8 @@ function AppRoutes() {
       {/* CDV Routes */}
       <Route path="/cdv" element={<CDVLanding />} />
       <Route path="/investidor" element={<CDVLandingInvestor />} />
+      <Route path="/apresentacao" element={<InstitutionalPresentation />} />
+      <Route path="/apresentacao-investidor" element={<InvestorPresentation />} />
       <Route path="/cdv/investor" element={<ProtectedRoute allowedRoles={['investidor']}><CDVInvestorDashboard /></ProtectedRoute>} />
       <Route path="/cdv/certificate/:id" element={<ProtectedRoute allowedRoles={['investidor']}><CDVCertificate /></ProtectedRoute>} />
       <Route path="/cdv/validate/:id" element={<CDVValidate />} />

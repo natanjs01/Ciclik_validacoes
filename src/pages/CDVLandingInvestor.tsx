@@ -53,10 +53,10 @@ export default function CDVLandingInvestor() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           {/* Botão Voltar */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => navigate('/apresentacao')}
-            className="font-display font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-full gap-2"
+            className="font-display font-medium bg-white/90 backdrop-blur-sm hover:bg-white shadow-md rounded-full gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar

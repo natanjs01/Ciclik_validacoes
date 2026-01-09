@@ -335,6 +335,7 @@ export default function AdminOperadoresLogisticos() {
 
     setLoading(true);
     try {
+      // Criar usuário (signUp envia email de confirmação automaticamente)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: Math.random().toString(36).slice(-12) + 'A1!',
@@ -361,8 +362,18 @@ export default function AdminOperadoresLogisticos() {
       if (!authData.user) throw new Error('Falha ao criar usuário');
 
       // Aguardar o trigger handle_new_user criar o profile e role
-      // (pequeno delay para garantir que o trigger complete)
       await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Confirmar email automaticamente para usuários criados pelo admin
+      // Isso evita o envio do email de confirmação (já será enviado o de redefinição de senha)
+      try {
+        await supabase.rpc('confirmar_email_usuario', {
+          usuario_id: authData.user.id
+        });
+      } catch (rpcError) {
+        console.error('Erro ao confirmar email automaticamente:', rpcError);
+        // Continua mesmo se falhar (o usuário ainda pode confirmar manualmente)
+      }
 
       const { data: opData, error: opError } = await supabase
         .from('cooperativas')

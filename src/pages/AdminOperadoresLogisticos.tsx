@@ -71,6 +71,51 @@ export default function AdminOperadoresLogisticos() {
     }
   };
 
+  const buscarCEP = async (cep: string) => {
+    const cepLimpo = cep.replace(/\D/g, '');
+    
+    if (cepLimpo.length !== 8) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast({
+          title: 'CEP não encontrado',
+          description: 'Verifique o CEP informado',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        logradouro: data.logradouro || '',
+        bairro: data.bairro || '',
+        cidade: data.localidade || '',
+        uf: data.uf || '',
+        complemento: data.complemento || ''
+      }));
+
+      toast({
+        title: 'Endereço encontrado! ✅',
+        description: `${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao buscar CEP',
+        description: 'Não foi possível consultar o CEP. Preencha manualmente.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadOpStats = async (op: any) => {
     const { data: entregas } = await supabase
       .from('entregas_reciclaveis')
@@ -868,15 +913,28 @@ export default function AdminOperadoresLogisticos() {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="cep">CEP *</Label>
+                <div className="relative">
+                  <Label htmlFor="cep">CEP * {loading && <span className="text-xs text-muted-foreground">(buscando...)</span>}</Label>
                   <Input
                     id="cep"
                     value={formData.cep}
-                    onChange={(e) => setFormData({ ...formData, cep: formatCEP(e.target.value) })}
+                    onChange={(e) => {
+                      const cepFormatado = formatCEP(e.target.value);
+                      setFormData({ ...formData, cep: cepFormatado });
+                      
+                      // Busca automática quando CEP estiver completo
+                      if (cepFormatado.replace(/\D/g, '').length === 8) {
+                        buscarCEP(cepFormatado);
+                      }
+                    }}
                     placeholder="00000-000"
                     maxLength={9}
+                    disabled={loading}
+                    className={loading ? 'animate-pulse' : ''}
                   />
+                  {formData.cep && formData.cep.replace(/\D/g, '').length === 8 && formData.logradouro && (
+                    <p className="text-xs text-green-600 mt-1">✓ Endereço preenchido automaticamente</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <Label htmlFor="logradouro">Logradouro</Label>

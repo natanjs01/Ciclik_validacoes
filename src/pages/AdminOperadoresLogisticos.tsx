@@ -483,20 +483,20 @@ export default function AdminOperadoresLogisticos() {
 
   const getStatusBadge = (status: string) => {
     const badges: any = {
-      'aprovada': <Badge className="bg-success">Aprovada</Badge>,
-      'pendente_aprovacao': <Badge className="bg-warning">Pendente</Badge>,
-      'suspensa': <Badge variant="destructive">Bloqueada</Badge>
+      'aprovada': <Badge className="bg-success text-white">Aprovada</Badge>,
+      'pendente_aprovacao': <Badge className="bg-warning text-white">Pendente</Badge>,
+      'suspensa': <Badge variant="destructive" className="text-white">Bloqueada</Badge>
     };
-    return badges[status] || <Badge>{status}</Badge>;
+    return badges[status] || <Badge className="text-white">{status}</Badge>;
   };
 
   const getTipoOperadorBadge = (tipo: TipoOperador) => {
     const badges = {
-      'cooperativa': <Badge variant="default" className="bg-success">Cooperativa</Badge>,
-      'rota_ciclik': <Badge variant="default" className="bg-primary">Rota Ciclik</Badge>,
-      'operador_parceiro': <Badge variant="default" className="bg-secondary">Operador Parceiro</Badge>
+      'cooperativa': <Badge variant="default" className="bg-success text-white">Cooperativa</Badge>,
+      'rota_ciclik': <Badge variant="default" className="bg-primary text-white">Rota Ciclik</Badge>,
+      'operador_parceiro': <Badge variant="default" className="bg-secondary text-white">Operador Parceiro</Badge>
     };
-    return badges[tipo] || <Badge>{tipo}</Badge>;
+    return badges[tipo] || <Badge className="text-white">{tipo}</Badge>;
   };
 
   const getTipoOperadorLabel = (tipo: TipoOperador) => {

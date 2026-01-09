@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getAssetPath } from "@/utils/assetPath";
 
 interface Quota {
   id: string;

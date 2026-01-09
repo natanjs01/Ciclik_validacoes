@@ -34,6 +34,23 @@ export default function ResetPassword() {
       // Se temos tokens de recovery, estabelecer sessão manualmente
       if (accessToken && type === 'recovery') {
         console.log('Processando tokens de recovery...');
+        
+        // 🔧 CORREÇÃO DO BUG: Verificar se há sessão ativa e fazer logout primeiro
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        
+        if (existingSession) {
+          console.log('⚠️ Sessão ativa detectada. Fazendo logout para usar token de recovery...');
+          
+          // Faz logout da sessão atual para evitar que updateUser() use a sessão errada
+          await supabase.auth.signOut();
+          
+          toast({
+            title: 'Preparando redefinição de senha',
+            description: 'Sessão anterior encerrada para garantir segurança.',
+          });
+        }
+        
+        // Agora estabelece a sessão com o token de recovery
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
@@ -41,9 +58,14 @@ export default function ResetPassword() {
         
         if (error) {
           console.error('Erro ao estabelecer sessão:', error);
+          toast({
+            title: 'Erro',
+            description: 'Link de recuperação inválido ou expirado.',
+            variant: 'destructive',
+          });
           setSessionReady(false);
         } else if (data.session) {
-          console.log('Sessão estabelecida com sucesso');
+          console.log('Sessão estabelecida com sucesso para:', data.session.user?.email);
           setSessionReady(true);
         }
         setCheckingSession(false);
@@ -101,20 +123,29 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
+      // 🔐 Log de segurança: Verificar qual usuário terá a senha alterada
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Alterando senha para o usuário:', session?.user?.email);
+      
       const { error } = await supabase.auth.updateUser({
         password: password,
       });
 
       if (error) throw error;
 
+      console.log('✅ Senha alterada com sucesso para:', session?.user?.email);
+
       toast({
         title: 'Senha definida com sucesso!',
-        description: 'Você será redirecionado para o sistema.',
+        description: 'Você será redirecionado para o login.',
       });
 
-      // Redirecionar para o dashboard após sucesso
+      // Fazer logout após trocar a senha para garantir que o usuário faça login novamente
+      await supabase.auth.signOut();
+
+      // Redirecionar para o login após sucesso
       setTimeout(() => {
-        navigate('/');
+        navigate('/login');
       }, 2000);
     } catch (error: any) {
       console.error('Erro ao definir senha:', error);

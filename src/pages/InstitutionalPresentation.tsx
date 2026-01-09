@@ -466,7 +466,7 @@ const InstitutionalPresentation = () => {
               {/* CTA */}
               <Button 
                 className="w-full bg-accent hover:bg-accent/90 text-white font-display"
-                onClick={() => navigate("/investidor")}
+                onClick={() => navigate("/cdv-investidor")}
               >
                 Consulte Condições
                 <ArrowRight className="w-4 h-4 ml-2" />

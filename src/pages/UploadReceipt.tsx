@@ -13,17 +13,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CameraCapture from '@/components/CameraCapture';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import ProductList from '@/components/ProductList';
+import { ProcessingModal } from '@/components/ProcessingModal';
 import { confrontarProduto } from '@/utils/confrontarProduto';
 import { buscarItensDoCupom } from '@/utils/buscarItensCupom';
 
 type UploadMode = 'select' | 'file' | 'camera' | 'barcode' | 'qrcode';
 type EntryMode = 'automatic' | 'manual';
+type ProcessingStage = 'scanning' | 'validating' | 'fetching' | 'complete';
 
 export default function UploadReceipt() {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [processingOCR, setProcessingOCR] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>('scanning');
+  const [processedItemCount, setProcessedItemCount] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [valorTotal, setValorTotal] = useState('');
@@ -313,6 +317,7 @@ export default function UploadReceipt() {
 
   const handleScanResult = async (result: string) => {
     setScanning(true);
+    setProcessingStage('scanning');
     console.log('[UploadReceipt] Resultado do scan:', result);
     
     // Verificar sessão ativa antes de processar
@@ -338,6 +343,8 @@ export default function UploadReceipt() {
     }
     
     try {
+      setProcessingStage('validating');
+      
       const { data: resultado, error } = await supabase.functions.invoke('processar-codigo-nota', {
         body: { 
           codigo: result,
@@ -383,6 +390,9 @@ export default function UploadReceipt() {
         return;
       }
 
+      // Atualizar estágio para buscar itens
+      setProcessingStage('fetching');
+
       const chaveAcesso = resultado.chave_acesso!;
       const parsedData = parseAccessKey(chaveAcesso);
       
@@ -415,6 +425,7 @@ export default function UploadReceipt() {
         const itensCupom = await buscarItensDoCupom(result, 60000); // 60s timeout para Render cold start
         
         console.log('[UploadReceipt] Itens encontrados:', itensCupom.length);
+        setProcessedItemCount(itensCupom.length);
         
         if (itensCupom && itensCupom.length > 0) {
           // Enriquecer itens com dados do banco Ciclik
@@ -1620,6 +1631,13 @@ export default function UploadReceipt() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modal de Processamento */}
+      <ProcessingModal 
+        isOpen={scanning} 
+        stage={processingStage} 
+        itemCount={processedItemCount}
+      />
     </div>
   );
 }

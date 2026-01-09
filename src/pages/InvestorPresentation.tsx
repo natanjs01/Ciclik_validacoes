@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
-// Importar imagens ODS
+// Importar imagens ODS como módulos ES6 para funcionamento em produção
 import ods08 from "@/assets/ods/ods-08.jpg";
 import ods09 from "@/assets/ods/ods-09.jpg";
 import ods10 from "@/assets/ods/ods-10.jpg";

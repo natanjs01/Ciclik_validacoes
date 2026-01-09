@@ -142,7 +142,7 @@ const InstitutionalPresentation = () => {
               variant="outline" 
               size="lg" 
               className="text-lg px-8 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-              onClick={() => { window.scrollTo(0, 0); navigate('/investidor'); }}
+              onClick={() => { window.scrollTo(0, 0); navigate('/apresentacao-investidor'); }}
             >
               <Building2 className="w-5 h-5 mr-2" />
               Patrocinar Impacto Real
@@ -524,7 +524,7 @@ const InstitutionalPresentation = () => {
                   variant="outline" 
                   size="lg" 
                   className="text-lg px-8 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-                  onClick={() => { window.scrollTo(0, 0); navigate('/investidor'); }}
+                  onClick={() => { window.scrollTo(0, 0); navigate('/apresentacao-investidor'); }}
                 >
                   <Building2 className="w-5 h-5 mr-2" />
                   Patrocinar Impacto Real

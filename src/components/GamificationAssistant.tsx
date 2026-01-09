@@ -253,6 +253,7 @@ export default function GamificationAssistant({ compact = false, onClose }: Gami
 
           {/* Progresso do nível */}
           <div className="px-4 pb-3">
+            {/* LINHA DO PRÓXIMO NÍVEL COMENTADA - Informação de progressão removida
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
@@ -262,6 +263,7 @@ export default function GamificationAssistant({ compact = false, onClose }: Gami
                 {progress.pontosParaProximoNivel > 0 ? `-${progress.pontosParaProximoNivel} pts` : '✓'}
               </span>
             </div>
+            */}
             <div className="relative">
               <Progress value={progress.progressoNivel} className="h-2" />
               {progress.progressoNivel >= 80 && (

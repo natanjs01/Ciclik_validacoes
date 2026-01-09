@@ -4,7 +4,7 @@ import {
   Leaf, Recycle, BookOpen, ScanLine, Award, Users, 
   Building2, Truck, Shield, TrendingUp, CheckCircle2,
   ArrowRight, Gift, XCircle, Heart, QrCode, BarChart3,
-  Megaphone, FileCheck, ArrowLeft
+  Megaphone, FileCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,24 +45,6 @@ const InstitutionalPresentation = () => {
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       
-      {/* Botão Voltar - Fixo no canto superior esquerdo */}
-      <motion.div
-        className="fixed top-4 left-4 z-50"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-display font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-full gap-2 backdrop-blur-sm bg-background/80"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </Button>
-      </motion.div>
-
       {/* ===== SEÇÃO 1: HERO ===== */}
       <section className="relative py-20 px-4 md:px-8 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
         {/* Decorative background */}

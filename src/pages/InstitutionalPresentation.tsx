@@ -45,6 +45,23 @@ const InstitutionalPresentation = () => {
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       
+      {/* Botão Entrar - Fixo no canto superior direito */}
+      <motion.div
+        className="fixed top-4 right-4 z-50"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/auth')}
+          className="font-display font-medium bg-white/90 backdrop-blur-sm hover:bg-white shadow-md rounded-full gap-2"
+        >
+          Entrar
+        </Button>
+      </motion.div>
+
       {/* ===== SEÇÃO 1: HERO ===== */}
       <section className="relative py-20 px-4 md:px-8 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
         {/* Decorative background */}

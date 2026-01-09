@@ -425,12 +425,21 @@ const AdminCDVQuotas = () => {
         .eq("id", investidorId);
 
       // Atribuir role 'investidor'
-      await supabase
+      // IMPORTANTE: Usar INSERT ao invés de UPSERT para não substituir a role 'usuario'
+      // Se já existir, ON CONFLICT faz nada (mantém as duas roles)
+      const { error: roleError } = await supabase
         .from("user_roles")
-        .upsert({
+        .insert({
           user_id: authData.user.id,
           role: 'investidor'
-        }, { onConflict: 'user_id' });
+        })
+        .select()
+        .single();
+
+      // Se já existe a role, ignora o erro de conflito
+      if (roleError && !roleError.message.includes('duplicate key')) {
+        console.error("Erro ao atribuir role investidor:", roleError);
+      }
 
       // Gerar link de reset de senha
       const { data: resetData, error: resetError } = await supabase.auth.resetPasswordForEmail(

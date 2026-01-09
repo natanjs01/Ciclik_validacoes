@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Leaf, Loader2, Eye, EyeOff, HelpCircle, Check, X } from 'lucide-react';
+import { Leaf, Loader2, Eye, EyeOff, HelpCircle, Check, X, ArrowLeft } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { z } from 'zod';
@@ -398,6 +398,19 @@ export default function Auth() {
   return (
 
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      {/* Botão Voltar - Fixo no canto superior esquerdo */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="font-display font-medium bg-white/90 backdrop-blur-sm hover:bg-white shadow-md rounded-full gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
+        </Button>
+      </div>
+
       <Card className="w-full max-w-md shadow-xl rounded-3xl border-0 overflow-hidden">
         {/* Logo Header */}
         <div className="pt-8 pb-6 px-6">

@@ -33,6 +33,11 @@ eco-champion-circle-main_referencia_não_alterar_nada/
 # DOCUMENTAÇÃO TEMPORÁRIA E SCRIPTS DE TESTE
 # ============================================
 
+# Ignorar TODOS os arquivos .md e .sql (exceto README.md)
+*.md
+!README.md
+*.sql
+
 # Arquivos de documentação de diagnóstico temporários
 DIAGNOSTICO_*.md
 DIAGNOSTICO_*.sql

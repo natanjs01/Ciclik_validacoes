@@ -63,49 +63,10 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
     let longitude: number | null = null;
     let precision = 'unknown';
 
-    // � Tentativa 0: LocationIQ com endereço completo (5.000 req/dia grátis)
-    // LocationIQ oferece geocodificação com melhor precisão para endereços completos
-    const LOCATIONIQ_KEY = 'pk.be1a87c6f8f1ceb800977d7c8842a3ab';
-    
-    try {
-      console.log(`🌎 Tentativa 0: LocationIQ com endereço completo...`);
-      
-      const locationiqUrl = `https://us1.locationiq.com/v1/search?key=${LOCATIONIQ_KEY}&q=${encodeURIComponent(enderecoCompleto)}&format=json&countrycodes=br&limit=1&addressdetails=1`;
-      const locationiqResponse = await fetch(locationiqUrl, {
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      if (locationiqResponse.ok) {
-        const locationiqResults = await locationiqResponse.json();
-        
-        if (locationiqResults.length > 0) {
-          latitude = parseFloat(locationiqResults[0].lat);
-          longitude = parseFloat(locationiqResults[0].lon);
-          
-          // Determinar precisão baseado no tipo de resultado
-          const displayName = locationiqResults[0].display_name || '';
-          if (displayName.includes(cooperativa.logradouro || '') && displayName.includes(cooperativa.numero || '')) {
-            precision = 'address';
-            console.log(`✅ Coordenadas encontradas via LocationIQ (endereço completo): ${latitude}, ${longitude}`);
-          } else if (displayName.includes(cooperativa.cep || '')) {
-            precision = 'postal_code';
-            console.log(`✅ Coordenadas encontradas via LocationIQ (CEP): ${latitude}, ${longitude}`);
-          } else {
-            precision = 'street';
-            console.log(`✅ Coordenadas encontradas via LocationIQ (rua): ${latitude}, ${longitude}`);
-          }
-        }
-      }
-    } catch (locationiqError) {
-      console.log('⚠️ LocationIQ não disponível, tentando outras fontes...', locationiqError);
-    }
-
-    // �🇧🇷 Tentativa 1: AwesomeAPI (API brasileira GRATUITA com lat/lng por CEP)
+    // 🇧🇷 Tentativa 0: AwesomeAPI (API brasileira GRATUITA com lat/lng por CEP)
     // Esta API é específica para CEPs brasileiros e retorna lat/lng + endereço completo
     // Sem limite de requisições, totalmente gratuita!
-    if ((!latitude || !longitude) && cooperativa.cep) {
+    if (cooperativa.cep) {
       try {
         const cepLimpo = cooperativa.cep.replace(/\D/g, '');
         console.log(`🇧🇷 Tentando AwesomeAPI com CEP: ${cepLimpo}`);
@@ -134,7 +95,7 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
       }
     }
 
-    // Tentativa 2: Endereço completo via Nominatim (fallback se LocationIQ e AwesomeAPI falharam)
+    // Tentativa 1: Endereço completo via Nominatim (só se não encontrou via AwesomeAPI)
     if (!latitude || !longitude) {
       // IMPORTANTE: Adicionar countrycodes=br para restringir resultados ao Brasil
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCompleto)}&countrycodes=br&limit=1`;
@@ -156,7 +117,7 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
       }
     }
 
-    // Tentativa 3: Rua + Bairro + Cidade + UF (fallback intermediário)
+    // Tentativa 2: Rua + Bairro + Cidade + UF (fallback intermediário)
     if (!latitude || !longitude) {
       console.log('⚠️ Endereço completo não encontrado, tentando rua + bairro + cidade');
       const enderecoIntermediario = [
@@ -187,9 +148,9 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
         precision = 'street';
         console.log(`✅ Coordenadas encontradas (rua + bairro): ${latitude}, ${longitude}`);
       } else {
-        // Tentativa 4: CEP via Nominatim (se AwesomeAPI e LocationIQ falharam)
+        // Tentativa 3: CEP via Nominatim (se AwesomeAPI falhou)
         if (cooperativa.cep && precision !== 'postal_code') {
-          console.log('⚠️ Rua + bairro não encontrado, tentando CEP + cidade via Nominatim');
+          console.log('⚠️ Rua + bairro não encontrado, tentando CEP + cidade');
           const enderecoCep = `${cooperativa.cep}, ${cooperativa.cidade}, ${cooperativa.uf}, Brasil`;
           const cepUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCep)}&countrycodes=br&limit=1`;
 
@@ -213,9 +174,9 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
           }
         }
         
-        // Tentativa 5: Cidade + UF (fallback genérico - último recurso)
+        // Tentativa 4: Cidade + UF (fallback genérico - último recurso)
         if (!latitude || !longitude) {
-          console.log('⚠️ Todas as tentativas anteriores falharam, tentando apenas cidade + UF (último recurso)');
+          console.log('⚠️ CEP não encontrado, tentando apenas cidade + UF (último recurso)');
           const enderecoSimples = `${cooperativa.cidade}, ${cooperativa.uf}, Brasil`;
           const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoSimples)}&countrycodes=br&limit=1`;
 

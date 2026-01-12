@@ -13,7 +13,8 @@ export async function confrontarProduto(gtin: string): Promise<ConfrontacaoResul
 
   try {
     // TODO: Verificar permissões RLS da tabela produtos_ciclik
-    // Temporariamente desabilitado devido a erro 406 (Not Acceptable)return { found: false };
+    // Temporariamente desabilitado devido a erro 406 (Not Acceptable)
+    return { found: false };
     
     /* CÓDIGO COMENTADO ATÉ RESOLVER PERMISSÕES RLS
     const { data, error } = await supabase

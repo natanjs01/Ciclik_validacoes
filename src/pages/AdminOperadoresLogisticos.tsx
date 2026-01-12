@@ -414,14 +414,27 @@ export default function AdminOperadoresLogisticos() {
         try {
           await geocodificarAposAtualizacao(selectedOp.id); // Força atualização das coordenadas
           geocodificacaoSucesso = true;
-        } catch (geoError) {
+        } catch (geoError: any) {
           console.error('Erro ao geocodificar cooperativa:', geoError);
-          // Não bloqueia a atualização se a geocodificação falhar
-          toast({
-            title: 'Aviso',
-            description: 'Dados atualizados, mas não foi possível atualizar a localização no mapa.',
-            variant: 'default'
-          });
+          
+          // Se for erro de duplicatas (P0001), pode ser a própria cooperativa
+          // Não bloqueia a atualização
+          if (geoError.message?.includes('P0001') || geoError.message?.includes('duplicadas')) {
+            console.warn('⚠️ Erro de coordenadas duplicadas (possivelmente da própria cooperativa). Favor corrigir trigger no banco.');
+            toast({
+              title: 'Aviso',
+              description: 'Dados atualizados, mas há um problema na validação de coordenadas duplicadas. O mapa pode não atualizar corretamente.',
+              variant: 'default',
+              duration: 5000
+            });
+          } else {
+            // Outros erros de geocodificação
+            toast({
+              title: 'Aviso',
+              description: 'Dados atualizados, mas não foi possível atualizar a localização no mapa.',
+              variant: 'default'
+            });
+          }
         }
       }
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Package, Recycle, Plus, Scale, Route, QrCode, MapPin, ChevronDown } from "lucide-react";
+import { ArrowLeft, Package, Recycle, Plus, Scale, Route, QrCode, MapPin, ChevronDown, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/formatters";
 import QRCode from "qrcode";
@@ -64,6 +64,7 @@ const SelectMaterialsForDelivery = () => {
   const [cooperativas, setCooperativas] = useState<Cooperativa[]>([]);
   const [selectedCooperativa, setSelectedCooperativa] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [refreshingCoops, setRefreshingCoops] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [deliveryId, setDeliveryId] = useState<string>("");
@@ -105,6 +106,34 @@ const SelectMaterialsForDelivery = () => {
   useEffect(() => {
     if (user) {
       verificarExpiracoesECarregar();
+      
+      // 🔄 Subscrição em tempo real para cooperativas
+      const cooperativasSubscription = supabase
+        .channel('cooperativas-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cooperativas'
+          },
+          (payload) => {
+            console.log('🔄 Cooperativa atualizada em tempo real:', payload);
+            console.log('🔄 Tipo de evento:', payload.eventType);
+            console.log('🔄 Dados novos:', payload.new);
+            
+            // Força reload com pequeno delay para garantir que o DB foi atualizado
+            setTimeout(() => {
+              console.log('🔄 Recarregando cooperativas após atualização...');
+              loadCooperativas();
+            }, 1000);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        cooperativasSubscription.unsubscribe();
+      };
     }
   }, [user]);
 
@@ -138,6 +167,8 @@ const SelectMaterialsForDelivery = () => {
 
   const loadCooperativas = async () => {
     try {
+      console.log('🔍 Carregando cooperativas do banco...');
+      
       const { data, error } = await supabase
         .from('cooperativas')
         .select('id, nome_fantasia, cidade, uf, logradouro, bairro, latitude, longitude')
@@ -146,22 +177,35 @@ const SelectMaterialsForDelivery = () => {
 
       if (error) throw error;
       
-      // Verificar dados de localização
-      const cooperativasComLocalizacao = data?.filter(c => c.latitude && c.longitude) || [];
+      console.log('🗺️ Cooperativas carregadas:', data?.length, 'cooperativas');
       
-      // Verificar DUPLICATAS de coordenadas (problema comum!)
-      const coordenadasMap = new Map<string, string[]>();
-      cooperativasComLocalizacao.forEach(coop => {
-        const key = `${coop.latitude},${coop.longitude}`;
-        if (!coordenadasMap.has(key)) {
-          coordenadasMap.set(key, []);
+      // Log detalhado das coordenadas
+      data?.forEach(coop => {
+        if (coop.latitude && coop.longitude) {
+          console.log(`📍 ${coop.nome_fantasia}: [${coop.latitude}, ${coop.longitude}]`);
+        } else {
+          console.log(`⚠️ ${coop.nome_fantasia}: SEM COORDENADAS`);
         }
-        coordenadasMap.get(key)!.push(coop.nome_fantasia);
       });
       
       setCooperativas(data || []);
     } catch (error: any) {
+      console.error('❌ Erro ao carregar cooperativas:', error);
       toast.error('Erro ao carregar cooperativas', { description: error.message });
+    }
+  };
+
+  const refreshCooperativas = async () => {
+    setRefreshingCoops(true);
+    try {
+      await loadCooperativas();
+      toast.success('Mapa atualizado!', {
+        description: 'Localizações das cooperativas foram recarregadas'
+      });
+    } catch (error) {
+      toast.error('Erro ao atualizar mapa');
+    } finally {
+      setRefreshingCoops(false);
     }
   };
 
@@ -549,9 +593,21 @@ const SelectMaterialsForDelivery = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <h2 className="font-medium text-sm">Localização</h2>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <h2 className="font-medium text-sm">Localização</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshCooperativas}
+                  disabled={refreshingCoops}
+                  className="h-7 text-xs"
+                >
+                  <RefreshCw className={cn("h-3 w-3 mr-1", refreshingCoops && "animate-spin")} />
+                  Atualizar
+                </Button>
               </div>
               <CooperativeMap
                 cooperativas={cooperativasComDistancia}

@@ -159,8 +159,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
+    try {
+      console.log('🚪 [LOGOUT] Iniciando processo de logout...');
+      
+      // Primeiro limpar o estado local antes de tentar fazer logout no servidor
+      console.log('🧹 [LOGOUT] Limpando estado local...');
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setProfile(null);
+      
+      // Tentar fazer logout no servidor
+      console.log('🌐 [LOGOUT] Tentando logout no servidor Supabase...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ [LOGOUT] Erro ao fazer logout no servidor:', error);
+        // Mesmo com erro no servidor, limpar o storage local
+        console.log('🗑️ [LOGOUT] Limpando storage local manualmente...');
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+      } else {
+        console.log('✅ [LOGOUT] Logout no servidor bem-sucedido');
+      }
+      
+      // Redirecionar para a página de login
+      console.log('↩️ [LOGOUT] Redirecionando para /auth...');
+      navigate('/auth', { replace: true });
+    } catch (error) {
+      console.error('💥 [LOGOUT] Erro crítico ao fazer logout:', error);
+      // Forçar limpeza e redirecionamento mesmo com erro
+      console.log('🔧 [LOGOUT] Forçando limpeza de emergência...');
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setProfile(null);
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      navigate('/auth', { replace: true });
+    }
   };
 
   return (

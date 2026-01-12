@@ -43,12 +43,21 @@ export default function CooperativeSelectorSheet({
     setTimeout(() => setOpen(false), 200);
   };
 
+  // Remove focus from trigger when opening drawer
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      // Remove focus from active element when opening
+      (document.activeElement as HTMLElement)?.blur();
+    }
+    setOpen(newOpen);
+  };
+
   return (
     <>
       {/* Trigger Button */}
       <Button
         variant="outline"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpenChange(true)}
         className={cn(
           "w-full justify-between h-auto py-3 px-4",
           "border-2 transition-all duration-200",
@@ -100,7 +109,7 @@ export default function CooperativeSelectorSheet({
       </Button>
 
       {/* Bottom Sheet */}
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="text-left border-b pb-4">
             <DrawerTitle className="flex items-center gap-2">

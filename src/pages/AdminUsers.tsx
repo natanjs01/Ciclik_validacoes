@@ -8,15 +8,19 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User, Search, Trophy, Gift, Target, Edit } from 'lucide-react';
+import { ArrowLeft, User, Search, Trophy, Gift, Target, Edit, Mail, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [totalProfilesCount, setTotalProfilesCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [emailStatuses, setEmailStatuses] = useState<Record<string, any>>({});
+  const [sendingEmail, setSendingEmail] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -63,48 +67,109 @@ export default function AdminUsers() {
       return;
     }
     
-    // Filtrar apenas usuários com CPF ou CNPJ preenchido (usuários reais cadastrados)
-    // Remove validação de tamanho pois pode ter máscara (pontos/traços)
-    const validUsers = data?.filter(user => 
-      (user.tipo_pessoa === 'PF' && user.cpf && user.cpf.trim().length > 0) ||
-      (user.tipo_pessoa === 'PJ' && user.cnpj && user.cnpj.trim().length > 0)
-    ) || [];
+    // Mostrar TODOS os usuários do banco, sem filtros
+    const allUsers = data || [];
     
-    // Remover duplicatas: manter apenas o registro mais recente por email/CPF/CNPJ
-    const uniqueUsers = validUsers.reduce((acc: any[], current) => {
-      // Usar email como chave primária de identificação
-      const identifier = current.tipo_pessoa === 'PF' ? current.cpf : current.cnpj;
-      
-      // Verificar se já existe um usuário com o mesmo identificador
-      const existingIndex = acc.findIndex(user => {
-        const existingId = user.tipo_pessoa === 'PF' ? user.cpf : user.cnpj;
-        return existingId === identifier || user.email === current.email;
-      });
-      
-      if (existingIndex === -1) {
-        // Não existe: adicionar
-        acc.push(current);
-      } else {
-        // Existe: manter o mais recente (maior data de criação)
-        const existing = acc[existingIndex];
-        const existingDate = new Date(existing.created_at || existing.data_cadastro);
-        const currentDate = new Date(current.created_at || current.data_cadastro);
+    console.log('✅ [AdminUsers] Total de usuários no banco:', allUsers.length);
+    
+    setTotalProfilesCount(allUsers.length);
+    setUsers(allUsers);
+    setFilteredUsers(allUsers);
+    
+    // Verificar status de email de todos os usuários
+    await checkEmailStatuses(allUsers);
+  };
+
+  const checkEmailStatuses = async (userList: any[]) => {
+    const statuses: Record<string, any> = {};
+    
+    for (const user of userList) {
+      try {
+        const { data, error } = await supabase.rpc('verificar_status_email_frontend', {
+          usuario_id: user.id
+        });
         
-        if (currentDate > existingDate) {
-          acc[existingIndex] = current;
+        if (data && data.success) {
+          statuses[user.id] = {
+            emailConfirmed: data.email_confirmado,
+            confirmedAt: data.confirmado_em,
+            createdAt: data.criado_em
+          };
         }
+      } catch (error) {
+        console.error(`Erro ao verificar status de email para ${user.email}:`, error);
       }
-      
-      return acc;
-    }, []);
+    }
     
-    console.log('✅ [AdminUsers] Total de profiles no banco:', data?.length);
-    console.log('✅ [AdminUsers] Usuários válidos (com documento):', validUsers.length);
-    console.log('✅ [AdminUsers] Usuários únicos (sem duplicatas):', uniqueUsers.length);
-    console.log('📊 [AdminUsers] Duplicatas removidas:', validUsers.length - uniqueUsers.length);
+    setEmailStatuses(statuses);
+  };
+
+  const getEmailStatusBadge = (userId: string) => {
+    const status = emailStatuses[userId];
     
-    setUsers(uniqueUsers);
-    setFilteredUsers(uniqueUsers);
+    if (!status) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Verificando...
+        </Badge>
+      );
+    }
+    
+    if (status.emailConfirmed) {
+      return (
+        <Badge className="bg-green-500 text-white flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Email confirmado
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge variant="destructive" className="flex items-center gap-1">
+        <XCircle className="h-3 w-3" />
+        Email não confirmado
+      </Badge>
+    );
+  };
+
+  const resendConfirmationEmail = async (user: any) => {
+    const status = emailStatuses[user.id];
+    
+    if (status?.emailConfirmed) {
+      toast({
+        title: 'Email já confirmado',
+        description: `O email de ${user.nome} já foi confirmado em ${new Date(status.confirmedAt).toLocaleDateString('pt-BR')}.`,
+        variant: 'default',
+      });
+      return;
+    }
+
+    setSendingEmail(prev => ({ ...prev, [user.id]: true }));
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Email reenviado com sucesso!',
+        description: `Email de confirmação reenviado para ${user.email}. Peça ao usuário para verificar a caixa de entrada e spam.`,
+      });
+      console.log(`✅ [REENVIO] Email de confirmação reenviado para: ${user.email}`);
+    } catch (error: any) {
+      console.error(`❌ [REENVIO] Erro ao reenviar email para ${user.email}:`, error);
+      toast({
+        title: 'Erro ao reenviar email',
+        description: error.message || 'Ocorreu um erro ao tentar reenviar o email de confirmação.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingEmail(prev => ({ ...prev, [user.id]: false }));
+    }
   };
 
   const updateUserScore = async (userId: string, newScore: number) => {
@@ -228,10 +293,11 @@ export default function AdminUsers() {
                           <User className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <CardTitle className="text-lg">{user.nome}</CardTitle>
                             {getNivelBadge(user.nivel)}
                             {getTipoBadge(user.tipo_pessoa, user.tipo_pj)}
+                            {getEmailStatusBadge(user.id)}
                           </div>
                           <div className="space-y-1 text-sm text-muted-foreground">
                             <div><strong>Email:</strong> {user.email}</div>
@@ -251,16 +317,30 @@ export default function AdminUsers() {
                         </div>
                       </div>
 
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        {!emailStatuses[user.id]?.emailConfirmed && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resendConfirmationEmail(user)}
+                            disabled={sendingEmail[user.id]}
+                            className="gap-2"
+                          >
+                            <Mail className="h-4 w-4" />
+                            {sendingEmail[user.id] ? 'Enviando...' : 'Reenviar Email'}
+                          </Button>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -315,6 +395,27 @@ export default function AdminUsers() {
                   <p className="font-semibold">{selectedUser.nome}</p>
                   <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
                 </div>
+
+                {/* Status de Email */}
+                {emailStatuses[selectedUser.id] && (
+                  <Alert variant={emailStatuses[selectedUser.id].emailConfirmed ? "default" : "destructive"}>
+                    {emailStatuses[selectedUser.id].emailConfirmed ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
+                    <AlertTitle>
+                      {emailStatuses[selectedUser.id].emailConfirmed 
+                        ? '✅ Email Confirmado' 
+                        : '❌ Email Não Confirmado'}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {emailStatuses[selectedUser.id].emailConfirmed 
+                        ? `Email confirmado em ${new Date(emailStatuses[selectedUser.id].confirmedAt).toLocaleDateString('pt-BR')}`
+                        : 'O usuário ainda não confirmou o email. Use o botão "Reenviar Email" na lista de usuários para reenviar o email de confirmação.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
                 
                 <div className="space-y-2">
                   <Label>Score Verde (pontos)</Label>

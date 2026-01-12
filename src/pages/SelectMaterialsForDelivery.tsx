@@ -145,6 +145,24 @@ const SelectMaterialsForDelivery = () => {
         .order('nome_fantasia');
 
       if (error) throw error;
+      
+      // Debug: verificar dados de localização
+      const cooperativasComLocalizacao = data?.filter(c => c.latitude && c.longitude) || [];
+      console.log('Total de cooperativas:', data?.length);
+      console.log('Cooperativas com localização:', cooperativasComLocalizacao.length);
+      
+      // Mostrar detalhes das cooperativas sem localização
+      data?.forEach(coop => {
+        if (!coop.latitude || !coop.longitude) {
+          console.log('⚠️ Cooperativa SEM localização:', {
+            nome: coop.nome_fantasia,
+            endereco: `${coop.logradouro || ''}, ${coop.bairro || ''}, ${coop.cidade || ''}-${coop.uf || ''}`,
+            latitude: coop.latitude,
+            longitude: coop.longitude
+          });
+        }
+      });
+      
       setCooperativas(data || []);
     } catch (error: any) {
       toast.error('Erro ao carregar cooperativas', { description: error.message });

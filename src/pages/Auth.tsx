@@ -82,10 +82,15 @@ export default function Auth() {
 
   // Redirecionar usuários já autenticados
   useEffect(() => {
-    if (user && !processingInvite) {
-      console.log('Usuário já autenticado, redirecionando...');
-      navigate('/');
-    }
+    // Adicionar um pequeno delay para evitar loop durante o logout
+    const timer = setTimeout(() => {
+      if (user && !processingInvite) {
+        console.log('Usuário já autenticado, redirecionando...');
+        navigate('/');
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [user, navigate, processingInvite]);
 
   // Processar tokens de convite/magic link na URL

@@ -211,6 +211,8 @@ export default function CooperativeMap({
   }, [selectedId]);
 
   const hasCooperativas = cooperativas.some((c) => c.latitude && c.longitude);
+  const totalCooperativas = cooperativas.length;
+  const cooperativasComLocalizacao = cooperativas.filter((c) => c.latitude && c.longitude).length;
 
   return (
     <motion.div
@@ -225,31 +227,49 @@ export default function CooperativeMap({
 
       {/* Overlay when no cooperatives */}
       {!hasCooperativas && (
-        <div className="absolute inset-0 bg-muted/80 backdrop-blur-sm flex flex-col items-center justify-center">
-          <MapPin className="h-10 w-10 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground text-center px-4">
-            Nenhuma cooperativa com localização disponível
+        <div className="absolute inset-0 bg-muted/95 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+          <MapPin className="h-12 w-12 text-muted-foreground mb-3" />
+          <p className="font-medium text-foreground mb-1">
+            Localização não disponível
           </p>
+          <p className="text-sm text-muted-foreground text-center max-w-xs">
+            {totalCooperativas === 0 
+              ? 'Nenhuma cooperativa cadastrada ainda'
+              : `${totalCooperativas} ${totalCooperativas === 1 ? 'cooperativa encontrada' : 'cooperativas encontradas'}, mas sem dados de localização`
+            }
+          </p>
+          {totalCooperativas > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Use o seletor abaixo para escolher a cooperativa
+            </p>
+          )}
         </div>
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-12 left-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md text-xs space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-primary border-2 border-white shadow" />
-          <span>Selecionada</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-accent border-2 border-white shadow" />
-          <span>Disponível</span>
-        </div>
-        {userLocation && (
+      {hasCooperativas && (
+        <div className="absolute bottom-12 left-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md text-xs space-y-1">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow" />
-            <span>Você</span>
+            <span className="w-3 h-3 rounded-full bg-primary border-2 border-white shadow" />
+            <span>Selecionada</span>
           </div>
-        )}
-      </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-accent border-2 border-white shadow" />
+            <span>Disponível</span>
+          </div>
+          {userLocation && (
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow" />
+              <span>Você</span>
+            </div>
+          )}
+          <div className="pt-1 mt-1 border-t border-border/50">
+            <span className="text-muted-foreground">
+              {cooperativasComLocalizacao} {cooperativasComLocalizacao === 1 ? 'ponto' : 'pontos'} no mapa
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Center on user button */}
       {userLocation && (

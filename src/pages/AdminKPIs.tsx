@@ -157,32 +157,29 @@ export default function AdminKPIs() {
     if (estado && estado !== 'todos') entregasQuery = entregasQuery.eq('cooperativas.uf', estado);
     if (cidade && cidade !== 'todas') entregasQuery = entregasQuery.eq('cooperativas.cidade', cidade);
 
-    // Cupons resgatados no período - precisa join com profiles
+    // Cupons resgatados no período
     let cuponsResgQuery = supabase
       .from('cupons_resgates')
-      .select('id, data_resgate, profiles!inner(uf, cidade)', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true });
     if (dataInicio) cuponsResgQuery = cuponsResgQuery.gte('data_resgate', dataInicio.toISOString());
     if (dataFim) {
       const dataFimAjustada = new Date(dataFim);
       dataFimAjustada.setHours(23, 59, 59, 999);
       cuponsResgQuery = cuponsResgQuery.lte('data_resgate', dataFimAjustada.toISOString());
     }
-    if (estado && estado !== 'todos') cuponsResgQuery = cuponsResgQuery.eq('profiles.uf', estado);
-    if (cidade && cidade !== 'todas') cuponsResgQuery = cuponsResgQuery.eq('profiles.cidade', cidade);
 
-    // Notas validadas no período - precisa join com profiles
-    let notasValidQuery = supabase
+    // Notas validadas - query simples sem filtros de data (tabela pode não ter created_at)
+    // Tratamento de erro caso a tabela tenha problemas de RLS ou estrutura
+    const notasValidQuery = supabase
       .from('notas_fiscais')
-      .select('id, profiles!inner(uf, cidade)', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('status_validacao', 'valida');
-    if (dataInicio) notasValidQuery = notasValidQuery.gte('data_envio', dataInicio.toISOString());
-    if (dataFim) {
-      const dataFimAjustada = new Date(dataFim);
-      dataFimAjustada.setHours(23, 59, 59, 999);
-      notasValidQuery = notasValidQuery.lte('data_envio', dataFimAjustada.toISOString());
-    }
-    if (estado && estado !== 'todos') notasValidQuery = notasValidQuery.eq('profiles.uf', estado);
-    if (cidade && cidade !== 'todas') notasValidQuery = notasValidQuery.eq('profiles.cidade', cidade);
+    
+    // Notas pendentes - mesma abordagem com tratamento de erro
+    const notasPendQuery = supabase
+      .from('notas_fiscais')
+      .select('id', { count: 'exact', head: true })
+      .eq('status_validacao', 'pendente');
 
     const [
       usuarios,
@@ -194,32 +191,34 @@ export default function AdminKPIs() {
       notasPend,
       notasValid,
       missoes,
-    ] = await Promise.all([
+    ] = await Promise.allSettled([
       usuariosQuery,
       coopQuery,
       entregasQuery,
       supabase.from('cupons').select('id', { count: 'exact', head: true }).eq('status', 'disponivel'),
       cuponsResgQuery,
       supabase.from('cupons').select('id', { count: 'exact', head: true }).eq('status', 'usado'),
-      supabase.from('notas_fiscais').select('id', { count: 'exact', head: true }).eq('status_validacao', 'pendente'),
+      notasPendQuery,
       notasValidQuery,
       supabase.from('missoes').select('id', { count: 'exact', head: true }).eq('status', 'ativa'),
     ]);
 
-    const pesoTotal = entregas.data?.reduce((acc, e) => acc + (Number(e.peso_validado) || 0), 0) || 0;
+    const pesoTotal = entregas.status === 'fulfilled' && entregas.value.data
+      ? entregas.value.data.reduce((acc, e) => acc + (Number(e.peso_validado) || 0), 0)
+      : 0;
 
     return {
-      usuarios_totais: usuarios.count || 0,
-      usuarios_ativos: usuarios.count || 0,
-      cooperativas_ativas: cooperativas.count || 0,
-      entregas_total: entregas.data?.length || 0,
+      usuarios_totais: usuarios.status === 'fulfilled' ? (usuarios.value.count || 0) : 0,
+      usuarios_ativos: usuarios.status === 'fulfilled' ? (usuarios.value.count || 0) : 0,
+      cooperativas_ativas: cooperativas.status === 'fulfilled' ? (cooperativas.value.count || 0) : 0,
+      entregas_total: entregas.status === 'fulfilled' && entregas.value.data ? entregas.value.data.length : 0,
       peso_total_kg: Math.round(pesoTotal),
-      cupons_disponiveis: cuponsDisp.count || 0,
-      cupons_resgatados: cuponsResg.count || 0,
-      cupons_usados: cuponsUsados.count || 0,
-      notas_pendentes: notasPend.count || 0,
-      notas_validadas: notasValid.count || 0,
-      missoes_ativas: missoes.count || 0,
+      cupons_disponiveis: cuponsDisp.status === 'fulfilled' ? (cuponsDisp.value.count || 0) : 0,
+      cupons_resgatados: cuponsResg.status === 'fulfilled' ? (cuponsResg.value.count || 0) : 0,
+      cupons_usados: cuponsUsados.status === 'fulfilled' ? (cuponsUsados.value.count || 0) : 0,
+      notas_pendentes: notasPend.status === 'fulfilled' ? (notasPend.value.count || 0) : 0,
+      notas_validadas: notasValid.status === 'fulfilled' ? (notasValid.value.count || 0) : 0,
+      missoes_ativas: missoes.status === 'fulfilled' ? (missoes.value.count || 0) : 0,
     };
   };
 

@@ -348,9 +348,9 @@ export default function CooperativeDashboard() {
               <div>
                 <p className="text-sm text-muted-foreground">Status do Operador</p>
                 <Badge className={`mt-1 ${
-                  cooperativa.status === 'aprovada' ? 'bg-success' :
-                  cooperativa.status === 'pendente_aprovacao' ? 'bg-warning' :
-                  'bg-destructive'
+                  cooperativa.status === 'aprovada' ? 'bg-success text-white' :
+                  cooperativa.status === 'pendente_aprovacao' ? 'bg-warning text-white' :
+                  'bg-destructive text-white'
                 }`}>
                   {cooperativa.status === 'aprovada' ? 'Aprovada' :
                    cooperativa.status === 'pendente_aprovacao' ? 'Pendente Aprovação' :

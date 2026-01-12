@@ -150,9 +150,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(profileData);
         } catch (error) {
           console.error('Erro ao carregar dados de autenticação (getSession)', error);
+        } finally {
+          // Garantir que o loading só seja desativado após carregar role e profile
+          setLoading(false);
         }
+      } else {
+        // Se não houver usuário, pode desativar o loading imediatamente
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

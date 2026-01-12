@@ -131,3 +131,93 @@ export async function geocodificarAposCadastro(cooperativaId: string) {
     throw error;
   }
 }
+
+/**
+ * 🛡️ Verifica se coordenadas já existem no banco (duplicadas)
+ * @param latitude - Latitude a verificar
+ * @param longitude - Longitude a verificar
+ * @param cooperativaId - ID da cooperativa atual (para excluir na busca ao editar)
+ * @returns Objeto indicando se é duplicada e qual cooperativa já usa essas coordenadas
+ */
+export async function verificarCoordenadasDuplicadas(
+  latitude: number,
+  longitude: number,
+  cooperativaId?: string
+): Promise<{ duplicada: boolean; cooperativaNome?: string; cooperativaId?: string }> {
+  try {
+    let query = supabase
+      .from('cooperativas')
+      .select('id, nome_fantasia')
+      .eq('latitude', latitude)
+      .eq('longitude', longitude)
+      .eq('status', 'aprovada')
+      .limit(1);
+    
+    // Se está editando, excluir a própria cooperativa da busca
+    if (cooperativaId) {
+      query = query.neq('id', cooperativaId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Erro ao verificar duplicatas:', error);
+      return { duplicada: false };
+    }
+    
+    if (data && data.length > 0) {
+      return {
+        duplicada: true,
+        cooperativaNome: data[0].nome_fantasia,
+        cooperativaId: data[0].id
+      };
+    }
+    
+    return { duplicada: false };
+  } catch (error) {
+    console.error('Erro ao verificar coordenadas duplicadas:', error);
+    return { duplicada: false }; // Em caso de erro, permitir cadastro
+  }
+}
+
+/**
+ * 🤖 Geocodifica E verifica duplicatas em uma única chamada
+ * Use esta função ao cadastrar/editar cooperativa
+ * @param cooperativaId - ID da cooperativa a geocodificar
+ * @returns Resultado com coordenadas e status de duplicata
+ */
+export async function geocodificarComValidacao(cooperativaId: string) {
+  try {
+    // Primeiro geocodifica
+    const resultado = await geocodificarAposCadastro(cooperativaId);
+    
+    // Depois verifica se é duplicata
+    if (resultado.latitude && resultado.longitude) {
+      const verificacao = await verificarCoordenadasDuplicadas(
+        resultado.latitude,
+        resultado.longitude,
+        cooperativaId
+      );
+      
+      if (verificacao.duplicada) {
+        toast.error('⚠️ Coordenadas duplicadas detectadas!', {
+          description: `A cooperativa "${verificacao.cooperativaNome}" já está cadastrada neste local.`,
+          duration: 8000
+        });
+        
+        return {
+          ...resultado,
+          duplicada: true,
+          cooperativaDuplicada: verificacao.cooperativaNome
+        };
+      }
+    }
+    
+    return {
+      ...resultado,
+      duplicada: false
+    };
+  } catch (error: any) {
+    throw error;
+  }
+}

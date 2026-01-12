@@ -148,12 +148,41 @@ const SelectMaterialsForDelivery = () => {
       
       // Debug: verificar dados de localização
       const cooperativasComLocalizacao = data?.filter(c => c.latitude && c.longitude) || [];
-      console.log('Total de cooperativas:', data?.length);
-      console.log('Cooperativas com localização:', cooperativasComLocalizacao.length);
+      console.log('🗺️ Total de cooperativas:', data?.length);
+      console.log('✅ Cooperativas com localização:', cooperativasComLocalizacao.length);
       
-      // Mostrar detalhes das cooperativas sem localização
+      // Verificar DUPLICATAS de coordenadas (problema comum!)
+      const coordenadasMap = new Map<string, string[]>();
+      cooperativasComLocalizacao.forEach(coop => {
+        const key = `${coop.latitude},${coop.longitude}`;
+        if (!coordenadasMap.has(key)) {
+          coordenadasMap.set(key, []);
+        }
+        coordenadasMap.get(key)!.push(coop.nome_fantasia);
+      });
+      
+      // Alertar sobre duplicatas
+      coordenadasMap.forEach((nomes, coords) => {
+        if (nomes.length > 1) {
+          console.warn('🚨 COORDENADAS DUPLICADAS:', {
+            coordenadas: coords,
+            quantidade: nomes.length,
+            cooperativas: nomes.join(' | '),
+            problema: 'Estas cooperativas aparecem no MESMO ponto no mapa!'
+          });
+        }
+      });
+      
+      // Mostrar detalhes de TODAS as cooperativas com localização
       data?.forEach(coop => {
-        if (!coop.latitude || !coop.longitude) {
+        if (coop.latitude && coop.longitude) {
+          console.log('📍 Cooperativa COM localização:', {
+            nome: coop.nome_fantasia,
+            endereco: `${coop.logradouro || ''}, ${coop.bairro || ''}, ${coop.cidade || ''}-${coop.uf || ''}`,
+            coordenadas: `${coop.latitude}, ${coop.longitude}`,
+            googleMaps: `https://www.google.com/maps?q=${coop.latitude},${coop.longitude}`
+          });
+        } else {
           console.log('⚠️ Cooperativa SEM localização:', {
             nome: coop.nome_fantasia,
             endereco: `${coop.logradouro || ''}, ${coop.bairro || ''}, ${coop.cidade || ''}-${coop.uf || ''}`,

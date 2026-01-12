@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Package, TrendingUp, Users, Recycle, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Package, TrendingUp, Users, Recycle, Clock, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import CiclikHeader from "@/components/CiclikHeader";
 
 interface Entrega {
@@ -52,6 +53,7 @@ interface ResumoStats {
 }
 
 const AdminDeliveryPromises = () => {
+  const navigate = useNavigate();
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [materiaisColetados, setMateriaisColetados] = useState<MaterialColetado[]>([]);
   const [resumo, setResumo] = useState<ResumoStats>({
@@ -192,11 +194,16 @@ const AdminDeliveryPromises = () => {
       <CiclikHeader />
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Promessas de Entrega</h1>
-            <p className="text-muted-foreground">
-              Rastreamento completo de entregas via QR Code
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Promessas de Entrega</h1>
+              <p className="text-muted-foreground">
+                Rastreamento completo de entregas via QR Code
+              </p>
+            </div>
           </div>
           <Button onClick={loadData}>Atualizar</Button>
         </div>

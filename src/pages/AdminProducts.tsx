@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Trash2, Package, Recycle, Upload, Loader2, AlertTriangle, Menu, X, Filter, Scale, Download } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, Recycle, Upload, Loader2, AlertTriangle, Menu, X, Filter, Scale, Download, ArrowLeft } from "lucide-react";
 import { ProdutoCiclik, TipoEmbalagem, TIPOS_EMBALAGEM_LABELS } from "@/types/produtos";
 import PageTransition from "@/components/PageTransition";
 import CiclikHeader from "@/components/CiclikHeader";
@@ -548,9 +548,14 @@ export default function AdminProducts() {
         
         <div className="container mx-auto p-6 space-y-6">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Gestão de Produtos Ciclik</h1>
-              <p className="text-muted-foreground">Cadastro e gerenciamento de produtos</p>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Gestão de Produtos Ciclik</h1>
+                <p className="text-muted-foreground">Cadastro e gerenciamento de produtos</p>
+              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

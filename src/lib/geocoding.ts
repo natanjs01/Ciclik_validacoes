@@ -2,39 +2,125 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 /**
- * Geocodifica uma cooperativa usando a API do Nominatim via Edge Function
+ * Geocodifica uma cooperativa diretamente usando API do Nominatim
  * @param cooperativaId - ID da cooperativa a ser geocodificada
+ * @param forceUpdate - Forçar re-geocodificação mesmo se já existirem coordenadas
  * @returns Objeto com sucesso, coordenadas e precisão
  */
-export async function geocodificarCooperativa(cooperativaId: string) {
+export async function geocodificarCooperativa(cooperativaId: string, forceUpdate = false) {
   try {
     console.log(`🗺️ Iniciando geocodificação para cooperativa ${cooperativaId}`);
     
-    const { data, error } = await supabase.functions.invoke(
-      'geocodificar-cooperativa',
-      {
-        body: { cooperativaId }
+    // Buscar dados da cooperativa
+    const { data: cooperativa, error: fetchError } = await supabase
+      .from('cooperativas')
+      .select('id, nome_fantasia, logradouro, numero, bairro, cidade, uf, cep, latitude, longitude')
+      .eq('id', cooperativaId)
+      .single();
+
+    if (fetchError || !cooperativa) {
+      throw new Error('Cooperativa não encontrada');
+    }
+
+    // Verificar se já tem coordenadas (apenas se não forçar atualização)
+    if (!forceUpdate && cooperativa.latitude && cooperativa.longitude) {
+      console.log(`✅ Cooperativa já tem coordenadas: ${cooperativa.latitude}, ${cooperativa.longitude}`);
+      return {
+        success: true,
+        latitude: cooperativa.latitude,
+        longitude: cooperativa.longitude,
+        precision: 'cached',
+        cached: true,
+        message: 'Cooperativa já possui coordenadas'
+      };
+    }
+
+    if (forceUpdate && cooperativa.latitude && cooperativa.longitude) {
+      console.log(`🔄 Forçando atualização de coordenadas existentes: ${cooperativa.latitude}, ${cooperativa.longitude}`);
+    }
+
+    // Montar endereço completo
+    const enderecoPartes = [
+      cooperativa.logradouro,
+      cooperativa.numero,
+      cooperativa.bairro,
+      cooperativa.cidade,
+      cooperativa.uf,
+      cooperativa.cep,
+      'Brasil'
+    ].filter(Boolean);
+
+    const enderecoCompleto = enderecoPartes.join(', ');
+    console.log(`🔍 Buscando coordenadas para: ${enderecoCompleto}`);
+
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    let precision = 'unknown';
+
+    // Tentativa 1: Endereço completo
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCompleto)}&limit=1`;
+    
+    const response = await fetch(geocodeUrl, {
+      headers: {
+        'User-Agent': 'Ciclik-App/1.0',
+        'Accept': 'application/json'
       }
-    );
+    });
 
-    if (error) {
-      console.error('❌ Erro ao geocodificar:', error);
-      throw error;
+    const results = await response.json();
+
+    if (results.length > 0) {
+      latitude = parseFloat(results[0].lat);
+      longitude = parseFloat(results[0].lon);
+      precision = 'address';
+      console.log(`✅ Coordenadas encontradas (endereço completo): ${latitude}, ${longitude}`);
+    } else {
+      // Tentativa 2: Cidade + UF (fallback)
+      console.log('⚠️ Endereço completo não encontrado, tentando cidade + UF');
+      const enderecoSimples = `${cooperativa.cidade}, ${cooperativa.uf}, Brasil`;
+      const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoSimples)}&limit=1`;
+
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          'User-Agent': 'Ciclik-App/1.0',
+          'Accept': 'application/json'
+        }
+      });
+
+      const fallbackResults = await fallbackResponse.json();
+
+      if (fallbackResults.length > 0) {
+        latitude = parseFloat(fallbackResults[0].lat);
+        longitude = parseFloat(fallbackResults[0].lon);
+        precision = 'city';
+        console.log(`✅ Coordenadas encontradas (cidade): ${latitude}, ${longitude}`);
+      } else {
+        throw new Error(`Não foi possível encontrar coordenadas para: ${cooperativa.cidade}, ${cooperativa.uf}`);
+      }
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'Erro desconhecido');
+    // Atualizar cooperativa com coordenadas
+    const { error: updateError } = await supabase
+      .from('cooperativas')
+      .update({
+        latitude,
+        longitude
+      })
+      .eq('id', cooperativaId);
+
+    if (updateError) {
+      throw new Error(`Erro ao atualizar coordenadas: ${updateError.message}`);
     }
 
-    console.log('✅ Geocodificação concluída:', data);
+    console.log(`✅ Cooperativa atualizada com sucesso!`);
     
     return {
       success: true,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      precision: data.precision,
-      cached: data.cached || false,
-      message: data.message
+      latitude,
+      longitude,
+      precision,
+      cached: false,
+      message: 'Coordenadas adicionadas com sucesso'
     };
   } catch (error: any) {
     console.error('❌ Erro na geocodificação:', error);
@@ -126,6 +212,37 @@ export async function geocodificarAposCadastro(cooperativaId: string) {
   } catch (error: any) {
     toast.dismiss('geocoding');
     toast.error('Erro ao buscar localização', {
+      description: error.message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Hook para RE-geocodificar cooperativa ao atualizar endereço
+ * Força a atualização mesmo se já existirem coordenadas
+ * Use esta função quando o endereço for alterado
+ */
+export async function geocodificarAposAtualizacao(cooperativaId: string) {
+  try {
+    toast.loading('Atualizando localização no mapa...', { id: 'geocoding' });
+    
+    const resultado = await geocodificarCooperativa(cooperativaId, true); // forceUpdate = true
+    
+    toast.dismiss('geocoding');
+    
+    const precisao = resultado.precision === 'address' 
+      ? 'endereço completo' 
+      : 'centro da cidade';
+    
+    toast.success('Localização atualizada!', {
+      description: `Coordenadas baseadas em: ${precisao}`
+    });
+    
+    return resultado;
+  } catch (error: any) {
+    toast.dismiss('geocoding');
+    toast.error('Erro ao atualizar localização', {
       description: error.message
     });
     throw error;

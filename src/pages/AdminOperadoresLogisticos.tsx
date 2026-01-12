@@ -16,6 +16,7 @@ import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { validateCNPJ, formatCNPJ, formatPhone, formatCEP } from '@/lib/validators';
 import { appUrl } from '@/lib/appUrl';
+import { geocodificarAposCadastro, geocodificarAposAtualizacao } from '@/lib/geocoding';
 
 type TipoOperador = 'cooperativa' | 'rota_ciclik' | 'operador_parceiro';
 
@@ -399,6 +400,28 @@ export default function AdminOperadoresLogisticos() {
         console.error('Erro ao atualizar profile:', profileError);
       }
 
+      // 🗺️ Geocodificar novamente se o endereço foi alterado
+      const enderecoAlterado = 
+        formData.cep !== selectedOp.cep ||
+        formData.logradouro !== selectedOp.logradouro ||
+        formData.numero !== selectedOp.numero ||
+        formData.cidade !== selectedOp.cidade ||
+        formData.uf !== selectedOp.uf;
+
+      if (enderecoAlterado) {
+        try {
+          await geocodificarAposAtualizacao(selectedOp.id); // Força atualização das coordenadas
+        } catch (geoError) {
+          console.error('Erro ao geocodificar cooperativa:', geoError);
+          // Não bloqueia a atualização se a geocodificação falhar
+          toast({
+            title: 'Aviso',
+            description: 'Dados atualizados, mas não foi possível atualizar a localização no mapa.',
+            variant: 'default'
+          });
+        }
+      }
+
       toast({
         title: 'Operador atualizado!',
         description: 'Os dados cadastrais foram atualizados com sucesso'
@@ -534,6 +557,19 @@ export default function AdminOperadoresLogisticos() {
           .from('cooperativas')
           .update({ documento_representante_url: urlRepresentante })
           .eq('id', opData.id);
+      }
+
+      // 🗺️ Geocodificar cooperativa automaticamente
+      try {
+        await geocodificarAposCadastro(opData.id);
+      } catch (geoError) {
+        console.error('Erro ao geocodificar cooperativa:', geoError);
+        // Não bloqueia o cadastro se a geocodificação falhar
+        toast({
+          title: 'Aviso',
+          description: 'Cooperativa criada, mas não foi possível obter a localização automaticamente. Você pode geocodificar depois.',
+          variant: 'default'
+        });
       }
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(

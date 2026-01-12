@@ -72,17 +72,21 @@ const queryClient = new QueryClient({
 
 // RoleBasedRedirect moved to separate component to ensure it's used within AuthProvider
 function RoleBasedRedirect() {
-  const { userRole, loading } = useAuth();
+  const { userRole, loading, user } = useAuth();
 
   if (loading) return null;
 
+  // Se não está autenticado, mostrar página institucional
+  if (!user) return <InstitutionalPresentation />;
+
+  // Se está autenticado, redirecionar para o dashboard apropriado
   if (userRole === 'admin') return <Navigate to="/admin" replace />;
   if (userRole === 'cooperativa') return <Navigate to="/cooperative" replace />;
   if (userRole === 'empresa') return <Navigate to="/company" replace />;
   if (userRole === 'investidor') return <Navigate to="/cdv/investor" replace />;
   if (userRole === 'vendedor' || userRole === 'usuario') return <Navigate to="/user" replace />;
   
-  // Se não tiver role, redireciona para auth
+  // Se está autenticado mas não tem role, redireciona para auth
   return <Navigate to="/auth" replace />;
 }
 
@@ -93,7 +97,8 @@ function AppRoutes() {
       <Route path="/auth/confirm" element={<EmailConfirm />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/" element={<InstitutionalPresentation />} />
+      <Route path="/" element={<RoleBasedRedirect />} />
+      <Route path="/institucional" element={<InstitutionalPresentation />} />
       
       {/* User Routes */}
       <Route path="/user" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><UserDashboard /></ProtectedRoute>} />

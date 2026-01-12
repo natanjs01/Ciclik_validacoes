@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, formatPhone, formatCEP } from '@/lib/validators';
 import { appUrl } from '@/lib/appUrl';
 import { getAssetPath } from '@/utils/assetPath';
+import { useAuth } from '@/contexts/AuthContext';
 
 const signupSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -58,6 +59,7 @@ export default function Auth() {
   const [processingInvite, setProcessingInvite] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -77,6 +79,14 @@ export default function Auth() {
     complemento: '',
     codigo_indicador: '',
   });
+
+  // Redirecionar usuários já autenticados
+  useEffect(() => {
+    if (user && !processingInvite) {
+      console.log('Usuário já autenticado, redirecionando...');
+      navigate('/');
+    }
+  }, [user, navigate, processingInvite]);
 
   // Processar tokens de convite/magic link na URL
   useEffect(() => {
@@ -128,10 +138,10 @@ export default function Auth() {
                 title: 'Bem-vindo!',
                 description: 'Você está logado como investidor.',
               });
-              navigate('/cdv/investor');
+              navigate('/');
             } else {
               // Usuário comum
-              navigate('/user');
+              navigate('/');
             }
           }
         } catch (err) {
@@ -348,22 +358,10 @@ export default function Auth() {
           console.error('Erro ao buscar roles:', rolesError);
         }
 
-        const isInvestor = roles?.some(r => r.role === 'investidor');
-        const isAdmin = roles?.some(r => r.role === 'admin');
-        const isCooperative = roles?.some(r => r.role === 'cooperativa');
-        const isCompany = roles?.some(r => r.role === 'empresa');
+        console.log('✅ [LOGIN] Login realizado com sucesso, roles:', roles);
 
-        if (isInvestor) {
-          navigate('/cdv/investor');
-        } else if (isAdmin) {
-          navigate('/admin');
-        } else if (isCooperative) {
-          navigate('/cooperative');
-        } else if (isCompany) {
-          navigate('/company');
-        } else {
-          navigate('/user');
-        }
+        // Deixar o RoleBasedRedirect fazer o redirecionamento
+        navigate('/');
       }
     } catch (error: any) {
       console.error('Erro no login:', error);

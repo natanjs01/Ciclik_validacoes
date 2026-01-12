@@ -31,12 +31,8 @@ const PWAInstallPrompt = () => {
       const baseUrl = import.meta.env.BASE_URL || '/';
       navigator.serviceWorker
         .register(`${baseUrl}service-worker.js`)
-        .then((registration) => {
-          console.log('Service Worker registrado com sucesso:', registration);
-        })
-        .catch((error) => {
-          console.log('Falha ao registrar Service Worker:', error);
-        });
+        .then((registration) => {})
+        .catch((error) => {});
     }
 
     // Captura o evento beforeinstallprompt
@@ -52,9 +48,7 @@ const PWAInstallPrompt = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Detecta quando o app foi instalado
-    window.addEventListener('appinstalled', () => {
-      console.log('PWA instalado com sucesso');
-      setIsInstalled(true);
+    window.addEventListener('appinstalled', () => {setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
     });
@@ -71,10 +65,7 @@ const PWAInstallPrompt = () => {
     deferredPrompt.prompt();
 
     // Aguarda a escolha do usuário
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`Usuário escolheu: ${outcome}`);
-
-    // Limpa o prompt
+    const { outcome } = await deferredPrompt.userChoice;// Limpa o prompt
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
 

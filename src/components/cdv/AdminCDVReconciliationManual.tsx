@@ -133,9 +133,7 @@ const AdminCDVReconciliationManual = () => {
       
       // Buscar saldo parcial separadamente com tratamento de erro
       const saldoRes = await supabase.from('saldo_parcial').select('*');
-      if (saldoRes.error) {
-        console.warn('Tabela saldo_parcial não disponível ou sem permissão:', saldoRes.error.message);
-        setSaldoParcial([]);
+      if (saldoRes.error) {setSaldoParcial([]);
       } else {
         // Mapear os dados para o formato esperado, independente da estrutura
         const saldoData = (saldoRes.data || []).map((item: any) => ({

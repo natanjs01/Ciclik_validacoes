@@ -25,11 +25,7 @@ export async function buscarItensDoCupom(
   // Garante esquema (evita falha se vier sem http/https)
   const urlNormalizada = /^https?:\/\//i.test(qrUrl)
     ? qrUrl
-    : `https://${qrUrl}`;
-
-  console.log('[buscarItensCupom] Consultando:', urlNormalizada);
-
-  // Timeout com AbortController
+    : `https://${qrUrl}`;// Timeout com AbortController
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -48,10 +44,7 @@ export async function buscarItensDoCupom(
       );
     }
 
-    const data = await resp.json();
-    console.log('[buscarItensCupom] Resposta:', data);
-
-    // Esperado: array de objetos { nome, ean }
+    const data = await resp.json();// Esperado: array de objetos { nome, ean }
     if (!Array.isArray(data)) {
       throw new Error("Resposta do backend inesperada (esperado um array).");
     }

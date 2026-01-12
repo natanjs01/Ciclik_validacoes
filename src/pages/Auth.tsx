@@ -85,7 +85,6 @@ export default function Auth() {
     // Adicionar um pequeno delay para evitar loop durante o logout
     const timer = setTimeout(() => {
       if (user && !processingInvite) {
-        console.log('Usuário já autenticado, redirecionando...');
         navigate('/');
       }
     }, 100);
@@ -102,12 +101,9 @@ export default function Auth() {
       const type = hashParams.get('type');
       const isInvited = searchParams.get('invited') === 'true';
 
-      console.log('Auth tokens check - type:', type, 'has access_token:', !!accessToken, 'invited:', isInvited);
-
       // Se temos tokens na URL (de invite ou magic link)
       if (accessToken && (type === 'invite' || type === 'magiclink' || type === 'signup')) {
         setProcessingInvite(true);
-        console.log('Processando token de convite/magic link...');
         
         try {
           const { data, error } = await supabase.auth.setSession({
@@ -127,8 +123,6 @@ export default function Auth() {
           }
 
           if (data.session) {
-            console.log('Sessão estabelecida com sucesso');
-            
             // Verificar role do usuário
             const { data: roles } = await supabase
               .from('user_roles')
@@ -201,49 +195,26 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    console.log('🚀 [CADASTRO] Iniciando processo de cadastro...');
-    console.log('📋 [CADASTRO] Dados do formulário:', {
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      tipo_pessoa: tipoPessoa,
-      cpf: formData.cpf ? 'PRESENTE' : 'AUSENTE',
-      cnpj: formData.cnpj ? 'PRESENTE' : 'AUSENTE',
-      tipo_pj: formData.tipo_pj,
-      cep: formData.cep,
-      codigo_indicador: formData.codigo_indicador
-    });
-
     try {
       // Validar confirmação de senha
-      console.log('🔐 [CADASTRO] Validando senhas...');
       if (formData.password !== formData.confirmPassword) {
         throw new Error('As senhas não coincidem');
       }
-      console.log('✅ [CADASTRO] Senhas validadas com sucesso');
 
-      console.log('📝 [CADASTRO] Validando dados com schema...');
       const validatedData = signupSchema.parse({
         ...formData,
         tipo_pessoa: tipoPessoa,
       });
-      console.log('✅ [CADASTRO] Schema validado com sucesso');
 
       if (tipoPessoa === 'PF') {
-        console.log('👤 [CADASTRO] Validando CPF...');
         if (!formData.cpf) throw new Error('CPF é obrigatório para Pessoa Física');
         if (!validateCPF(formData.cpf)) throw new Error('CPF inválido');
-        console.log('✅ [CADASTRO] CPF válido');
       }
       if (tipoPessoa === 'PJ') {
-        console.log('🏢 [CADASTRO] Validando CNPJ...');
         if (!formData.cnpj) throw new Error('CNPJ é obrigatório para Pessoa Jurídica');
         if (!validateCNPJ(formData.cnpj)) throw new Error('CNPJ inválido');
         if (!formData.tipo_pj) throw new Error('Tipo de PJ é obrigatório');
-        console.log('✅ [CADASTRO] CNPJ válido');
       }
-
-      console.log('📤 [CADASTRO] Criando usuário via signUp...');
       
       // 1. Criar usuário no auth.users com TODOS os dados no raw_user_meta_data
       // O trigger handle_new_user irá criar automaticamente o profile e role
@@ -282,28 +253,19 @@ export default function Auth() {
         throw new Error('Usuário não foi criado');
       }
 
-      console.log('✅ [CADASTRO] Usuário criado:', authData.user.id);
-      console.log('✅ [CADASTRO] Trigger handle_new_user irá criar profile e role automaticamente!');
-
       toast({
         title: '📧 Verifique seu Email!',
         description: `Cadastro realizado! Enviamos um link de confirmação para ${validatedData.email}. Confirme seu email para fazer login.`,
       });
-      console.log('✅ [CADASTRO] Toast de sucesso exibido');
       
       // Redireciona para página de confirmação pendente
       navigate('/auth/confirm');
     } catch (error: any) {
       console.error('💥 [CADASTRO] Erro capturado:', error);
-      console.error('💥 [CADASTRO] Error name:', error.name);
-      console.error('💥 [CADASTRO] Error message:', error.message);
-      console.error('💥 [CADASTRO] Error stack:', error.stack);
       
       const errorMessage = error.message === 'User already registered' 
         ? 'Este e-mail já está cadastrado. Faça login ou use outro e-mail.'
         : error.message;
-      
-      console.error('📢 [CADASTRO] Mensagem de erro para o usuário:', errorMessage);
       
       toast({
         title: 'Erro no cadastro',
@@ -311,7 +273,6 @@ export default function Auth() {
         variant: 'destructive',
       });
     } finally {
-      console.log('🏁 [CADASTRO] Processo finalizado');
       setLoading(false);
     }
   };
@@ -332,7 +293,6 @@ export default function Auth() {
 
       // Verificar se o email foi confirmado
       if (data.user && !data.user.email_confirmed_at) {
-        console.log('⚠️ [LOGIN] Email não confirmado');
         
         // Verificar se é admin (admin pode logar sem confirmar)
         const { data: roles, error: rolesError } = await supabase
@@ -348,8 +308,6 @@ export default function Auth() {
           
           throw new Error('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada e spam.');
         }
-        
-        console.log('✅ [LOGIN] Admin pode logar sem confirmar email');
       }
 
       // Verificar role do usuário para redirecionar corretamente
@@ -362,8 +320,6 @@ export default function Auth() {
         if (rolesError) {
           console.error('Erro ao buscar roles:', rolesError);
         }
-
-        console.log('✅ [LOGIN] Login realizado com sucesso, roles:', roles);
 
         // Deixar o RoleBasedRedirect fazer o redirecionamento
         navigate('/');

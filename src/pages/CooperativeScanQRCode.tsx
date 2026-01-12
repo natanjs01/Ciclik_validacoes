@@ -37,13 +37,12 @@ export default function CooperativeScanQRCode() {
       }
     } catch (err) {
       // Scanner já pode estar parado
-      console.log("Cleanup - stop:", err);
     }
 
     try {
       scanner.clear();
     } catch (err) {
-      console.log("Cleanup - clear:", err);
+      // Ignorar erro ao limpar
     }
 
     scannerRef.current = null;

@@ -16,7 +16,6 @@ export default function BarcodeScanner({ onScan, onCancel, mode }: BarcodeScanne
 
   const initScanner = async () => {
     try {
-      console.log('[BarcodeScanner] Inicializando scanner em modo:', mode);
       const scanner = new Html5Qrcode('scanner-container');
       scannerRef.current = scanner;
 
@@ -41,13 +40,10 @@ export default function BarcodeScanner({ onScan, onCancel, mode }: BarcodeScanne
             ],
           };
 
-      console.log('[BarcodeScanner] Configuração do scanner:', config);
-
       await scanner.start(
         { facingMode: 'environment' },
         config,
         (decodedText) => {
-          console.log('[BarcodeScanner] Código detectado:', decodedText);
           stopScanner();
           onScan(decodedText);
         },
@@ -55,7 +51,6 @@ export default function BarcodeScanner({ onScan, onCancel, mode }: BarcodeScanne
           // Ignore errors durante scanning (muitos falsos positivos)
         }
       );
-      console.log('[BarcodeScanner] Scanner iniciado com sucesso');
     } catch (error) {
       console.error('[BarcodeScanner] Erro ao iniciar scanner:', error);
       setIsScanning(false);
@@ -78,7 +73,6 @@ export default function BarcodeScanner({ onScan, onCancel, mode }: BarcodeScanne
         scannerRef.current.clear();
       } catch (error) {
         // Ignore stop errors - scanner may already be stopped
-        console.log('[BarcodeScanner] Scanner cleanup:', error);
       }
     }
     setIsScanning(false);

@@ -1,8 +1,4 @@
-import { supabase } from './integrations/supabase/client';
-
-console.log('🔍 Verificando estrutura do banco de dados...\n');
-
-async function checkDatabaseStructure() {
+import { supabase } from './integrations/supabase/client';async function checkDatabaseStructure() {
   try {
     // Lista de tabelas esperadas
     const expectedTables = [
@@ -23,10 +19,7 @@ async function checkDatabaseStructure() {
       { name: 'categories', description: 'Categorias de produtos' },
       { name: 'cdv_credits', description: 'Créditos CDV' },
       { name: 'cdv_transactions', description: 'Transações CDV' }
-    ];
-
-    console.log('📊 Verificando tabelas...\n');
-    const results = [];
+    ];const results = [];
 
     for (const table of expectedTables) {
       try {
@@ -83,59 +76,25 @@ async function checkDatabaseStructure() {
       }
     }
 
-    // Exibir resultados
-    console.log('═'.repeat(80));
-    console.log('TABELA'.padEnd(30) + 'STATUS'.padEnd(15) + 'DESCRIÇÃO');
-    console.log('═'.repeat(80));
+    // Exibir resultados);+ 'STATUS'.padEnd(15) + 'DESCRIÇÃO'););
 
     results.forEach(result => {
       const tableInfo = `${result.status} ${result.table}`.padEnd(30);
       const status = result.accessible 
         ? `${result.count || 0} registros`.padEnd(15)
-        : (result.error || 'Erro').padEnd(15);
-      console.log(tableInfo + status + result.description);
-    });
-
-    console.log('═'.repeat(80));
+        : (result.error || 'Erro').padEnd(15);}););
 
     // Resumo
     const totalTables = results.length;
     const existingTables = results.filter(r => r.exists).length;
     const accessibleTables = results.filter(r => r.accessible).length;
     const missingTables = results.filter(r => !r.exists);
-    const restrictedTables = results.filter(r => r.exists && !r.accessible);
+    const restrictedTables = results.filter(r => r.exists && !r.accessible);if (missingTables.length > 0) {missingTables.forEach(table => {});}
 
-    console.log('\n📈 RESUMO DA ANÁLISE\n');
-    console.log(`Total de tabelas esperadas: ${totalTables}`);
-    console.log(`✅ Tabelas existentes: ${existingTables}/${totalTables}`);
-    console.log(`✅ Tabelas acessíveis: ${accessibleTables}/${totalTables}`);
-    console.log(`❌ Tabelas faltando: ${missingTables.length}`);
-    console.log(`🔒 Tabelas sem permissão: ${restrictedTables.length}`);
-
-    if (missingTables.length > 0) {
-      console.log('\n⚠️  AÇÃO NECESSÁRIA: Criar as seguintes tabelas:\n');
-      missingTables.forEach(table => {
-        console.log(`   - ${table.table}: ${table.description}`);
-      });
-      console.log('\n💡 Execute o script MIGRACAO_SUPABASE_COMPLETA.sql no Supabase Dashboard');
-      console.log('   Dashboard: https://supabase.com/dashboard/project/csyfgvtcvbyzirdqvmfc/sql');
+    if (restrictedTables.length > 0) {restrictedTables.forEach(table => {});');
     }
 
-    if (restrictedTables.length > 0) {
-      console.log('\n🔒 AÇÃO NECESSÁRIA: Configurar RLS para as seguintes tabelas:\n');
-      restrictedTables.forEach(table => {
-        console.log(`   - ${table.table}: ${table.error}`);
-      });
-      console.log('\n💡 Verifique as políticas de Row Level Security (RLS)');
-    }
-
-    if (accessibleTables === totalTables) {
-      console.log('\n🎉 SUCESSO! Todas as tabelas estão criadas e acessíveis!');
-    }
-
-    console.log('\n');
-
-  } catch (error: any) {
+    if (accessibleTables === totalTables) {}} catch (error: any) {
     console.error('❌ Erro durante a verificação:', error.message);
   }
 }

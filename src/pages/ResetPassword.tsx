@@ -27,21 +27,11 @@ export default function ResetPassword() {
       // Tokens podem vir do hash (#) ou da query (?)
       const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
-      const type = hashParams.get('type') || queryParams.get('type');
-      
-      console.log('URL tokens - type:', type, 'has access_token:', !!accessToken);
-      
-      // Se temos tokens de recovery, estabelecer sessão manualmente
-      if (accessToken && type === 'recovery') {
-        console.log('Processando tokens de recovery...');
-        
-        // 🔧 CORREÇÃO DO BUG: Verificar se há sessão ativa e fazer logout primeiro
+      const type = hashParams.get('type') || queryParams.get('type');// Se temos tokens de recovery, estabelecer sessão manualmente
+      if (accessToken && type === 'recovery') {// 🔧 CORREÇÃO DO BUG: Verificar se há sessão ativa e fazer logout primeiro
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         
-        if (existingSession) {
-          console.log('⚠️ Sessão ativa detectada. Fazendo logout para usar token de recovery...');
-          
-          // Faz logout da sessão atual para evitar que updateUser() use a sessão errada
+        if (existingSession) {// Faz logout da sessão atual para evitar que updateUser() use a sessão errada
           await supabase.auth.signOut();
           
           toast({
@@ -64,9 +54,7 @@ export default function ResetPassword() {
             variant: 'destructive',
           });
           setSessionReady(false);
-        } else if (data.session) {
-          console.log('Sessão estabelecida com sucesso para:', data.session.user?.email);
-          setSessionReady(true);
+        } else if (data.session) {setSessionReady(true);
         }
         setCheckingSession(false);
         return;
@@ -74,10 +62,7 @@ export default function ResetPassword() {
 
       // Escutar eventos de autenticação para detectar quando a sessão está pronta
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          console.log('Auth event:', event, 'Session:', !!session);
-          
-          if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        (event, session) => {if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
             setSessionReady(true);
             setCheckingSession(false);
           } else if (event === 'SIGNED_OUT') {
@@ -124,18 +109,11 @@ export default function ResetPassword() {
 
     try {
       // 🔐 Log de segurança: Verificar qual usuário terá a senha alterada
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('🔐 Alterando senha para o usuário:', session?.user?.email);
-      
-      const { error } = await supabase.auth.updateUser({
+      const { data: { session } } = await supabase.auth.getSession();const { error } = await supabase.auth.updateUser({
         password: password,
       });
 
-      if (error) throw error;
-
-      console.log('✅ Senha alterada com sucesso para:', session?.user?.email);
-
-      toast({
+      if (error) throw error;toast({
         title: 'Senha definida com sucesso!',
         description: 'Você será redirecionado para o login.',
       });

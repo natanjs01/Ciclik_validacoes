@@ -25,10 +25,7 @@ async function executeSql(query: string): Promise<any> {
   return response.json();
 }
 
-async function applyMigration() {
-  console.log('🔧 Aplicando migration de coordenadas geográficas...\n');
-
-  const migrations = [
+async function applyMigration() {const migrations = [
     {
       name: 'Adicionar latitude em cooperativas',
       sql: 'ALTER TABLE cooperativas ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8);'
@@ -56,21 +53,9 @@ async function applyMigration() {
   ];
 
   for (const migration of migrations) {
-    try {
-      console.log(`⏳ ${migration.name}...`);
-      await executeSql(migration.sql);
-      console.log(`✅ ${migration.name} - OK\n`);
-    } catch (error: any) {
+    try {await executeSql(migration.sql);} catch (error: any) {
       console.error(`❌ ${migration.name} - ERRO:`);
-      console.error(error.message);
-      console.log('');
-    }
-  }
-
-  console.log('🎉 Migration concluída!\n');
-  console.log('📋 Próximos passos:');
-  console.log('   1. Recarregar a página /select-materials');
-  console.log('   2. Adicionar coordenadas às cooperativas via dashboard');
-}
+      console.error(error.message);}
+  }}
 
 applyMigration();

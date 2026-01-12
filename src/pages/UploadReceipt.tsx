@@ -227,38 +227,16 @@ export default function UploadReceipt() {
 
   const consultarSefazAutomatico = async (accessKey: string, uf: string) => {
     try {
-      setProcessingOCR(true);
-      
-      console.log('[UploadReceipt] Consultando SEFAZ:', { accessKey, uf });
-      
-      const { data, error } = await supabase.functions.invoke('consultar-sefaz', {
+      setProcessingOCR(true);const { data, error } = await supabase.functions.invoke('consultar-sefaz', {
         body: { chaveAcesso: accessKey, uf },
-      });
-
-      console.log('[UploadReceipt] Resposta SEFAZ:', { data, error });
-
-      if (error) throw error;
+      });if (error) throw error;
 
       if (data.success && data.data) {
-        const notaData = data.data;
-        
-        console.log('[UploadReceipt] Dados da nota SEFAZ:', {
-          numero: notaData.numero,
-          cnpj: notaData.cnpj,
-          dataEmissao: notaData.dataEmissao,
-          valorTotal: notaData.valorTotal,
-          quantidadeItens: notaData.itens?.length
-        });
-        
-        if (notaData.numero) setNumeroNota(notaData.numero);
+        const notaData = data.data;if (notaData.numero) setNumeroNota(notaData.numero);
         if (notaData.cnpj) setCnpj(notaData.cnpj);
-        if (notaData.dataEmissao) {
-          console.log('[UploadReceipt] Atualizando data para:', notaData.dataEmissao);
-          setDataCompra(notaData.dataEmissao);
+        if (notaData.dataEmissao) {setDataCompra(notaData.dataEmissao);
         }
-        if (notaData.valorTotal && notaData.valorTotal > 0) {
-          console.log('[UploadReceipt] Atualizando valor para:', notaData.valorTotal);
-          setValorTotal(notaData.valorTotal.toString());
+        if (notaData.valorTotal && notaData.valorTotal > 0) {setValorTotal(notaData.valorTotal.toString());
         }
 
         // Processar itens retornados da SEFAZ e enriquecer com dados de produtos
@@ -318,20 +296,8 @@ export default function UploadReceipt() {
 
   const handleScanResult = async (result: string) => {
     setScanning(true);
-    setProcessingStage('scanning');
-    console.log('[UploadReceipt] Resultado do scan:', result);
-    
-    // Verificar sessão ativa antes de processar
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    console.log('[UploadReceipt] Verificação de sessão:', {
-      hasSession: !!session,
-      hasAccessToken: !!session?.access_token,
-      user: session?.user?.email,
-      error: sessionError
-    });
-    
-    if (!session || !session.access_token) {
+    setProcessingStage('scanning');// Verificar sessão ativa antes de processar
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();if (!session || !session.access_token) {
       toast({
         title: 'Sessão Expirada',
         description: 'Sua sessão expirou. Por favor, faça login novamente.',
@@ -363,11 +329,7 @@ export default function UploadReceipt() {
         setUploadMode('select');
         setScanning(false);
         return;
-      }
-
-      console.log('[UploadReceipt] Resultado do processamento:', resultado);
-
-      if (!resultado.valida) {
+      }if (!resultado.valida) {
         toast({
           title: 'Código Inválido',
           description: resultado.motivo_invalidez,
@@ -376,11 +338,7 @@ export default function UploadReceipt() {
         setUploadMode('select');
         setScanning(false);
         return;
-      }
-
-      console.log(`[UploadReceipt] Modelo: ${resultado.modelo}, Tipo entrada: ${resultado.tipo_entrada}, Origem: ${resultado.origem_leitura}`);
-      
-      if (resultado.modelo !== '65' && resultado.modelo !== '59') {
+      }if (resultado.modelo !== '65' && resultado.modelo !== '59') {
         toast({
           title: 'Modelo não suportado',
           description: `Este sistema só aceita notas fiscais modelo 65 (NFC-e) ou 59 (CF-e-SAT). Modelo detectado: ${resultado.modelo}`,
@@ -416,19 +374,13 @@ export default function UploadReceipt() {
       setUploadMode('select');
       
       // Buscar itens da nota usando a API Ciclik
-      try {
-        console.log('[UploadReceipt] Buscando itens da nota via API Ciclik...');
-        
-        // NOTIFICAÇÃO COMENTADA: Substituída pelo ProcessingModal
+      try {// NOTIFICAÇÃO COMENTADA: Substituída pelo ProcessingModal
         // toast({
         //   title: 'Consultando Nota Fiscal',
         //   description: 'Buscando itens da nota... Isso pode levar até 60 segundos.',
         // });
         
-        const itensCupom = await buscarItensDoCupom(result, 60000); // 60s timeout para Render cold start
-        
-        console.log('[UploadReceipt] Itens encontrados:', itensCupom.length);
-        setProcessedItemCount(itensCupom.length);
+        const itensCupom = await buscarItensDoCupom(result, 60000); // 60s timeout para Render cold startsetProcessedItemCount(itensCupom.length);
         
         if (itensCupom && itensCupom.length > 0) {
           // Enriquecer itens com dados do banco Ciclik
@@ -491,9 +443,7 @@ export default function UploadReceipt() {
       }
       
       // Tentar consultar SEFAZ em background
-      consultarSefazAutomatico(chaveAcesso, parsedData.uf).catch(err => {
-        console.log('[UploadReceipt] SEFAZ não disponível:', err);
-      });
+      consultarSefazAutomatico(chaveAcesso, parsedData.uf).catch(err => {});
       
     } catch (error) {
       console.error('[UploadReceipt] Erro ao processar chave de acesso:', error);

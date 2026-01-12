@@ -68,11 +68,7 @@ export default function AdminUsers() {
     }
     
     // Mostrar TODOS os usuários do banco, sem filtros
-    const allUsers = data || [];
-    
-    console.log('✅ [AdminUsers] Total de usuários no banco:', allUsers.length);
-    
-    setTotalProfilesCount(allUsers.length);
+    const allUsers = data || [];setTotalProfilesCount(allUsers.length);
     setUsers(allUsers);
     setFilteredUsers(allUsers);
     
@@ -158,9 +154,7 @@ export default function AdminUsers() {
       toast({
         title: 'Email reenviado com sucesso!',
         description: `Email de confirmação reenviado para ${user.email}. Peça ao usuário para verificar a caixa de entrada e spam.`,
-      });
-      console.log(`✅ [REENVIO] Email de confirmação reenviado para: ${user.email}`);
-    } catch (error: any) {
+      });} catch (error: any) {
       console.error(`❌ [REENVIO] Erro ao reenviar email para ${user.email}:`, error);
       toast({
         title: 'Erro ao reenviar email',

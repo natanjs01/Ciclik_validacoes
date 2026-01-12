@@ -203,11 +203,7 @@ const AdminCDVQuotas = () => {
             } else {
               hasMore = false;
             }
-          }
-          
-          console.log(`Projeto ${projeto.titulo}: ${allQuotas.length} quotas carregadas`);
-          
-          return {
+          }return {
             ...projeto,
             quotas: allQuotas,
           };
@@ -369,14 +365,8 @@ const AdminCDVQuotas = () => {
       }
 
       // Verificar se já recebeu convite
-      if (investidor.convite_enviado) {
-        console.log("Investidor já recebeu convite anteriormente");
-        return;
-      }
-
-      console.log("Criando usuário auth para investidor:", investidor.email);
-
-      // Criar usuário auth com senha temporária
+      if (investidor.convite_enviado) {return;
+      }// Criar usuário auth com senha temporária
       const tempPassword = Math.random().toString(36).slice(-12) + "A1!";
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: investidor.email,
@@ -400,11 +390,7 @@ const AdminCDVQuotas = () => {
 
       if (!authData.user) {
         throw new Error("Falha ao criar usuário");
-      }
-
-      console.log("Usuário auth criado:", authData.user.id);
-
-      // Aguardar o trigger handle_new_user criar o profile e role
+      }// Aguardar o trigger handle_new_user criar o profile e role
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Confirmar email automaticamente para usuários criados pelo admin
@@ -609,11 +595,7 @@ const AdminCDVQuotas = () => {
       const dataMaturacao = new Date(dataAtribuicao);
       dataMaturacao.setMonth(dataMaturacao.getMonth() + (projeto.prazo_maturacao_meses || 12));
 
-      const quotaIds = quotasToAssign.map(q => q.id);
-
-      console.log(`Atribuindo ${quotaIds.length} quotas ao investidor ${bulkInvestidor}`);
-
-      const { error } = await supabase
+      const quotaIds = quotasToAssign.map(q => q.id);const { error } = await supabase
         .from("cdv_quotas")
         .update({
           id_investidor: bulkInvestidor,

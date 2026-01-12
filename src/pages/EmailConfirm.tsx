@@ -31,26 +31,13 @@ export default function EmailConfirm() {
 
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
-      const type = params.get('type');
-
-      console.log('📧 [EMAIL-CONFIRM] Iniciando confirmação...', { 
-        hasAccessToken: !!accessToken, 
-        hasRefreshToken: !!refreshToken,
-        type 
-      });
-
-      // Se não há tokens, significa que o usuário acabou de se cadastrar
-      if (!accessToken || !refreshToken || type !== 'signup') {
-        console.log('⏳ [EMAIL-CONFIRM] Sem tokens de confirmação, mostrando tela de pendência');
-        setStatus('pending');
+      const type = params.get('type');// Se não há tokens, significa que o usuário acabou de se cadastrar
+      if (!accessToken || !refreshToken || type !== 'signup') {setStatus('pending');
         setMessage('Verifique seu email para confirmar seu cadastro.');
         return;
       }
 
-      try {
-        console.log('🔐 [EMAIL-CONFIRM] Autenticando com tokens...');
-        
-        // Usar setSession para autenticar com os tokens do email
+      try {// Usar setSession para autenticar com os tokens do email
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -63,9 +50,7 @@ export default function EmailConfirm() {
           return;
         }
 
-        if (data.user) {
-          console.log('✅ [EMAIL-CONFIRM] Email confirmado com sucesso!', data.user.email);
-          setStatus('success');
+        if (data.user) {setStatus('success');
           setMessage('Email confirmado com sucesso! Você já pode fazer login.');
           
           // NÃO redireciona automaticamente - usuário decide quando sair

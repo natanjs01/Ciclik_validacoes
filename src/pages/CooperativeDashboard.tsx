@@ -31,6 +31,7 @@ import { formatWeight } from '@/lib/formatters';
 export default function CooperativeDashboard() {
   const { user, profile, signOut } = useAuth();
   const [cooperativa, setCooperativa] = useState<any>(null);
+  const [loadingCooperativa, setLoadingCooperativa] = useState(true);
   const [entregasPrevistas, setEntregasPrevistas] = useState<any[]>([]);
   const [entregasEmColeta, setEntregasEmColeta] = useState<any[]>([]);
   const [entregasRealizadas, setEntregasRealizadas] = useState<any[]>([]);
@@ -106,13 +107,20 @@ export default function CooperativeDashboard() {
   const loadCooperativa = async () => {
     if (!user) return;
     
-    const { data } = await supabase
-      .from('cooperativas')
-      .select('*')
-      .eq('id_user', user.id)
-      .single();
-    
-    if (data) setCooperativa(data);
+    try {
+      setLoadingCooperativa(true);
+      const { data } = await supabase
+        .from('cooperativas')
+        .select('*')
+        .eq('id_user', user.id)
+        .single();
+      
+      if (data) setCooperativa(data);
+    } catch (error) {
+      console.error('Erro ao carregar cooperativa:', error);
+    } finally {
+      setLoadingCooperativa(false);
+    }
   };
 
   const loadStats = async () => {
@@ -279,6 +287,17 @@ export default function CooperativeDashboard() {
       setEntregasRealizadas(data);
     }
   };
+
+  if (loadingCooperativa) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Carregando dados da cooperativa...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!cooperativa) {
     return (

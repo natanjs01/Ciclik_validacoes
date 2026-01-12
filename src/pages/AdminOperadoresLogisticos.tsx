@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, CheckCircle, XCircle, Pause, Star, TrendingUp, Package, Plus, FileText, Trash2, MoreVertical, Download, Search, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Pause, Star, TrendingUp, Package, Plus, FileText, Trash2, MoreVertical, Download, Search, Mail, Edit } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +54,7 @@ export default function AdminOperadoresLogisticos() {
   const [selectedOp, setSelectedOp] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEmailHistoryOpen, setIsEmailHistoryOpen] = useState(false);
   const [isEditEmailDialogOpen, setIsEditEmailDialogOpen] = useState(false);
   const [emailHistory, setEmailHistory] = useState<any[]>([]);
@@ -319,6 +320,95 @@ export default function AdminOperadoresLogisticos() {
     } catch (error: any) {
       toast({
         title: 'Erro',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditOperador = async () => {
+    if (!validateCNPJ(formData.cnpj)) {
+      toast({
+        title: 'CNPJ inválido',
+        description: 'Por favor, verifique o CNPJ informado',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!formData.razao_social || !formData.nome_fantasia || !formData.cep || !formData.whatsapp || !formData.email) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os campos obrigatórios',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Atualizar cooperativas (sem tipo_pj que é exclusivo de profiles)
+      const updateData: any = {
+        cnpj: formData.cnpj,
+        razao_social: formData.razao_social,
+        nome_fantasia: formData.nome_fantasia,
+        email: formData.email,
+        cep: formData.cep,
+        logradouro: formData.logradouro,
+        numero: formData.numero,
+        complemento: formData.complemento,
+        bairro: formData.bairro,
+        cidade: formData.cidade,
+        uf: formData.uf,
+        whatsapp: formData.whatsapp,
+        tipo_operador: formData.tipo_operador
+      };
+
+      if (formData.capacidade_mensal_ton) {
+        updateData.capacidade_mensal_ton = parseFloat(formData.capacidade_mensal_ton);
+      }
+
+      const { error: updateError } = await supabase
+        .from('cooperativas')
+        .update(updateData)
+        .eq('id', selectedOp.id);
+
+      if (updateError) throw updateError;
+
+      // Atualizar também no profile do usuário
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nome: formData.nome_fantasia,
+          cnpj: formData.cnpj,
+          cep: formData.cep,
+          logradouro: formData.logradouro,
+          numero: formData.numero,
+          complemento: formData.complemento,
+          bairro: formData.bairro,
+          cidade: formData.cidade,
+          uf: formData.uf,
+          telefone: formData.whatsapp,
+          tipo_pj: formData.tipo_pj
+        })
+        .eq('id', selectedOp.id_user);
+
+      if (profileError) {
+        console.error('Erro ao atualizar profile:', profileError);
+      }
+
+      toast({
+        title: 'Operador atualizado!',
+        description: 'Os dados cadastrais foram atualizados com sucesso'
+      });
+
+      setIsEditDialogOpen(false);
+      loadOperadores();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao atualizar',
         description: error.message,
         variant: 'destructive'
       });
@@ -790,6 +880,32 @@ export default function AdminOperadoresLogisticos() {
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedOp(op);
+                                    setFormData({
+                                      cnpj: op.cnpj || '',
+                                      razao_social: op.razao_social || '',
+                                      nome_fantasia: op.nome_fantasia || '',
+                                      email: op.email || '',
+                                      cep: op.cep || '',
+                                      logradouro: op.logradouro || '',
+                                      numero: op.numero || '',
+                                      complemento: op.complemento || '',
+                                      bairro: op.bairro || '',
+                                      cidade: op.cidade || '',
+                                      uf: op.uf || '',
+                                      whatsapp: op.whatsapp || '',
+                                      capacidade_mensal_ton: op.capacidade_mensal_ton?.toString() || '',
+                                      tipo_operador: op.tipo_operador || 'cooperativa',
+                                      tipo_pj: op.tipo_pj || 'Outro'
+                                    });
+                                    setIsEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar Dados Cadastrais
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedOp(op);
                                     setEditEmailValue(op.email || '');
                                     setIsEditEmailDialogOpen(true);
                                   }}
@@ -1075,6 +1191,206 @@ export default function AdminOperadoresLogisticos() {
                 className="w-full"
               >
                 {loading ? 'Criando...' : 'Criar Operador'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Editar Dados Cadastrais */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Dados Cadastrais do Operador</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit_tipo_operador">Tipo de Operador *</Label>
+                <Select value={formData.tipo_operador} onValueChange={(value) => setFormData({ ...formData, tipo_operador: value as TipoOperador })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cooperativa">Cooperativa</SelectItem>
+                    <SelectItem value="rota_ciclik">Rota Ciclik</SelectItem>
+                    <SelectItem value="operador_parceiro">Operador Parceiro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_cnpj">CNPJ *</Label>
+                  <Input
+                    id="edit_cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_whatsapp">WhatsApp *</Label>
+                  <Input
+                    id="edit_whatsapp"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: formatPhone(e.target.value) })}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit_razao_social">Razão Social *</Label>
+                <Input
+                  id="edit_razao_social"
+                  value={formData.razao_social}
+                  onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_nome_fantasia">Nome Fantasia *</Label>
+                <Input
+                  id="edit_nome_fantasia"
+                  value={formData.nome_fantasia}
+                  onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_email">Email *</Label>
+                <Input
+                  id="edit_email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="email@operador.com"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Nota: Para reenviar convite com novo email, use a opção "Editar Email e Reenviar Convite"
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="edit_tipo_pj">Tipo de Organização *</Label>
+                <select
+                  id="edit_tipo_pj"
+                  value={formData.tipo_pj}
+                  onChange={(e) => setFormData({ ...formData, tipo_pj: e.target.value as any })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="Condominio">Condomínio</option>
+                  <option value="Restaurante">Restaurante</option>
+                  <option value="Comercio">Comércio</option>
+                  <option value="Servico">Serviço</option>
+                  <option value="Industria">Indústria</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="relative">
+                  <Label htmlFor="edit_cep">CEP * {loading && <span className="text-xs text-muted-foreground">(buscando...)</span>}</Label>
+                  <Input
+                    id="edit_cep"
+                    value={formData.cep}
+                    onChange={(e) => {
+                      const cepFormatado = formatCEP(e.target.value);
+                      setFormData({ ...formData, cep: cepFormatado });
+                      
+                      // Busca automática quando CEP estiver completo
+                      if (cepFormatado.replace(/\D/g, '').length === 8) {
+                        buscarCEP(cepFormatado);
+                      }
+                    }}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    disabled={loading}
+                    className={loading ? 'animate-pulse' : ''}
+                  />
+                  {formData.cep && formData.cep.replace(/\D/g, '').length === 8 && formData.logradouro && (
+                    <p className="text-xs text-green-600 mt-1">✓ Endereço preenchido automaticamente</p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="edit_logradouro">Logradouro</Label>
+                  <Input
+                    id="edit_logradouro"
+                    value={formData.logradouro}
+                    onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="edit_numero">Número</Label>
+                  <Input
+                    id="edit_numero"
+                    value={formData.numero}
+                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="edit_complemento">Complemento</Label>
+                  <Input
+                    id="edit_complemento"
+                    value={formData.complemento}
+                    onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="edit_bairro">Bairro</Label>
+                  <Input
+                    id="edit_bairro"
+                    value={formData.bairro}
+                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_cidade">Cidade</Label>
+                  <Input
+                    id="edit_cidade"
+                    value={formData.cidade}
+                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_uf">UF</Label>
+                  <Input
+                    id="edit_uf"
+                    value={formData.uf}
+                    onChange={(e) => setFormData({ ...formData, uf: e.target.value.toUpperCase() })}
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit_capacidade">Capacidade Mensal (toneladas)</Label>
+                <Input
+                  id="edit_capacidade"
+                  type="text"
+                  value={formatBrazilianNumber(formData.capacidade_mensal_ton)}
+                  onChange={(e) => {
+                    const formatted = formatBrazilianNumber(e.target.value);
+                    const parsed = parseBrazilianNumber(formatted);
+                    setFormData({ ...formData, capacidade_mensal_ton: parsed });
+                  }}
+                  placeholder="0,00"
+                />
+              </div>
+
+              <Button 
+                onClick={handleEditOperador}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? 'Atualizando...' : 'Salvar Alterações'}
               </Button>
             </div>
           </DialogContent>

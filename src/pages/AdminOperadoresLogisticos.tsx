@@ -408,9 +408,12 @@ export default function AdminOperadoresLogisticos() {
         formData.cidade !== selectedOp.cidade ||
         formData.uf !== selectedOp.uf;
 
+      let geocodificacaoSucesso = false;
+
       if (enderecoAlterado) {
         try {
           await geocodificarAposAtualizacao(selectedOp.id); // Força atualização das coordenadas
+          geocodificacaoSucesso = true;
         } catch (geoError) {
           console.error('Erro ao geocodificar cooperativa:', geoError);
           // Não bloqueia a atualização se a geocodificação falhar
@@ -424,10 +427,15 @@ export default function AdminOperadoresLogisticos() {
 
       toast({
         title: 'Operador atualizado!',
-        description: 'Os dados cadastrais foram atualizados com sucesso'
+        description: geocodificacaoSucesso 
+          ? 'Dados e localização no mapa atualizados com sucesso' 
+          : 'Os dados cadastrais foram atualizados com sucesso'
       });
 
       setIsEditDialogOpen(false);
+      
+      // Pequeno delay para garantir que o banco foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 500));
       loadOperadores();
     } catch (error: any) {
       toast({

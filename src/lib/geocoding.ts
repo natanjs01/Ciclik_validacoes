@@ -104,7 +104,8 @@ export async function geocodificarCooperativa(cooperativaId: string, forceUpdate
       .from('cooperativas')
       .update({
         latitude,
-        longitude
+        longitude,
+        updated_at: new Date().toISOString() // Força atualização do timestamp
       })
       .eq('id', cooperativaId);
 

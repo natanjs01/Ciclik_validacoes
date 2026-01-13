@@ -299,7 +299,8 @@ const SelectMaterialsForDelivery = () => {
           status: 'gerada',
           status_promessa: 'ativa',
           itens_vinculados: itensVinculados,
-          peso_estimado: pesoEstimadoKg
+          peso_estimado: pesoEstimadoKg,
+          data_geracao: new Date().toISOString()
         })
         .select()
         .single();

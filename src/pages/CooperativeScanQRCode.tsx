@@ -174,7 +174,12 @@ export default function CooperativeScanQRCode() {
   // Handler de leitura bem-sucedida
   const onScanSuccess = async (decodedText: string) => {
     // Prevenir processamento múltiplo
-    if (isProcessingRef.current) return;
+    if (isProcessingRef.current) {
+      console.log('[Scanner] Já está processando, ignorando leitura duplicada');
+      return;
+    }
+    
+    console.log('[Scanner] QR Code lido com sucesso, iniciando processamento...');
     isProcessingRef.current = true;
 
     if (isMountedRef.current) {
@@ -193,24 +198,55 @@ export default function CooperativeScanQRCode() {
   // Processar e validar QR Code
   const processQRCode = async (qrData: string) => {
     try {
+      console.log('[QRCode] Dados lidos:', qrData);
+      
       // Parse JSON
       let data;
       try {
         data = JSON.parse(qrData);
-      } catch {
-        toast.error("QR Code inválido", { description: "Formato não reconhecido" });
+        console.log('[QRCode] Dados parseados:', data);
+      } catch (parseError) {
+        console.error('[QRCode] Erro ao fazer parse do JSON:', parseError);
+        toast.error("QR Code inválido", { 
+          description: "Formato não reconhecido. Tente escanear novamente." 
+        });
         if (isMountedRef.current) setCameraStatus('idle');
         return;
       }
 
-      // Validar tipo
-      if (data.tipo !== 'promessa_entrega_ciclik') {
-        toast.error("QR Code inválido", { description: "Este não é um QR Code de entrega Ciclik" });
+      // Validar tipo e rotear para o processamento correto
+      console.log('[QRCode] Validando tipo:', data.tipo);
+      
+      if (data.tipo === 'promessa_entrega_ciclik') {
+        // Processar QR Code de entrega
+        await processEntregaQRCode(data);
+      } else if (data.tipo === 'adesao_rota_ciclik') {
+        // Processar QR Code de adesão a rota
+        await processAdesaoRotaQRCode(data);
+      } else {
+        console.warn('[QRCode] Tipo não suportado:', data.tipo);
+        toast.error("QR Code não suportado", { 
+          description: `Este tipo de QR Code não pode ser processado aqui. Tipo: ${data.tipo || 'indefinido'}` 
+        });
         if (isMountedRef.current) setCameraStatus('idle');
-        return;
       }
 
+    } catch (error: any) {
+      console.error("[QRCode] Erro ao processar QR Code:", error);
+      toast.error("Erro ao processar", { 
+        description: error.message || "Tente novamente" 
+      });
+      if (isMountedRef.current) setCameraStatus('idle');
+    }
+  };
+
+  // Processar QR Code de adesão a rota
+  const processAdesaoRotaQRCode = async (data: any) => {
+    try {
+      console.log('[QRCode] Processando adesão a rota:', data);
+      
       // Buscar cooperativa do usuário
+      console.log('[QRCode] Buscando cooperativa do usuário:', user?.id);
       const { data: coopData, error: coopError } = await supabase
         .from('cooperativas')
         .select('id')
@@ -218,11 +254,151 @@ export default function CooperativeScanQRCode() {
         .single();
 
       if (coopError || !coopData) {
+        console.error('[QRCode] Erro ao buscar cooperativa:', coopError);
         toast.error("Cooperativa não encontrada");
         if (isMountedRef.current) setCameraStatus('idle');
         return;
       }
 
+      console.log('[QRCode] Cooperativa encontrada:', coopData.id);
+      
+      // Buscar adesão ativa do usuário à rota
+      console.log('[QRCode] Buscando adesão - QRCode:', data.qrcode, 'Hash:', data.hash);
+      const { data: adesao, error: adesaoError } = await supabase
+        .from('usuarios_rotas')
+        .select(`
+          *,
+          rota:rotas_coleta!id_rota (
+            id,
+            nome,
+            id_operador
+          ),
+          usuario:profiles!id_usuario (
+            id,
+            nome
+          )
+        `)
+        .eq('qrcode_adesao', data.qrcode)
+        .eq('hash_qrcode', data.hash)
+        .eq('status', 'ativa')
+        .single();
+
+      if (adesaoError || !adesao) {
+        console.error('[QRCode] Erro ao buscar adesão:', adesaoError);
+        toast.error("QR Code inválido", { 
+          description: "Adesão não encontrada ou inativa" 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] Adesão encontrada:', adesao);
+      
+      // Verificar se a cooperativa é a operadora da rota
+      console.log('[QRCode] Verificando operador - Rota:', adesao.rota?.id_operador, 'Cooperativa:', coopData.id);
+      if (adesao.rota?.id_operador !== coopData.id) {
+        toast.error("QR Code de outra rota", {
+          description: "Esta rota não é operada por sua cooperativa"
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] Criando nova entrega automática para coleta de rota...');
+      console.log('[QRCode] ID Usuário Adesão:', adesao.id_usuario);
+      console.log('[QRCode] ID Cooperativa:', coopData.id);
+      console.log('[QRCode] User Auth:', user?.id);
+      
+      // Criar nova entrega automaticamente
+      const entregaId = crypto.randomUUID();
+      const qrcodeId = crypto.randomUUID();
+      const hashQRCode = `${adesao.id_usuario}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      console.log('[QRCode] Dados do INSERT:', {
+        id: entregaId,
+        id_usuario: adesao.id_usuario,
+        id_cooperativa: coopData.id,
+        qrcode_id: qrcodeId,
+        hash_qrcode: hashQRCode
+      });
+      
+      const { data: novaEntrega, error: entregaError } = await supabase
+        .from('entregas_reciclaveis')
+        .insert({
+          id: entregaId,
+          id_usuario: adesao.id_usuario,
+          id_cooperativa: coopData.id,
+          qrcode_id: qrcodeId,
+          hash_qrcode: hashQRCode,
+          tipo_material: 'Rota de Coleta',
+          status: 'recebida',
+          status_promessa: 'em_coleta',
+          data_geracao: new Date().toISOString(),
+          data_recebimento: new Date().toISOString(),
+          peso_estimado: 0,
+          itens_vinculados: {
+            tipo: 'rota',
+            id_rota: adesao.id_rota,
+            nome_rota: adesao.rota?.nome,
+            id_adesao: adesao.id
+          }
+        })
+        .select()
+        .single();
+
+      if (entregaError) {
+        console.error('[QRCode] Erro ao criar entrega:', entregaError);
+        toast.error("Erro ao criar entrega", { 
+          description: entregaError.message 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] Entrega criada com sucesso:', novaEntrega.id);
+      
+      toast.success("QR Code de Rota validado!", { 
+        description: `Usuário: ${adesao.usuario?.nome || 'N/A'}. Iniciando registro de coleta...` 
+      });
+
+      console.log('[QRCode] Redirecionando para registro de materiais:', novaEntrega.id);
+      
+      // Redirecionar para registro de materiais
+      if (isMountedRef.current) {
+        navigate(`/cooperative/register-materials/${novaEntrega.id}`);
+      }
+      
+    } catch (error: any) {
+      console.error('[QRCode] Erro ao processar adesão a rota:', error);
+      toast.error("Erro ao processar QR Code de rota", {
+        description: error.message || "Tente novamente"
+      });
+      if (isMountedRef.current) setCameraStatus('idle');
+    }
+  };
+
+  // Processar QR Code de entrega
+  const processEntregaQRCode = async (data: any) => {
+    try {
+
+      // Buscar cooperativa do usuário
+      console.log('[QRCode] Buscando cooperativa do usuário:', user?.id);
+      const { data: coopData, error: coopError } = await supabase
+        .from('cooperativas')
+        .select('id')
+        .eq('id_user', user?.id)
+        .single();
+
+      if (coopError || !coopData) {
+        console.error('[QRCode] Erro ao buscar cooperativa:', coopError);
+        toast.error("Cooperativa não encontrada");
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] Cooperativa encontrada:', coopData.id);
+      console.log('[QRCode] Buscando entrega com id:', data.id_entrega, 'hash:', data.hash);
+      
       // Buscar entrega
       const { data: entrega, error: entregaError } = await supabase
         .from('entregas_reciclaveis')
@@ -232,12 +408,36 @@ export default function CooperativeScanQRCode() {
         .single();
 
       if (entregaError || !entrega) {
-        toast.error("QR Code inválido", { description: "Entrega não encontrada" });
+        console.error('[QRCode] Erro ao buscar entrega:', entregaError);
+        console.log('[QRCode] Entrega encontrada:', entrega);
+        
+        // Tentar buscar só pelo ID para debug
+        const { data: entregaDebug } = await supabase
+          .from('entregas_reciclaveis')
+          .select('id, hash_qrcode, id_cooperativa, status_promessa')
+          .eq('id', data.id_entrega)
+          .single();
+        
+        console.log('[QRCode] Debug - Entrega pelo ID:', entregaDebug);
+        
+        if (entregaDebug && entregaDebug.hash_qrcode !== data.hash) {
+          toast.error("QR Code inválido", { 
+            description: "Hash de segurança não corresponde. O QR Code pode ter sido adulterado." 
+          });
+        } else {
+          toast.error("QR Code inválido", { 
+            description: "Entrega não encontrada no sistema." 
+          });
+        }
+        
         if (isMountedRef.current) setCameraStatus('idle');
         return;
       }
 
+      console.log('[QRCode] Entrega encontrada:', entrega.id, 'Status:', entrega.status_promessa);
+
       // Verificar cooperativa
+      console.log('[QRCode] Verificando cooperativa - Entrega:', entrega.id_cooperativa, 'Usuário:', coopData.id);
       if (entrega.id_cooperativa !== coopData.id) {
         toast.error("QR Code de outra cooperativa", {
           description: "Esta entrega não é destinada à sua cooperativa"
@@ -250,6 +450,8 @@ export default function CooperativeScanQRCode() {
       const dataGeracao = new Date(entrega.data_geracao);
       const agora = new Date();
       const diferencaHoras = (agora.getTime() - dataGeracao.getTime()) / (1000 * 60 * 60);
+
+      console.log('[QRCode] Verificando validade - Geração:', dataGeracao, 'Agora:', agora, 'Horas:', diferencaHoras);
 
       if (diferencaHoras > 24) {
         toast.error("QR Code expirado", { description: "Válido por apenas 24 horas" });
@@ -264,6 +466,7 @@ export default function CooperativeScanQRCode() {
       }
 
       // Verificar status
+      console.log('[QRCode] Status da promessa:', entrega.status_promessa);
       if (entrega.status_promessa === 'finalizada') {
         toast.error("Entrega já finalizada");
         if (isMountedRef.current) setCameraStatus('idle');
@@ -278,6 +481,7 @@ export default function CooperativeScanQRCode() {
 
       // Atualizar status se necessário
       if (entrega.status_promessa === 'ativa') {
+        console.log('[QRCode] Atualizando status para em_coleta');
         await supabase
           .from('entregas_reciclaveis')
           .update({
@@ -292,16 +496,22 @@ export default function CooperativeScanQRCode() {
         toast.success("Continuando registro...");
       }
 
-      // Redirecionar
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          navigate(`/cooperative/register-materials/${entrega.id}`);
-        }
-      }, 800);
+      console.log('[QRCode] Preparando redirecionamento para:', entrega.id);
+      console.log('[QRCode] isMountedRef.current:', isMountedRef.current);
+      
+      // Redirecionar imediatamente (sem setTimeout)
+      if (isMountedRef.current) {
+        console.log('[QRCode] Navegando para /cooperative/register-materials/' + entrega.id);
+        navigate(`/cooperative/register-materials/${entrega.id}`);
+      } else {
+        console.warn('[QRCode] Componente foi desmontado, cancelando navegação');
+      }
 
     } catch (error: any) {
-      console.error("Erro ao processar QR Code:", error);
-      toast.error("Erro ao processar", { description: "Tente novamente" });
+      console.error("[QRCode] Erro ao processar entrega:", error);
+      toast.error("Erro ao processar entrega", { 
+        description: error.message || "Tente novamente" 
+      });
       if (isMountedRef.current) setCameraStatus('idle');
     }
   };

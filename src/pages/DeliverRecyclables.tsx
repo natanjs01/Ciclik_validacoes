@@ -68,7 +68,8 @@ export default function DeliverRecyclables() {
           tipo_material: 'Não especificado',
           peso_estimado: null,
           qrcode_id: qrcodeId,
-          status: 'gerada'
+          status: 'gerada',
+          data_geracao: new Date().toISOString()
         })
         .select()
         .single();

@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/Ciclik_validacoes/',
+  base: mode === 'production' ? '/Ciclik_validacoes/' : '/',
   server: {
     host: "::",
     port: 8080,
@@ -14,7 +14,6 @@ export default defineConfig(({ mode }) => ({
       host: 'localhost',
       port: 8080,
       clientPort: 8080,
-      path: '/Ciclik_validacoes/',
     },
     watch: {
       usePolling: true,

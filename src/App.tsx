@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Auth from "./pages/Auth";
@@ -57,6 +58,7 @@ import AdminRotasColeta from "./pages/AdminRotasColeta";
 import AdminInteresses from "./pages/AdminInteresses";
 import InstitutionalPresentation from "./pages/InstitutionalPresentation";
 import InvestorPresentation from "./pages/InvestorPresentation";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 import SupabaseTest from "./pages/SupabaseTest";
 import EmailConfirm from "./pages/EmailConfirm";
@@ -117,6 +119,9 @@ function AppRoutes() {
       <Route path="/goals" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><Goals /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><Profile /></ProtectedRoute>} />
       
+      {/* Notifications Route - Available for all authenticated users */}
+      <Route path="/notifications" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor', 'cooperativa', 'empresa', 'admin', 'investidor']}><NotificationsPage /></ProtectedRoute>} />
+      
       {/* Cooperative Routes */}
       <Route path="/cooperative" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeDashboard /></ProtectedRoute>} />
       <Route path="/cooperative/scan-qrcode" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeScanQRCode /></ProtectedRoute>} />
@@ -173,9 +178,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <PWAInstallPrompt />
-      <BrowserRouter basename="/Ciclik_validacoes">
+      <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/Ciclik_validacoes' : '/'}>
         <AuthProvider>
-          <AppRoutes />
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

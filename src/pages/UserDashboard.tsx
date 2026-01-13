@@ -36,7 +36,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import NotificationBell from '@/components/NotificationBell';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import PageTransition from '@/components/PageTransition';
 import TourGuide from '@/components/TourGuide';
 import RecyclabilityStats from '@/components/RecyclabilityStats';
@@ -404,9 +404,14 @@ export default function UserDashboard() {
                     <Separator className="my-3" />
 
                     {/* Notificações */}
-                    <div className="px-1">
-                      <NotificationBell showLabel />
-                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 h-11"
+                      onClick={() => navigate('/notifications')}
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span>Notificações</span>
+                    </Button>
 
                     {/* Meu Perfil */}
                     <Button

@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, LogOut, Menu } from 'lucide-react';
+import { ArrowLeft, User, LogOut, Menu, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import NotificationBell from '@/components/NotificationBell';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { getAssetPath } from '@/utils/assetPath';
 import {
   Sheet,
@@ -75,18 +75,20 @@ export default function CiclikHeader({
             </div>
           )}
 
-          {/* Menu Hamburguer */}
+          {/* Menu Hamburguer e Notificações */}
           {showUserActions && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="flex-shrink-0"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
+            <div className="flex items-center gap-2">
+              {/* Menu Hamburguer */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="flex-shrink-0"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
               <SheetContent side="right" className="w-[280px]">
                 <SheetHeader className="text-left">
                   <SheetTitle className="text-foreground">Menu</SheetTitle>
@@ -109,9 +111,14 @@ export default function CiclikHeader({
                   )}
 
                   {/* Notificações */}
-                  <div className="px-1">
-                    <NotificationBell showLabel />
-                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 h-11"
+                    onClick={() => navigate('/notifications')}
+                  >
+                    <Bell className="h-5 w-5" />
+                    <span>Notificações</span>
+                  </Button>
 
                   {/* Meu Perfil */}
                   <Button
@@ -137,6 +144,7 @@ export default function CiclikHeader({
                 </div>
               </SheetContent>
             </Sheet>
+            </div>
           )}
         </div>
       </div>

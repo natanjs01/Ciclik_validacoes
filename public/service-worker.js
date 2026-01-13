@@ -68,3 +68,87 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// =============================================
+// PUSH NOTIFICATIONS
+// =============================================
+
+// Receber notificação push
+self.addEventListener('push', (event) => {
+  console.log('Push notification recebido:', event);
+
+  let data = {
+    title: 'Ciclik',
+    body: 'Nova notificação',
+    icon: '/icon-192-white.png',
+    badge: '/icon-192-white.png',
+    tag: 'ciclik-notification',
+    data: {}
+  };
+
+  if (event.data) {
+    try {
+      const parsedData = event.data.json();
+      data = {
+        ...data,
+        ...parsedData
+      };
+    } catch (e) {
+      console.error('Erro ao parsear dados do push:', e);
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag,
+    data: data.data,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+    actions: data.actions || []
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Clique na notificação
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notificação clicada:', event);
+  
+  event.notification.close();
+
+  // URL para abrir (da notificação ou página principal)
+  const urlToOpen = event.notification.data?.url || BASE_PATH;
+
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((windowClients) => {
+      // Procurar por janela já aberta
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url.includes(BASE_PATH) && 'focus' in client) {
+          return client.focus().then((client) => {
+            if ('navigate' in client) {
+              return client.navigate(urlToOpen);
+            }
+          });
+        }
+      }
+      // Se não encontrou janela aberta, abre uma nova
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Fechar notificação
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notificação fechada:', event);
+});

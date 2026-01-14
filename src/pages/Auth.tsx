@@ -365,8 +365,10 @@ export default function Auth() {
           onClick={() => {
             // Força scroll para esconder barra do navegador antes de navegar
             window.scrollTo(0, 1);
-            setTimeout(() => window.scrollTo(0, 0), 10);
-            navigate('/');
+            setTimeout(() => {
+              window.scrollTo(0, 0);
+              navigate('/apresentacao');
+            }, 10);
           }}
           className="font-display font-medium bg-white/90 backdrop-blur-sm hover:bg-white shadow-md rounded-full gap-2"
         >

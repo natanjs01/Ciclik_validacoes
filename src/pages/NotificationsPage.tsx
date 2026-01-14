@@ -69,7 +69,12 @@ export default function NotificationsPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            // Força scroll para esconder barra do navegador
+            window.scrollTo(0, 1);
+            setTimeout(() => window.scrollTo(0, 0), 10);
+            navigate(-1);
+          }}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>

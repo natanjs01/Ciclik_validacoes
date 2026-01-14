@@ -146,7 +146,12 @@ const NotFound = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // Força scroll para esconder barra do navegador
+                window.scrollTo(0, 1);
+                setTimeout(() => window.scrollTo(0, 0), 10);
+                navigate(-1);
+              }}
               className="gap-2"
             >
               <ArrowLeft className="w-5 h-5" />

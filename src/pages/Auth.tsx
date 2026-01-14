@@ -362,7 +362,12 @@ export default function Auth() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/')}
+          onClick={() => {
+            // Força scroll para esconder barra do navegador antes de navegar
+            window.scrollTo(0, 1);
+            setTimeout(() => window.scrollTo(0, 0), 10);
+            navigate('/');
+          }}
           className="font-display font-medium bg-white/90 backdrop-blur-sm hover:bg-white shadow-md rounded-full gap-2"
         >
           <ArrowLeft className="w-4 h-4" />

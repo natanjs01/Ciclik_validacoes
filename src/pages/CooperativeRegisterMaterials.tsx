@@ -8,10 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Trash2, CheckCircle, Package, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, CheckCircle, Package, Save, AlertCircle, X, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatWeight, formatNumber } from '@/lib/formatters';
 
 interface MaterialRegistrado {
@@ -67,6 +77,8 @@ export default function CooperativeRegisterMaterials() {
   const [loading, setLoading] = useState(true);
   const [salvandoAuto, setSalvandoAuto] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Auto-save quando materiais mudam
   useEffect(() => {
@@ -320,6 +332,48 @@ export default function CooperativeRegisterMaterials() {
     }
   };
 
+  const cancelarColeta = async () => {
+    setCancelando(true);
+    
+    try {
+      // 1. Deletar todos os materiais registrados
+      if (materiaisRegistrados.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('materiais_coletados_detalhado')
+          .delete()
+          .eq('id_entrega', entregaId);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // 2. Reverter status da entrega para 'ativa' (promessa ativa novamente)
+      const { error: updateError } = await supabase
+        .from('entregas_reciclaveis')
+        .update({
+          status_promessa: 'ativa',
+          status: 'gerada',
+          data_recebimento: null
+        })
+        .eq('id', entregaId);
+
+      if (updateError) throw updateError;
+
+      toast.success("Coleta cancelada com sucesso", {
+        description: "A entrega voltou ao status de promessa ativa"
+      });
+
+      setTimeout(() => {
+        navigate('/cooperative');
+      }, 1500);
+
+    } catch (error: any) {
+      toast.error("Erro ao cancelar coleta", {
+        description: error.message
+      });
+      setCancelando(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
@@ -506,18 +560,78 @@ export default function CooperativeRegisterMaterials() {
               </Card>
             )}
 
-            {/* Finalizar */}
-            <Button
-              onClick={finalizarColeta}
-              disabled={finalizando || materiaisRegistrados.length === 0}
-              className="w-full"
-              size="lg"
-            >
-              <CheckCircle className="mr-2 h-5 w-5" />
-              {finalizando ? 'Finalizando...' : 'Finalizar Coleta'}
-            </Button>
+            {/* Botões de Ação */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => setShowCancelDialog(true)}
+                disabled={cancelando || finalizando}
+                variant="outline"
+                className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                size="lg"
+              >
+                <X className="mr-2 h-5 w-5" />
+                {cancelando ? 'Cancelando...' : 'Cancelar Coleta'}
+              </Button>
+              
+              <Button
+                onClick={finalizarColeta}
+                disabled={finalizando || materiaisRegistrados.length === 0 || cancelando}
+                className="flex-1"
+                size="lg"
+              >
+                <CheckCircle className="mr-2 h-5 w-5" />
+                {finalizando ? 'Finalizando...' : 'Finalizar Coleta'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Dialog de Confirmação de Cancelamento */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Cancelar Coleta?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <p>
+                  Esta ação irá cancelar completamente o processo de coleta e reverter a entrega 
+                  para o status de <strong>promessa ativa</strong>.
+                </p>
+                {materiaisRegistrados.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>{materiaisRegistrados.length}</strong> {materiaisRegistrados.length === 1 ? 'material registrado' : 'materiais registrados'} {materiaisRegistrados.length === 1 ? 'será removido' : 'serão removidos'}
+                      <br />
+                      <span className="text-sm">Peso total: {formatWeight(materiaisRegistrados.reduce((sum, m) => sum + m.peso_kg, 0))}</span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <p className="text-sm">
+                  Tem certeza que deseja continuar?
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={cancelando}>
+                Não, voltar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowCancelDialog(false);
+                  cancelarColeta();
+                }}
+                disabled={cancelando}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {cancelando ? 'Cancelando...' : 'Sim, cancelar coleta'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

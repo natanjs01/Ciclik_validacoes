@@ -6,7 +6,7 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#8CC63F",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/Ciclik_validacoes/",
   "icons": [
     {

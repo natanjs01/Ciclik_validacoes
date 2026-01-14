@@ -31,7 +31,6 @@ import { formatWeight } from '@/lib/formatters';
 export default function CooperativeDashboard() {
   const { user, profile, signOut } = useAuth();
   const [cooperativa, setCooperativa] = useState<any>(null);
-  const [loadingCooperativa, setLoadingCooperativa] = useState(true);
   const [entregasPrevistas, setEntregasPrevistas] = useState<any[]>([]);
   const [entregasEmColeta, setEntregasEmColeta] = useState<any[]>([]);
   const [entregasRealizadas, setEntregasRealizadas] = useState<any[]>([]);
@@ -49,7 +48,7 @@ export default function CooperativeDashboard() {
 
   const { run, completeTour, startTour } = useTour({
     tourKey: 'cooperative-welcome',
-    autoStart: true
+    autoStart: false // ← DESLIGAR autoStart - vamos controlar manualmente
   });
 
   const tourSteps = [
@@ -87,6 +86,7 @@ export default function CooperativeDashboard() {
   ];
 
   useEffect(() => {
+    // Carrega tudo em paralelo
     loadCooperativa();
     loadStats();
     loadEntregasPrevistas();
@@ -104,11 +104,24 @@ export default function CooperativeDashboard() {
     return () => clearInterval(interval);
   }, [user, periodFilter, materialFilter]);
 
+  // Iniciar tour apenas quando cooperativa estiver carregada
+  useEffect(() => {
+    if (cooperativa) {
+      const hasSeenTour = localStorage.getItem('tour_completed_cooperative-welcome');
+      if (!hasSeenTour) {
+        // Delay para garantir que a página está totalmente renderizada
+        const timer = setTimeout(() => {
+          startTour();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [cooperativa, startTour]);
+
   const loadCooperativa = async () => {
     if (!user) return;
     
     try {
-      setLoadingCooperativa(true);
       const { data } = await supabase
         .from('cooperativas')
         .select('*')
@@ -118,8 +131,6 @@ export default function CooperativeDashboard() {
       if (data) setCooperativa(data);
     } catch (error) {
       console.error('Erro ao carregar cooperativa:', error);
-    } finally {
-      setLoadingCooperativa(false);
     }
   };
 
@@ -194,6 +205,7 @@ export default function CooperativeDashboard() {
 
     if (!coopData) return;
 
+    // Carregar entregas sem o join
     const { data, error } = await supabase
       .from('entregas_reciclaveis')
       .select('*')
@@ -208,7 +220,20 @@ export default function CooperativeDashboard() {
     }
 
     if (data) {
-      setEntregasPrevistas(data);
+      // Buscar dados dos usuários separadamente
+      const userIds = [...new Set(data.map(e => e.id_usuario))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, cpf')
+        .in('id', userIds);
+
+      // Mapear profiles para as entregas
+      const entregasComProfiles = data.map(entrega => ({
+        ...entrega,
+        profiles: profilesData?.find(p => p.id === entrega.id_usuario) || null
+      }));
+
+      setEntregasPrevistas(entregasComProfiles);
     }
   };
 
@@ -288,32 +313,16 @@ export default function CooperativeDashboard() {
     }
   };
 
-  if (loadingCooperativa) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Carregando dados da cooperativa...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Se não tem cooperativa, mostra mensagem
   if (!cooperativa) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Cooperativa não encontrada</CardTitle>
-            <CardDescription>
-              Sua conta não está vinculada a nenhuma cooperativa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={signOut} className="w-full">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <Recycle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Carregando cooperativa...</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -337,7 +346,7 @@ export default function CooperativeDashboard() {
               <Recycle className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{cooperativa.nome_fantasia}</h1>
+              <h1 className="text-2xl font-bold">{cooperativa?.nome_fantasia || 'Carregando...'}</h1>
               <p className="text-sm text-muted-foreground">Painel do Operador</p>
             </div>
           </div>
@@ -355,37 +364,39 @@ export default function CooperativeDashboard() {
         </div>
 
         {/* Status Badge */}
-        <Card 
-          data-tour="status"
-          className={`border-2 ${
-          cooperativa.status === 'aprovada' ? 'border-success bg-success/5' :
-          cooperativa.status === 'pendente_aprovacao' ? 'border-warning bg-warning/5' :
-          'border-destructive bg-destructive/5'
-        }`}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Status do Operador</p>
-                <Badge className={`mt-1 ${
-                  cooperativa.status === 'aprovada' ? 'bg-success text-white' :
-                  cooperativa.status === 'pendente_aprovacao' ? 'bg-warning text-white' :
-                  'bg-destructive text-white'
-                }`}>
-                  {cooperativa.status === 'aprovada' ? 'Aprovada' :
-                   cooperativa.status === 'pendente_aprovacao' ? 'Pendente Aprovação' :
-                   'Suspensa'}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-warning" />
-                <div className="text-right">
-                  <p className="text-2xl font-bold">{stats.pontuacao}</p>
-                  <p className="text-xs text-muted-foreground">Confiabilidade</p>
+        {cooperativa && (
+          <Card 
+            data-tour="status"
+            className={`border-2 ${
+            cooperativa.status === 'aprovada' ? 'border-success bg-success/5' :
+            cooperativa.status === 'pendente_aprovacao' ? 'border-warning bg-warning/5' :
+            'border-destructive bg-destructive/5'
+          }`}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Status do Operador</p>
+                  <Badge className={`mt-1 ${
+                    cooperativa.status === 'aprovada' ? 'bg-success text-white' :
+                    cooperativa.status === 'pendente_aprovacao' ? 'bg-warning text-white' :
+                    'bg-destructive text-white'
+                  }`}>
+                    {cooperativa.status === 'aprovada' ? 'Aprovada' :
+                     cooperativa.status === 'pendente_aprovacao' ? 'Pendente Aprovação' :
+                     'Suspensa'}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-warning" />
+                  <div className="text-right">
+                    <p className="text-2xl font-bold">{stats.pontuacao}</p>
+                    <p className="text-xs text-muted-foreground">Confiabilidade</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4" data-tour="stats">
@@ -620,7 +631,7 @@ export default function CooperativeDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Pronto para coletar?</CardTitle>
+                <CardTitle>Pronto para coletar!</CardTitle>
                 <CardDescription className="text-primary-foreground/80">
                   Escaneie o QR Code do usuário para iniciar
                 </CardDescription>

@@ -326,7 +326,7 @@ const SelectMaterialsForDelivery = () => {
       const qrCodeDataUrl = await QRCode.toDataURL(qrCodeData, {
         width: 400,
         margin: 2,
-        color: { dark: '#10B981', light: '#FFFFFF' }
+        color: { dark: '#000000', light: '#FFFFFF' }
       });
 
       setQrCodeUrl(qrCodeDataUrl);

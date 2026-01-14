@@ -239,7 +239,7 @@ export default function RotasAdesaoDialog({ open, onOpenChange }: Props) {
         width: 400,
         margin: 2,
         color: {
-          dark: '#10B981',
+          dark: '#000000',
           light: '#FFFFFF'
         }
       });
@@ -290,7 +290,7 @@ export default function RotasAdesaoDialog({ open, onOpenChange }: Props) {
         width: 400,
         margin: 2,
         color: {
-          dark: '#10B981',
+          dark: '#000000',
           light: '#FFFFFF'
         }
       });

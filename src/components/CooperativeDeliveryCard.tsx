@@ -1,7 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Package, User, QrCode } from 'lucide-react';
+import { Clock, Package, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatWeight } from '@/lib/formatters';
@@ -14,6 +13,10 @@ interface DeliveryCardProps {
     peso_estimado: number;
     status_promessa: string;
     data_geracao: string;
+    profiles?: {
+      nome: string;
+      cpf: string;
+    };
   };
   onScanQR: () => void;
 }
@@ -52,6 +55,21 @@ export function CooperativeDeliveryCard({ entrega, onScanQR }: DeliveryCardProps
     return horasRestantes <= 2 && horasRestantes > 0;
   };
 
+  const getEntregadorInfo = () => {
+    if (!entrega.profiles?.cpf || !entrega.profiles?.nome) {
+      return 'Entregador não identificado';
+    }
+    
+    // Pegar os 3 primeiros dígitos do CPF (removendo formatação)
+    const cpfLimpo = entrega.profiles.cpf.replace(/\D/g, '');
+    const tresPrimeirosCpf = cpfLimpo.substring(0, 3);
+    
+    // Pegar o primeiro nome
+    const primeiroNome = entrega.profiles.nome.split(' ')[0];
+    
+    return `${tresPrimeirosCpf} - ${primeiroNome}`;
+  };
+
   return (
     <Card className={`transition-all hover:shadow-lg ${isExpiring() ? 'border-warning' : ''}`}>
       <CardContent className="pt-6">
@@ -61,7 +79,7 @@ export function CooperativeDeliveryCard({ entrega, onScanQR }: DeliveryCardProps
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">ID: {entrega.id_usuario.substring(0, 8)}</span>
+                <span className="font-medium">{getEntregadorInfo()}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Package className="h-3 w-3" />
@@ -83,14 +101,6 @@ export function CooperativeDeliveryCard({ entrega, onScanQR }: DeliveryCardProps
           <div className="bg-muted/50 p-2 rounded text-xs font-mono">
             ID: {entrega.id.substring(0, 8)}...
           </div>
-
-          {/* Ação */}
-          {entrega.status_promessa === 'ativa' && (
-            <Button onClick={onScanQR} className="w-full">
-              <QrCode className="mr-2 h-4 w-4" />
-              Ler QR Code
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

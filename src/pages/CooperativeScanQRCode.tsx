@@ -88,19 +88,38 @@ export default function CooperativeScanQRCode() {
 
       if (!coopData) return;
 
+      // Carregar entregas sem o join
       const { data: entregas, error } = await supabase
         .from('entregas_reciclaveis')
-        .select(`
-          *,
-          usuario:profiles!id_usuario(nome, telefone)
-        `)
+        .select('*')
         .eq('id_cooperativa', coopData.id)
         .eq('status_promessa', 'ativa')
         .order('data_geracao', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
-      if (entregas) setEntregasAtivas(entregas);
+      if (error) {
+        console.error('Erro na query de entregas:', error);
+        throw error;
+      }
+
+      if (entregas && entregas.length > 0) {
+        // Buscar dados dos usuários separadamente
+        const userIds = [...new Set(entregas.map(e => e.id_usuario))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, nome, telefone')
+          .in('id', userIds);
+
+        // Mapear profiles para as entregas
+        const entregasComUsuarios = entregas.map(entrega => ({
+          ...entrega,
+          usuario: profilesData?.find(p => p.id === entrega.id_usuario) || null
+        }));
+
+        setEntregasAtivas(entregasComUsuarios);
+      } else {
+        setEntregasAtivas([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar entregas:', error);
     } finally {
@@ -122,14 +141,14 @@ export default function CooperativeScanQRCode() {
 
       const { data: rotasData, error } = await supabase
         .from('rotas_coleta')
-        .select(`
-          *,
-          adesoes_ativas:usuarios_rotas(count)
-        `)
+        .select('*, adesoes_ativas:usuarios_rotas(count)')
         .eq('id_operador', coopData.id)
         .eq('status', 'ativa');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro na query de rotas:', error);
+        throw error;
+      }
       if (rotasData) setRotas(rotasData);
     } catch (error) {
       console.error('Erro ao carregar rotas:', error);
@@ -651,8 +670,9 @@ export default function CooperativeScanQRCode() {
                       <Badge variant="secondary">{entregasAtivas.length} {entregasAtivas.length === 1 ? 'entrega' : 'entregas'}</Badge>
                     </div>
                     
-                    <div className="space-y-2">
-                      {entregasAtivas.slice(0, 5).map((entrega) => (
+                    {/* Área com scroll limitado - max 4 cards visíveis */}
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+                      {entregasAtivas.map((entrega) => (
                         <Alert key={entrega.id} className="bg-primary/5">
                           <User className="h-4 w-4 text-primary" />
                           <AlertDescription>
@@ -672,11 +692,6 @@ export default function CooperativeScanQRCode() {
                           </AlertDescription>
                         </Alert>
                       ))}
-                      {entregasAtivas.length > 5 && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          + {entregasAtivas.length - 5} entregas aguardando
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}

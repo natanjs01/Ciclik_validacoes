@@ -80,7 +80,7 @@ export default function DeliverRecyclables() {
         width: 400,
         margin: 2,
         color: {
-          dark: '#166534',
+          dark: '#000000',
           light: '#ffffff'
         }
       });

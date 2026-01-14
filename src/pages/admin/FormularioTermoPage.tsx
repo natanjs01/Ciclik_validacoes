@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminTermos } from '@/hooks/useAdminTermos';
+import { uploadPDF } from '@/services/termosStorageService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -80,6 +81,10 @@ export default function FormularioTermoPage() {
       erros.push('É necessário fazer upload de um PDF ou fornecer uma URL');
     }
 
+    if (rolesAplicaveis.length === 0) {
+      erros.push('Selecione pelo menos um tipo de usuário (role)');
+    }
+
     setErrosValidacao(erros);
     return erros.length === 0;
   };
@@ -94,30 +99,48 @@ export default function FormularioTermoPage() {
       return;
     }
 
-    // Preparar dados
-    const novoTermo: NovoTermo = {
-      tipo,
-      versao,
-      titulo,
-      pdf_url: pdfUrl,
-      descricao: descricao || undefined,
-      conteudo_html: conteudoHtml || undefined,
-      obrigatorio,
-      roles_aplicaveis: rolesAplicaveis.length > 0 ? rolesAplicaveis : [],
-      ativo,
-    };
-
     try {
+      let urlPDF = pdfUrl;
+
+      // Se houver arquivo PDF, fazer upload primeiro
+      if (pdfFile) {
+        const resultadoUpload = await uploadPDF(pdfFile, tipo, versao);
+        
+        if (!resultadoUpload.success) {
+          setErrosValidacao([resultadoUpload.error || 'Erro ao fazer upload do PDF']);
+          return;
+        }
+
+        urlPDF = resultadoUpload.pdf_url || '';
+      }
+
+      // Validar se temos URL do PDF
+      if (!urlPDF) {
+        setErrosValidacao(['É necessário fornecer um PDF']);
+        return;
+      }
+
+      // Preparar dados
+      const novoTermo: NovoTermo = {
+        tipo,
+        versao,
+        titulo,
+        pdf_url: urlPDF,
+        descricao: descricao || undefined,
+        conteudo_html: conteudoHtml || undefined,
+        obrigatorio,
+        roles_aplicaveis: rolesAplicaveis.length > 0 ? rolesAplicaveis : [],
+        ativo,
+      };
+
       const termoCriado = await criar(novoTermo);
       
       if (termoCriado) {
-        // TODO: Se houver PDF, fazer upload aqui
-        // await upload(pdfFile, tipo, versao);
-        
         navigate('/admin/termos');
       }
     } catch (err) {
       console.error('Erro ao salvar termo:', err);
+      setErrosValidacao([err instanceof Error ? err.message : 'Erro ao salvar termo']);
     }
   };
 

@@ -757,10 +757,12 @@ export default function AdminOperadoresLogisticos() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button 
-            variant="ghost" 
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/admin')}
+            className="gap-2"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
           <div className="flex gap-2">

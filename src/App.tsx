@@ -38,6 +38,9 @@ import CompanyOwnMetrics from "./pages/CompanyOwnMetrics";
 import AdminUsers from "./pages/AdminUsers";
 import AdminKPIs from "./pages/AdminKPIs";
 import AdminDocumentation from "./pages/AdminDocumentation";
+import GerenciarTermosPage from "./pages/admin/GerenciarTermosPage";
+import FormularioTermoPage from "./pages/admin/FormularioTermoPage";
+import RelatorioAceitesPage from "./pages/admin/RelatorioAceitesPage";
 import AdminProducts from "./pages/AdminProducts";
 import AdminProductsReport from "./pages/AdminProductsReport";
 import AdminSettings from "./pages/AdminSettings";
@@ -144,6 +147,10 @@ function AppRoutes() {
       <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
       <Route path="/admin/kpis" element={<ProtectedRoute allowedRoles={['admin']}><AdminKPIs /></ProtectedRoute>} />
       <Route path="/admin/documentation" element={<ProtectedRoute allowedRoles={['admin']}><AdminDocumentation /></ProtectedRoute>} />
+      <Route path="/admin/termos" element={<ProtectedRoute allowedRoles={['admin']}><GerenciarTermosPage /></ProtectedRoute>} />
+      <Route path="/admin/termos/novo" element={<ProtectedRoute allowedRoles={['admin']}><FormularioTermoPage /></ProtectedRoute>} />
+      <Route path="/admin/termos/:id/editar" element={<ProtectedRoute allowedRoles={['admin']}><FormularioTermoPage /></ProtectedRoute>} />
+      <Route path="/admin/termos/:id/relatorio" element={<ProtectedRoute allowedRoles={['admin']}><RelatorioAceitesPage /></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/products/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminProductsReport /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />

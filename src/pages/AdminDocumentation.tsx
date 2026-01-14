@@ -287,10 +287,12 @@ const AdminDocumentation = () => {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => navigate('/admin')}
+                className="gap-2"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
               </Button>
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-warning/10 p-2">

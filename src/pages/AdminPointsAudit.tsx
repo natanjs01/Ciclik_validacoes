@@ -298,8 +298,14 @@ export default function AdminPointsAudit() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/dashboard")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin/dashboard")}
+            className="gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
+            Voltar
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Auditoria de Pontos</h1>

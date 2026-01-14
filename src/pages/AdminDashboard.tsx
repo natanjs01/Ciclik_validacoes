@@ -18,7 +18,8 @@ import {
   HelpCircle,
   Package,
   Route,
-  Target
+  Target,
+  FileCheck
 } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import TourGuide from '@/components/TourGuide';
@@ -140,6 +141,13 @@ export default function AdminDashboard() {
       icon: FileText,
       color: 'warning',
       path: '/admin/documentation'
+    },
+    {
+      title: 'Gestão de Termos de Uso',
+      description: 'Gerenciar termos, políticas e aceites',
+      icon: FileCheck,
+      color: 'primary',
+      path: '/admin/termos'
     },
     {
       title: 'Gestão de Missões',

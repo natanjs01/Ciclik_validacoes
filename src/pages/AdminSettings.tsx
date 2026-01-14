@@ -68,8 +68,14 @@ const AdminSettings = () => {
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/admin')}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Configurações do Sistema</h1>

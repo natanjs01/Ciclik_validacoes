@@ -261,11 +261,12 @@ const AdminGamification = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => navigate('/admin')}
-            className="mb-4"
+            className="gap-2 mb-4"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Dashboard
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
           </Button>
         </div>
 

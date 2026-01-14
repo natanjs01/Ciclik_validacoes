@@ -524,8 +524,13 @@ export default function AdminRotasColeta() {
     <PageTransition>
       <div className="min-h-screen bg-background p-4 md:p-8">
         <div className="mx-auto max-w-7xl space-y-6">
-          <Button onClick={() => navigate('/admin')} variant="ghost" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+          <Button
+            onClick={() => navigate('/admin')}
+            variant="ghost"
+            size="sm"
+            className="gap-2 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
 

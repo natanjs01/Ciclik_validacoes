@@ -92,10 +92,12 @@ export default function AdminInteresses() {
           <div className="flex items-center gap-4 mb-6">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => navigate('/admin')}
+              className="gap-2"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">

@@ -8,6 +8,12 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Truque para esconder a barra do navegador em PWA
+    window.scrollTo(0, 1);
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 0);
+    
     // Redireciona para a apresentação institucional após um breve delay
     const timer = setTimeout(() => {
       navigate('/apresentacao');

@@ -42,6 +42,14 @@ const AnimatedCounter = ({ end, suffix = "" }: { end: number; suffix?: string })
 const InstitutionalPresentation = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Truque para esconder a barra do navegador em PWA
+    window.scrollTo(0, 1);
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 0);
+  }, []);
+
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       

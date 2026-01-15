@@ -264,201 +264,179 @@ const CDVCertificate = () => {
       <div className="max-w-4xl mx-auto p-4 md:p-8">
         {/* Certificado para PDF */}
         <div ref={certificateRef} className="bg-white rounded-2xl overflow-hidden shadow-lg">
-          <Card className="border-0 overflow-hidden">
-            {/* Header do certificado - design compacto para A4 */}
-            <div className="bg-gradient-to-r from-primary to-primary/85 text-white relative">
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
-                <div className="absolute top-1/2 right-[15%] w-32 h-32 rounded-full border border-white/10 -translate-y-1/2" />
-              </div>
-              
-              <div className="relative z-10 px-6 py-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <span className="text-xl font-display font-bold tracking-wide text-white/95">ciclik</span>
-                  <Leaf className="w-4 h-4 text-ciclik-orange" />
+          <Card className="border-0 overflow-hidden shadow-2xl bg-white">
+            {/* Header Corporativo */}
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
+              <div className="px-8 py-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <img src={getAssetPath('logo-with-slogan.png')} alt="Ciclik" className="h-12 object-contain" />
+                  </div>
+                  <Badge className="bg-white/20 text-white border-0 px-4 py-2 backdrop-blur-sm">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Certificado Oficial #{certificate.numero_quota}
+                  </Badge>
                 </div>
                 
-                <h1 className="text-2xl font-display font-bold mb-1 tracking-tight">
-                  Certificado Digital Verde
-                </h1>
-                <p className="text-sm opacity-80 font-body">Impacto Ambiental Certificado</p>
+                <div className="text-center">
+                  <h1 className="text-4xl font-display font-bold mb-2">
+                    Certificado Digital Verde
+                  </h1>
+                  <p className="text-lg opacity-90">
+                    Comprovação de Impacto Ambiental Mensurável
+                  </p>
+                </div>
               </div>
             </div>
 
-            <CardContent className="p-5">
-              {/* Identificação - compacto */}
-              <div className="text-center mb-4">
-                <Badge className="bg-primary/10 text-primary text-sm px-4 py-1.5 mb-2 font-display">
-                  CDV #{certificate.numero_quota}
-                </Badge>
-                <h2 className="text-xl font-display font-bold text-foreground mb-1">
+            <CardContent className="p-8 space-y-6">
+              {/* Identificação Corporativa */}
+              <div className="border-l-4 border-primary pl-6 py-4 bg-muted/30">
+                <p className="text-sm text-muted-foreground font-body mb-2 uppercase tracking-wider">
+                  Certificado emitido para
+                </p>
+                <h2 className="text-3xl font-display font-bold text-foreground mb-1">
                   {certificate.investidor?.razao_social || "Investidor"}
                 </h2>
-                <p className="text-sm text-muted-foreground font-body">
-                  CNPJ: {certificate.investidor?.cnpj || "N/A"}
+                <p className="text-muted-foreground font-body">
+                  CNPJ: {certificate.investidor?.cnpj || "N/A"} • Responsável: {certificate.investidor?.nome_responsavel || "N/A"}
                 </p>
               </div>
 
-              {/* Selo de Validação - compacto */}
-              <div className="flex justify-center mb-4">
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-1.5">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-700 font-display font-semibold">Certificado Válido e Verificável</span>
+              {/* Métricas em Tabela */}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-primary/5">
+                    <tr>
+                      <th className="text-left p-4 font-display font-semibold">Categoria de Impacto</th>
+                      <th className="text-right p-4 font-display font-semibold">Valor Certificado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t">
+                      <td className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Leaf className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-display font-medium">Resíduos Reciclados</p>
+                          <p className="text-xs text-muted-foreground font-body">Material desviado de aterros</p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="text-2xl font-display font-bold text-primary">{certificate.kg_conciliados} kg</span>
+                      </td>
+                    </tr>
+                    <tr className="border-t bg-muted/20">
+                      <td className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <GraduationCap className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-display font-medium">Educação Ambiental</p>
+                          <p className="text-xs text-muted-foreground font-body">Horas de conscientização</p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="text-2xl font-display font-bold text-primary">{certificate.horas_conciliadas}h</span>
+                      </td>
+                    </tr>
+                    <tr className="border-t">
+                      <td className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Package className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-display font-medium">Embalagens Mapeadas</p>
+                          <p className="text-xs text-muted-foreground font-body">Rastreabilidade logística</p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="text-2xl font-display font-bold text-primary">{certificate.embalagens_conciliadas}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Equivalências em Cards Compactos */}
+              <div>
+                <h3 className="text-sm font-display font-bold mb-3 text-muted-foreground uppercase tracking-wider">
+                  Equivalência de Impacto Ambiental
+                </h3>
+                <div className="grid grid-cols-5 gap-3">
+                  <div className="bg-white border border-blue-200 rounded-lg p-3 text-center shadow-sm">
+                    <CloudOff className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                    <p className="text-xl font-display font-bold text-blue-700">{Number(co2Evitado).toLocaleString('pt-BR')}</p>
+                    <p className="text-[10px] text-blue-600 uppercase">kg CO₂</p>
+                  </div>
+                  <div className="bg-white border border-green-200 rounded-lg p-3 text-center shadow-sm">
+                    <TreeDeciduous className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                    <p className="text-xl font-display font-bold text-green-700">{arvoresPreservadas.toLocaleString('pt-BR')}</p>
+                    <p className="text-[10px] text-green-600 uppercase">árvores</p>
+                  </div>
+                  <div className="bg-white border border-yellow-200 rounded-lg p-3 text-center shadow-sm">
+                    <Zap className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
+                    <p className="text-xl font-display font-bold text-yellow-700">{Number(energiaEconomizada).toLocaleString('pt-BR')}</p>
+                    <p className="text-[10px] text-yellow-600 uppercase">kWh</p>
+                  </div>
+                  <div className="bg-white border border-cyan-200 rounded-lg p-3 text-center shadow-sm">
+                    <Droplets className="w-6 h-6 text-cyan-600 mx-auto mb-1" />
+                    <p className="text-xl font-display font-bold text-cyan-700">{Number(aguaEconomizada).toLocaleString('pt-BR')}</p>
+                    <p className="text-[10px] text-cyan-600 uppercase">litros</p>
+                  </div>
+                  <div className="bg-white border border-purple-200 rounded-lg p-3 text-center shadow-sm">
+                    <Users className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                    <p className="text-xl font-display font-bold text-purple-700">{pessoasImpactadas.toLocaleString('pt-BR')}</p>
+                    <p className="text-[10px] text-purple-600 uppercase">pessoas</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Impactos Certificados - compacto */}
-              <div className="mb-4">
-                <h3 className="text-sm font-display font-bold text-center mb-3 text-foreground">Impactos Ambientais Certificados</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <Leaf className="w-4 h-4 text-primary" />
-                    </div>
-                    <p className="text-lg font-display font-bold text-primary">{certificate.kg_conciliados} kg</p>
-                    <p className="text-xs text-muted-foreground font-body">Resíduos Reciclados</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <GraduationCap className="w-4 h-4 text-primary" />
-                    </div>
-                    <p className="text-lg font-display font-bold text-primary">{certificate.horas_conciliadas}h</p>
-                    <p className="text-xs text-muted-foreground font-body">Educação Ambiental</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-3 text-center">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <Package className="w-4 h-4 text-primary" />
-                    </div>
-                    <p className="text-lg font-display font-bold text-primary">{certificate.embalagens_conciliadas}</p>
-                    <p className="text-xs text-muted-foreground font-body">Embalagens Mapeadas</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Impactos Ambientais Equivalentes - compacto */}
-              <div className="mb-4">
-                <h3 className="text-sm font-display font-bold text-center mb-2 text-foreground">Equivalência Ambiental</h3>
-                <div className="grid grid-cols-5 gap-2">
-                  <div className="bg-blue-50 border border-blue-200/50 rounded-lg p-2 text-center">
-                    <CloudOff className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-                    <p className="text-sm font-display font-bold text-blue-700">{Number(co2Evitado).toLocaleString('pt-BR')}</p>
-                    <p className="text-[10px] text-blue-600/80 font-body">kg CO₂</p>
-                  </div>
-                  
-                  <div className="bg-green-50 border border-green-200/50 rounded-lg p-2 text-center">
-                    <TreeDeciduous className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                    <p className="text-sm font-display font-bold text-green-700">{arvoresPreservadas.toLocaleString('pt-BR')}</p>
-                    <p className="text-[10px] text-green-600/80 font-body">árvores</p>
-                  </div>
-                  
-                  <div className="bg-yellow-50 border border-yellow-200/50 rounded-lg p-2 text-center">
-                    <Zap className="w-4 h-4 text-yellow-600 mx-auto mb-1" />
-                    <p className="text-sm font-display font-bold text-yellow-700">{Number(energiaEconomizada).toLocaleString('pt-BR')}</p>
-                    <p className="text-[10px] text-yellow-600/80 font-body">kWh</p>
-                  </div>
-                  
-                  <div className="bg-cyan-50 border border-cyan-200/50 rounded-lg p-2 text-center">
-                    <Droplets className="w-4 h-4 text-cyan-600 mx-auto mb-1" />
-                    <p className="text-sm font-display font-bold text-cyan-700">{Number(aguaEconomizada).toLocaleString('pt-BR')}</p>
-                    <p className="text-[10px] text-cyan-600/80 font-body">litros</p>
-                  </div>
-                  
-                  <div className="bg-purple-50 border border-purple-200/50 rounded-lg p-2 text-center">
-                    <Users className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-                    <p className="text-sm font-display font-bold text-purple-700">{pessoasImpactadas.toLocaleString('pt-BR')}</p>
-                    <p className="text-[10px] text-purple-600/80 font-body">pessoas</p>
-                  </div>
-                </div>
-                
-                {/* Nota sobre mudança de comportamento */}
-                <div className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground font-body bg-muted/30 rounded py-1.5 px-3">
-                  <TrendingUp className="w-3 h-3 text-primary" />
-                  <span>Tendência: <strong className="text-foreground">{pessoasImpactadas}</strong> cidadãos em mudança de comportamento ambiental</span>
-                </div>
-              </div>
-
-              {/* Seção ODS - compacta */}
-              <div className="mb-4 border-t pt-4">
-                <div className="text-center mb-3">
-                  <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <Globe className="w-4 h-4 text-primary" />
-                    <h3 className="text-sm font-display font-bold text-foreground">Objetivos de Desenvolvimento Sustentável</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground font-body">
-                    Contribuição direta para as ODS da ONU:
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-6 gap-2">
-                  <img src={ods08} alt="ODS 8" className="w-full rounded shadow-sm" />
-                  <img src={ods09} alt="ODS 9" className="w-full rounded shadow-sm" />
-                  <img src={ods10} alt="ODS 10" className="w-full rounded shadow-sm" />
-                  <img src={ods11} alt="ODS 11" className="w-full rounded shadow-sm" />
-                  <img src={ods12} alt="ODS 12" className="w-full rounded shadow-sm" />
-                  <img src={ods13} alt="ODS 13" className="w-full rounded shadow-sm" />
-                </div>
-                
-                <p className="mt-2 text-[10px] text-center text-muted-foreground font-body">
-                  Agenda 2030: Investimento em impacto ambiental verificável para a transformação sustentável
+              {/* ODS Compacta */}
+              <div className="border-t pt-6">
+                <p className="text-xs text-muted-foreground font-body text-center mb-3 uppercase tracking-wider">
+                  Contribuição ODS da ONU - Agenda 2030
                 </p>
+                <div className="flex justify-center gap-2">
+                  <img src={ods08} alt="ODS 8" className="w-14 h-14 rounded-lg" />
+                  <img src={ods09} alt="ODS 9" className="w-14 h-14 rounded-lg" />
+                  <img src={ods10} alt="ODS 10" className="w-14 h-14 rounded-lg" />
+                  <img src={ods11} alt="ODS 11" className="w-14 h-14 rounded-lg" />
+                  <img src={ods12} alt="ODS 12" className="w-14 h-14 rounded-lg" />
+                  <img src={ods13} alt="ODS 13" className="w-14 h-14 rounded-lg" />
+                </div>
               </div>
 
-              {/* Informações e QR Code - compacto */}
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <div>
-                      <span className="text-[10px] text-muted-foreground font-body block">Data de Geração</span>
-                      <span className="text-xs font-display font-medium">{format(generationDate, "dd/MM/yyyy", { locale: ptBR })}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                    <Award className="w-4 h-4 text-primary" />
-                    <div>
-                      <span className="text-[10px] text-muted-foreground font-body block">Projeto</span>
-                      <span className="text-xs font-display font-medium">{certificate.projeto?.titulo || "CDV"}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    <div>
-                      <span className="text-[10px] text-muted-foreground font-body block">Período</span>
-                      <span className="text-xs font-display font-medium">
-                        {format(new Date(certificate.data_compra), "MMM/yy", { locale: ptBR })} - {format(new Date(certificate.data_maturacao), "MMM/yy", { locale: ptBR })}
-                      </span>
-                    </div>
-                  </div>
+              {/* Footer com QR Code */}
+              <div className="grid grid-cols-3 gap-6 border-t pt-6 items-center" data-qr-container>
+                <div>
+                  <p className="text-xs text-muted-foreground font-body mb-1">Emitido em</p>
+                  <p className="font-display font-semibold">{format(generationDate, "dd/MM/yyyy", { locale: ptBR })}</p>
+                  <p className="text-xs text-muted-foreground font-body mt-2">Projeto</p>
+                  <p className="font-display font-medium text-sm">{certificate.projeto?.titulo || "CDV"}</p>
                 </div>
-
-                <div className="flex flex-col items-center justify-center" data-qr-container>
+                <div className="flex justify-center">
                   {qrCodeUrl && (
-                    <div className="text-center">
-                      <div className="p-2 bg-white rounded-lg shadow-sm border inline-block">
+                    <div className="relative">
+                      <div className="w-28 h-28 bg-white rounded-xl border-2 border-muted p-2 shadow-sm">
                         <img 
                           src={qrCodeUrl} 
                           alt="QR Code de Validação" 
-                          className="w-20 h-20"
+                          className="w-full h-full"
                         />
                       </div>
-                      <p className="text-[10px] text-muted-foreground font-body mt-1">
-                        Escaneie para validar
-                      </p>
+                      <p className="text-[10px] text-muted-foreground font-body text-center mt-1">QR Code de Validação</p>
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Rodapé compacto */}
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground font-body">
-                  <div className="flex items-center gap-2">
-                    <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-4 opacity-60" />
-                    <span>Certificado de Impacto Ambiental</span>
-                  </div>
-                  <span>ciclik.com.br/validate/{certificate.id.slice(0, 8)}</span>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground font-body mb-1">Período de Validade</p>
+                  <p className="font-display font-semibold text-sm">
+                    {format(new Date(certificate.data_compra), "MMM/yy", { locale: ptBR })} - {format(new Date(certificate.data_maturacao), "MMM/yy", { locale: ptBR })}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-body mt-2">Verificável em</p>
+                  <p className="font-display font-medium text-sm text-primary">ciclik.com.br</p>
                 </div>
               </div>
             </CardContent>

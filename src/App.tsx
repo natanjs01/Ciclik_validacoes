@@ -45,6 +45,7 @@ import RelatorioAceitesPage from "./pages/admin/RelatorioAceitesPage";
 import TermosPendentesPage from "./pages/TermosPendentesPage";
 import AdminProducts from "./pages/AdminProducts";
 import AdminProductsReport from "./pages/AdminProductsReport";
+import AdminProductsAnalysis from "./pages/AdminProductsAnalysis";
 import AdminSettings from "./pages/AdminSettings";
 import AdminGamification from "./pages/AdminGamification";
 import AdminPointsAudit from "./pages/AdminPointsAudit";
@@ -57,6 +58,7 @@ import CDVLanding from "./pages/CDVLanding";
 import CDVLandingInvestor from "./pages/CDVLandingInvestor";
 import CDVInvestorDashboard from "./pages/CDVInvestorDashboard";
 import CDVCertificate from "./pages/CDVCertificate";
+import CDVCertificatePreview from "./pages/CDVCertificatePreview";
 import CDVValidate from "./pages/CDVValidate";
 import AdminCDV from "./pages/AdminCDV";
 import AdminRotasColeta from "./pages/AdminRotasColeta";
@@ -175,6 +177,7 @@ function AppRoutes() {
       <Route path="/admin/termos/:id/relatorio" element={<ProtectedRoute allowedRoles={['admin']}><RelatorioAceitesPage /></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/products/report" element={<ProtectedRoute allowedRoles={['admin']}><AdminProductsReport /></ProtectedRoute>} />
+      <Route path="/admin/products/analysis" element={<ProtectedRoute allowedRoles={['admin']}><AdminProductsAnalysis /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
       <Route path="/admin/gamification" element={<ProtectedRoute allowedRoles={['admin']}><AdminGamification /></ProtectedRoute>} />
       <Route path="/admin/points-audit" element={<ProtectedRoute allowedRoles={['admin']}><AdminPointsAudit /></ProtectedRoute>} />
@@ -191,6 +194,7 @@ function AppRoutes() {
       <Route path="/apresentacao-investidor" element={<InvestorPresentation />} />
       <Route path="/cdv/investor" element={<ProtectedRoute allowedRoles={['investidor']}><CDVInvestorDashboard /></ProtectedRoute>} />
       <Route path="/cdv/certificate/:id" element={<ProtectedRoute allowedRoles={['investidor']}><CDVCertificate /></ProtectedRoute>} />
+      <Route path="/preview-certificado" element={<CDVCertificatePreview />} />
       <Route path="/cdv/validate/:id" element={<CDVValidate />} />
       
       {/* Test Routes */}

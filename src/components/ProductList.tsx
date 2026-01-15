@@ -215,6 +215,11 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                           </Badge>
                         )}
                       </>
+                    ) : item.gtin && item.gtin.toUpperCase() === 'SEM GTIN' ? (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Material sem viabilidade de reciclagem
+                      </Badge>
                     ) : item.gtin && item.gtin.length >= 8 ? (
                       <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
                         <AlertCircle className="h-3 w-3 mr-1" />
@@ -225,6 +230,8 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
 
                   {/* Product fields */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                    {/* CAMPO GTIN OCULTO - Mantido para uso interno */}
+                    {/*
                     <div className="md:col-span-2">
                       <Label className="text-xs mb-1 block">GTIN</Label>
                       <Input
@@ -234,7 +241,8 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                         className="w-full"
                       />
                     </div>
-                    <div className="md:col-span-7">
+                    */}
+                    <div className="md:col-span-9">
                       <Label className="text-xs mb-1 block">Produto</Label>
                       <Input
                         value={item.nome}
@@ -287,7 +295,7 @@ export default function ProductList({ items, onChange, numeroNota, onNumeroNotaC
                         <Switch
                           checked={item.reciclavel}
                           onCheckedChange={(checked) => updateItem(index, 'reciclavel', checked)}
-                          disabled={item.produto_cadastrado}
+                          disabled={true}
                         />
                       </div>
                     </div>

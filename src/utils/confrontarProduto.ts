@@ -12,33 +12,42 @@ export async function confrontarProduto(gtin: string): Promise<ConfrontacaoResul
   }
 
   try {
-    // TODO: Verificar permissões RLS da tabela produtos_ciclik
-    // Temporariamente desabilitado devido a erro 406 (Not Acceptable)
-    return { found: false };
-    
-    /* CÓDIGO COMENTADO ATÉ RESOLVER PERMISSÕES RLS
     const { data, error } = await supabase
       .from('produtos_ciclik')
       .select('*')
       .eq('gtin', gtin.trim())
-      .single();
+      .maybeSingle(); // Usa maybeSingle() ao invés de single() para evitar erro quando não encontra
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // Not found
-        return { found: false };
-      }
-      console.error('Erro ao buscar produto:', error);
+      // Log detalhado do erro para debug - COMENTADO
+      // console.error('❌ Erro ao buscar produto:', {
+      //   gtin: gtin.trim(),
+      //   error: error,
+      //   code: error.code,
+      //   message: error.message,
+      //   details: error.details
+      // });
       return { found: false };
     }
 
-    return {
-      found: true,
-      produto: data as ProdutoCiclik
-    };
-    */
+    // Se encontrou o produto
+    if (data) {
+      // console.log('✅ Produto encontrado:', {
+      //   gtin: gtin.trim(),
+      //   descricao: data.descricao
+      // });
+      return {
+        found: true,
+        produto: data as ProdutoCiclik
+      };
+    }
+
+    // Produto não existe na base
+    // console.log('⚠️ Produto não cadastrado:', gtin.trim());
+    return { found: false };
+    
   } catch (error) {
-    console.error('Erro ao confrontar produto:', error);
+    // console.error('💥 Erro inesperado ao confrontar produto:', error);
     return { found: false };
   }
 }

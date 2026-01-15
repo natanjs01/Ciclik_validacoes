@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,6 +100,24 @@ export default function UploadReceipt() {
     }
   }, [itens, entryMode, valorTotalManual]);
 
+  // Verificar se todos os itens com EAN estão cadastrados
+  const todosItensComEanCadastrados = useMemo(() => {
+    if (itens.length === 0) return false;
+    
+    // Filtrar apenas itens que têm EAN/GTIN válido (não vazio e não "SEM GTIN")
+    const itensComEan = itens.filter(item => 
+      item.gtin && 
+      item.gtin.trim() !== '' && 
+      item.gtin.toUpperCase() !== 'SEM GTIN'
+    );
+    
+    // Se não há itens com EAN, pode enviar
+    if (itensComEan.length === 0) return true;
+    
+    // Verificar se todos os itens com EAN estão cadastrados
+    return itensComEan.every(item => item.produto_cadastrado === true);
+  }, [itens]);
+
   const formatCurrency = (value: string): string => {
     const numbers = value.replace(/\D/g, '');
     const amount = parseFloat(numbers) / 100;
@@ -164,9 +182,28 @@ export default function UploadReceipt() {
           title: 'Produto encontrado!',
           description: `${result.produto.descricao}${pesoInfo}`,
         });
+      } else {
+        // Produto não encontrado - registrar na tabela de análise
+        try {
+          await supabase.rpc('registrar_produto_em_analise', {
+            p_ean_gtin: gtin.trim(),
+            p_descricao: novoItemDescricao || 'Produto sem descrição',
+            p_origem: 'manual',
+            p_usuario_id: user?.id || null,
+            p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+          });
+          
+          toast({
+            title: 'Produto não cadastrado',
+            description: 'Este produto foi enviado para análise administrativa.',
+            variant: 'destructive'
+          });
+        } catch (error) {
+          // console.error('Erro ao registrar produto em análise:', error);
+        }
       }
     } catch (error) {
-      console.error('Erro ao buscar produto:', error);
+      // console.error('Erro ao buscar produto:', error);
     } finally {
       setBuscandoGtin(false);
     }
@@ -261,6 +298,19 @@ export default function UploadReceipt() {
                     produto_cadastrado: true,
                     produto_ciclik: result.produto
                   };
+                } else {
+                  // Produto não encontrado - registrar na tabela de análise
+                  try {
+                    await supabase.rpc('registrar_produto_em_analise', {
+                      p_ean_gtin: item.gtin.trim(),
+                      p_descricao: item.descricao || 'Produto sem descrição',
+                      p_origem: 'qrcode',
+                      p_usuario_id: user?.id || null,
+                      p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+                    });
+                  } catch (error) {
+                    // console.error('Erro ao registrar produto em análise:', error);
+                  }
                 }
               }
               // Se não tiver GTIN, usar dados básicos
@@ -268,7 +318,7 @@ export default function UploadReceipt() {
                 ...item, 
                 nome: item.descricao,
                 produto_cadastrado: false,
-                reciclavel: true,
+                reciclavel: false, // Produtos não cadastrados são marcados como não recicláveis
                 tipo_embalagem: 'misto'
               };
             })
@@ -283,7 +333,7 @@ export default function UploadReceipt() {
         // });
       }
     } catch (error) {
-      console.error('Erro ao consultar SEFAZ:', error);
+      // console.error('Erro ao consultar SEFAZ:', error);
       toast({
         title: 'Consulta SEFAZ indisponível',
         description: 'Não foi possível consultar a SEFAZ no momento. Os dados básicos foram extraídos da chave de acesso.',
@@ -320,7 +370,7 @@ export default function UploadReceipt() {
       });
 
       if (error) {
-        console.error('[UploadReceipt] Erro ao processar código:', error);
+        // console.error('[UploadReceipt] Erro ao processar código:', error);
         toast({
           title: 'Erro ao Processar Código',
           description: 'Não foi possível processar o código. Tente novamente.',
@@ -386,7 +436,11 @@ export default function UploadReceipt() {
           // Enriquecer itens com dados do banco Ciclik
           const itensEnriquecidos = await Promise.all(
             itensCupom.map(async (item) => {
-              if (item.ean && item.ean.length > 0) {
+              // Verificar se o EAN é "SEM GTIN"
+              const isSemGtin = item.ean && item.ean.toUpperCase() === 'SEM GTIN';
+              
+              // Se tiver GTIN válido, buscar no banco
+              if (item.ean && item.ean.length > 0 && !isSemGtin) {
                 const result = await confrontarProduto(item.ean);
                 if (result.found && result.produto) {
                   const pesoUnitario = result.produto.peso_medio_gramas || 0;
@@ -404,16 +458,44 @@ export default function UploadReceipt() {
                     produto_cadastrado: true,
                     produto_ciclik: result.produto
                   };
+                } else {
+                  // Produto não encontrado - registrar na tabela de análise
+                  try {
+                    await supabase.rpc('registrar_produto_em_analise', {
+                      p_ean_gtin: item.ean.trim(),
+                      p_descricao: item.nome || 'Produto sem descrição',
+                      p_origem: 'qrcode',
+                      p_usuario_id: user?.id || null,
+                      p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+                    });
+                  } catch (error) {
+                    // console.error('Erro ao registrar produto em análise:', error);
+                  }
+                }
+              } else if (isSemGtin || !item.ean) {
+                // Produto SEM GTIN ou sem código - TAMBÉM registrar para análise
+                try {
+                  await supabase.rpc('registrar_produto_em_analise', {
+                    p_ean_gtin: item.ean || 'SEM GTIN',
+                    p_descricao: item.nome || 'Produto sem descrição',
+                    p_origem: 'qrcode',
+                    p_usuario_id: user?.id || null,
+                    p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+                  });
+                  // console.log('📦 Produto SEM GTIN enviado para análise:', item.nome);
+                } catch (error) {
+                  // console.error('Erro ao registrar produto SEM GTIN em análise:', error);
                 }
               }
-              // Se não encontrar no banco, usar dados básicos
+              
+              // Se não encontrar no banco ou for "SEM GTIN", usar dados básicos
               return {
                 nome: item.nome,
                 gtin: item.ean,
                 quantidade: 1,
                 valor_unitario: 0,
                 produto_cadastrado: false,
-                reciclavel: true,
+                reciclavel: false, // Produtos não cadastrados são marcados como não recicláveis
                 tipo_embalagem: 'misto'
               };
             })
@@ -434,7 +516,7 @@ export default function UploadReceipt() {
           });
         }
       } catch (apiError) {
-        console.error('[UploadReceipt] Erro ao buscar itens:', apiError);
+        // console.error('[UploadReceipt] Erro ao buscar itens:', apiError);
         toast({
           title: 'Itens não disponíveis',
           description: 'Não foi possível buscar os itens automaticamente. Adicione manualmente.',
@@ -446,7 +528,7 @@ export default function UploadReceipt() {
       consultarSefazAutomatico(chaveAcesso, parsedData.uf).catch(err => {});
       
     } catch (error) {
-      console.error('[UploadReceipt] Erro ao processar chave de acesso:', error);
+      // console.error('[UploadReceipt] Erro ao processar chave de acesso:', error);
       toast({
         title: 'Erro ao processar chave',
         description: error instanceof Error ? error.message : 'Tente novamente ou insira os dados manualmente.',
@@ -509,9 +591,26 @@ export default function UploadReceipt() {
                     produto_cadastrado: true,
                     produto_ciclik: result.produto
                   };
+                } else {
+                  // Produto não encontrado - registrar na tabela de análise
+                  try {
+                    await supabase.rpc('registrar_produto_em_analise', {
+                      p_ean_gtin: item.gtin.trim(),
+                      p_descricao: item.nome || item.descricao || 'Produto sem descrição',
+                      p_origem: 'qrcode',
+                      p_usuario_id: user?.id || null,
+                      p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+                    });
+                  } catch (error) {
+                    // console.error('Erro ao registrar produto em análise:', error);
+                  }
                 }
               }
-              return { ...item, produto_cadastrado: false };
+              return { 
+                ...item, 
+                produto_cadastrado: false,
+                reciclavel: false // Produtos não cadastrados são marcados como não recicláveis
+              };
             })
           );
           setItens(itensEnriquecidos);
@@ -525,7 +624,7 @@ export default function UploadReceipt() {
         throw new Error(data.error || 'Erro ao processar OCR');
       }
     } catch (error) {
-      console.error('OCR error:', error);
+      // console.error('OCR error:', error);
       toast({
         title: 'Erro no OCR',
         description: error instanceof Error ? error.message : 'Erro ao processar imagem',
@@ -565,7 +664,7 @@ export default function UploadReceipt() {
       valor_unitario: novoItemValorUnitario ? getNumericValue(novoItemValorUnitario) : null,
       peso_unitario_gramas: pesoUnitario,
       peso_total_estimado_gramas: pesoTotal,
-      reciclavel: true,
+      reciclavel: produtoCiclik?.reciclavel || false, // Usa o valor do produto cadastrado ou false
       produto_cadastrado: tempProductData?.produto_cadastrado || false,
       produto_ciclik: produtoCiclik,
       origem_manual: true
@@ -755,7 +854,7 @@ export default function UploadReceipt() {
           .insert(materiaisReciclaveis);
 
         if (materiaisError) {
-          console.error('Erro ao criar materiais recicláveis:', materiaisError);
+          // console.error('Erro ao criar materiais recicláveis:', materiaisError);
         }
       }
 
@@ -1015,23 +1114,9 @@ export default function UploadReceipt() {
                   </div>
                 )}
 
+                {/* CAMPOS COMENTADOS: Só aparecem no card "Dados da Nota Fiscal" */}
+                {/*
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* ========================================
-                      CAMPO VALOR TOTAL OCULTO
-                      (Será melhorado no futuro)
-                      ======================================== */}
-                  {/* TODO: Melhorar visualização de valores
-                  <div className="space-y-2">
-                    <Label htmlFor="valor">Valor Total (R$)</Label>
-                    <Input
-                      id="valor"
-                      placeholder="0,00"
-                      value={valorTotal}
-                      onChange={(e) => handleValorTotalChange(e.target.value)}
-                    />
-                  </div>
-                  */}
-
                   <div className="space-y-2">
                     <Label htmlFor="cnpj">CNPJ do Estabelecimento</Label>
                     <Input
@@ -1062,6 +1147,7 @@ export default function UploadReceipt() {
                     />
                   </div>
                 </div>
+                */}
               </TabsContent>
 
               <TabsContent value="manual" className="space-y-6 mt-6">
@@ -1121,6 +1207,8 @@ export default function UploadReceipt() {
                     )}
                   </div>
 
+                  {/* CAMPOS COMENTADOS: Duplicados - já aparecem no topo após escanear QR Code */}
+                  {/*
                   <div className="space-y-2">
                     <Label htmlFor="cnpj-manual">
                       CNPJ do Estabelecimento
@@ -1171,6 +1259,7 @@ export default function UploadReceipt() {
                       onChange={(e) => setNumeroNota(e.target.value)}
                     />
                   </div>
+                  */}
                 </div>
 
                 <div className={`border rounded-lg p-4 space-y-4 bg-muted/50 ${errors.itens ? 'border-destructive' : ''}`}>
@@ -1190,6 +1279,8 @@ export default function UploadReceipt() {
                   
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* CAMPO GTIN OCULTO - Mantido para uso interno */}
+                      {/*
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="item-gtin">
                           GTIN / Código de Barras
@@ -1214,6 +1305,7 @@ export default function UploadReceipt() {
                           <p className="text-xs text-muted-foreground">Buscando produto...</p>
                         )}
                       </div>
+                      */}
 
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="item-descricao">Descrição do Material</Label>
@@ -1372,6 +1464,25 @@ export default function UploadReceipt() {
                                               title: 'Produto encontrado!',
                                               description: 'Os campos foram atualizados automaticamente.',
                                             });
+                                          } else {
+                                            // Produto não encontrado - registrar na tabela de análise
+                                            try {
+                                              await supabase.rpc('registrar_produto_em_analise', {
+                                                p_ean_gtin: editingItem.gtin.trim(),
+                                                p_descricao: editingItem.descricao || editingItem.nome || 'Produto sem descrição',
+                                                p_origem: 'manual',
+                                                p_usuario_id: user?.id || null,
+                                                p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
+                                              });
+                                              
+                                              toast({
+                                                title: 'Produto não cadastrado',
+                                                description: 'Este produto foi enviado para análise administrativa.',
+                                                variant: 'destructive'
+                                              });
+                                            } catch (error) {
+                                              console.error('Erro ao registrar produto em análise:', error);
+                                            }
                                           }
                                         } finally {
                                           setBuscandoGtin(false);
@@ -1560,6 +1671,19 @@ export default function UploadReceipt() {
                     <li>Data da Compra</li>
                     <li>Pelo menos um Material Reciclável</li>
                   </ul>
+                </div>
+              )}
+              
+              {/* Mensagem informativa para produtos não cadastrados */}
+              {itens.length > 0 && !todosItensComEanCadastrados && (
+                <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" />
+                    <div>
+                      <p className="font-medium mb-1">Produtos em avaliação</p>
+                      <p>Os produtos que aparecem como não cadastrados serão avaliados pela nossa equipe em até 72 horas. Você pode enviar a nota fiscal normalmente!</p>
+                    </div>
+                  </div>
                 </div>
               )}
               

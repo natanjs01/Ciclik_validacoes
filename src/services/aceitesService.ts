@@ -69,13 +69,13 @@ export async function temTermosPendentes(userId: string): Promise<boolean> {
     });
 
     if (error) {
-      console.error('Erro ao verificar termos pendentes:', error);
+      console.error('❌ Erro ao verificar termos pendentes:', error);
       return false; // Em caso de erro, assume que não há pendentes
     }
 
     return data === true;
   } catch (error) {
-    console.error('Erro em temTermosPendentes:', error);
+    console.error('❌ Erro ao verificar termos pendentes:', error);
     return false;
   }
 }

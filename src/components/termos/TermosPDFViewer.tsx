@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Download, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Configurar worker do react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Configurar worker do react-pdf LOCAL (evita problemas de CORS com service worker)
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface TermosPDFViewerProps {
   pdfUrl: string;

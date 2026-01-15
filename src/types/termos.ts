@@ -22,13 +22,13 @@ export enum TipoTermo {
 
 /**
  * Roles que podem ter termos específicos
+ * IMPORTANTE: Devem corresponder exatamente ao enum app_role do banco de dados
  */
 export enum RoleUsuario {
   ADMIN = 'admin',
-  COOPERADO = 'cooperado',
+  USUARIO = 'usuario',
+  COOPERATIVA = 'cooperativa',
   INVESTIDOR = 'investidor',
-  OPERADOR_LOGISTICO = 'operador_logistico',
-  PARCEIRO = 'parceiro',
 }
 
 /**
@@ -395,10 +395,9 @@ export const LABELS_TIPO_TERMO: Record<TipoTermo, string> = {
  */
 export const LABELS_ROLE: Record<RoleUsuario, string> = {
   [RoleUsuario.ADMIN]: 'Administrador',
-  [RoleUsuario.COOPERADO]: 'Cooperado',
+  [RoleUsuario.USUARIO]: 'Usuário',
+  [RoleUsuario.COOPERATIVA]: 'Cooperativa',
   [RoleUsuario.INVESTIDOR]: 'Investidor',
-  [RoleUsuario.OPERADOR_LOGISTICO]: 'Operador Logístico',
-  [RoleUsuario.PARCEIRO]: 'Parceiro',
 };
 
 /**

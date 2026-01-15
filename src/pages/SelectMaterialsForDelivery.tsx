@@ -118,13 +118,8 @@ const SelectMaterialsForDelivery = () => {
             table: 'cooperativas'
           },
           (payload) => {
-            console.log('🔄 Cooperativa atualizada em tempo real:', payload);
-            console.log('🔄 Tipo de evento:', payload.eventType);
-            console.log('🔄 Dados novos:', payload.new);
-            
             // Força reload com pequeno delay para garantir que o DB foi atualizado
             setTimeout(() => {
-              console.log('🔄 Recarregando cooperativas após atualização...');
               loadCooperativas();
             }, 1000);
           }
@@ -167,8 +162,6 @@ const SelectMaterialsForDelivery = () => {
 
   const loadCooperativas = async () => {
     try {
-      console.log('🔍 Carregando cooperativas do banco...');
-      
       const { data, error } = await supabase
         .from('cooperativas')
         .select('id, nome_fantasia, cidade, uf, logradouro, bairro, latitude, longitude')
@@ -176,17 +169,6 @@ const SelectMaterialsForDelivery = () => {
         .order('nome_fantasia');
 
       if (error) throw error;
-      
-      console.log('🗺️ Cooperativas carregadas:', data?.length, 'cooperativas');
-      
-      // Log detalhado das coordenadas
-      data?.forEach(coop => {
-        if (coop.latitude && coop.longitude) {
-          console.log(`📍 ${coop.nome_fantasia}: [${coop.latitude}, ${coop.longitude}]`);
-        } else {
-          console.log(`⚠️ ${coop.nome_fantasia}: SEM COORDENADAS`);
-        }
-      });
       
       setCooperativas(data || []);
     } catch (error: any) {

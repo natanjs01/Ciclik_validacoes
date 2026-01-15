@@ -135,7 +135,7 @@ export async function listarTodosTermos(
     }
 
     if (filtros.busca) {
-      query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      query = query.or(`titulo.ilike.%${filtros.busca}%,resumo.ilike.%${filtros.busca}%`);
     }
 
     // Aplicar paginação
@@ -201,9 +201,10 @@ export async function criarTermo(termo: NovoTermo): Promise<TermoUso> {
         tipo: termo.tipo,
         versao: termo.versao,
         titulo: termo.titulo,
-        descricao: termo.descricao,
+        resumo: termo.descricao, // Mapear descricao -> resumo
         conteudo_html: termo.conteudo_html,
         pdf_url: termo.pdf_url,
+        pdf_path: `v${termo.versao}/${termo.tipo.replace(/_/g, '-')}-v${termo.versao}.pdf`, // Adicionar pdf_path obrigatório
         roles_aplicaveis: termo.roles_aplicaveis,
         obrigatorio: termo.obrigatorio ?? true,
         ativo: termo.ativo ?? true
@@ -258,7 +259,7 @@ export async function atualizarTermo(
       .from('termos_uso')
       .update({
         titulo: atualizacao.titulo,
-        descricao: atualizacao.descricao,
+        resumo: atualizacao.descricao, // Mapear descricao -> resumo
         conteudo_html: atualizacao.conteudo_html,
         pdf_url: atualizacao.pdf_url,
         obrigatorio: atualizacao.obrigatorio,

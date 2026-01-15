@@ -169,10 +169,12 @@ export function useHasTermosPendentes(autoCheck: boolean = true) {
 
     try {
       setLoading(true);
+      
       const resultado = await temTermosPendentes(user.id);
+      
       setTemPendentes(resultado);
     } catch (err) {
-      console.error('Erro em useHasTermosPendentes:', err);
+      console.error('❌ Erro ao verificar termos pendentes:', err);
       setTemPendentes(false);
     } finally {
       setLoading(false);

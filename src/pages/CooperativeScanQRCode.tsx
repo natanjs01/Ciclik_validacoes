@@ -508,14 +508,12 @@ export default function CooperativeScanQRCode() {
         console.error('[QRCode] Erro ao buscar entrega:', entregaError);
         console.log('[QRCode] Entrega encontrada:', entrega);
         
-        // Tentar buscar só pelo ID para debug
+        // Tentar buscar só pelo ID para verificar inconsistência
         const { data: entregaDebug } = await supabase
           .from('entregas_reciclaveis')
           .select('id, hash_qrcode, id_cooperativa, status_promessa')
           .eq('id', data.id_entrega)
           .single();
-        
-        console.log('[QRCode] Debug - Entrega pelo ID:', entregaDebug);
         
         if (entregaDebug && entregaDebug.hash_qrcode !== data.hash) {
           toast.error("QR Code inválido", { 

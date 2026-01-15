@@ -220,7 +220,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Notificação recebida:', payload);
+          // console.log('Notificação recebida:', payload); // Debug real-time notifications
 
           if (payload.eventType === 'INSERT') {
             // Nova notificação

@@ -21,7 +21,6 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ showLabel = false, className }: NotificationBellProps) {
-  console.log('NotificationBell showLabel:', showLabel); // DEBUG
   const {
     notifications,
     unreadCount,

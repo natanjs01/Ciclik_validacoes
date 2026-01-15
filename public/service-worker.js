@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ciclik-v2'; // Incrementado para forçar atualização
+const CACHE_NAME = 'ciclik-v3'; // Incrementado para forçar atualização (fix CORS PDF)
 const BASE_PATH = '/Ciclik_validacoes/';
 const urlsToCache = [
   BASE_PATH,
@@ -43,6 +43,14 @@ self.addEventListener('activate', (event) => {
 
 // Interceptação de requisições
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // EXCEÇÃO: Não interceptar requisições para CDNs externos (unpkg, etc)
+  // Isso resolve problemas de CORS com bibliotecas externas
+  if (url.hostname !== self.location.hostname && url.hostname !== 'localhost') {
+    return; // Deixa o browser fazer o fetch normalmente
+  }
+
   event.respondWith(
     // ESTRATÉGIA: Network First (busca da rede primeiro, cache como fallback)
     fetch(event.request)

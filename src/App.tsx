@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -40,7 +40,9 @@ import AdminKPIs from "./pages/AdminKPIs";
 import AdminDocumentation from "./pages/AdminDocumentation";
 import GerenciarTermosPage from "./pages/admin/GerenciarTermosPage";
 import FormularioTermoPage from "./pages/admin/FormularioTermoPage";
+import DetalhesTermoPage from "./pages/admin/DetalhesTermoPage";
 import RelatorioAceitesPage from "./pages/admin/RelatorioAceitesPage";
+import TermosPendentesPage from "./pages/TermosPendentesPage";
 import AdminProducts from "./pages/AdminProducts";
 import AdminProductsReport from "./pages/AdminProductsReport";
 import AdminSettings from "./pages/AdminSettings";
@@ -78,11 +80,17 @@ const queryClient = new QueryClient({
 // RoleBasedRedirect moved to separate component to ensure it's used within AuthProvider
 function RoleBasedRedirect() {
   const { userRole, loading, user } = useAuth();
+  const location = useLocation();
 
   if (loading) return null;
 
   // Se não está autenticado, mostrar página institucional
   if (!user) return <InstitutionalPresentation />;
+
+  // NÃO redirecionar se está na página de termos pendentes
+  if (location.pathname === '/termos-pendentes') {
+    return null;
+  }
 
   // Se está autenticado, redirecionar para o dashboard apropriado
   if (userRole === 'admin') return <Navigate to="/admin" replace />;
@@ -122,6 +130,19 @@ function AppRoutes() {
       <Route path="/goals" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><Goals /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor']}><Profile /></ProtectedRoute>} />
       
+      {/* Termos de Uso Route - Available for all authenticated users - SKIP TERMOS CHECK */}
+      <Route 
+        path="/termos-pendentes" 
+        element={
+          <ProtectedRoute 
+            allowedRoles={['admin', 'usuario', 'vendedor', 'cooperativa', 'investidor']}
+            skipTermosCheck={true}
+          >
+            <TermosPendentesPage />
+          </ProtectedRoute>
+        } 
+      />
+      
       {/* Notifications Route - Available for all authenticated users */}
       <Route path="/notifications" element={<ProtectedRoute allowedRoles={['usuario', 'vendedor', 'cooperativa', 'empresa', 'admin', 'investidor']}><NotificationsPage /></ProtectedRoute>} />
       
@@ -149,6 +170,7 @@ function AppRoutes() {
       <Route path="/admin/documentation" element={<ProtectedRoute allowedRoles={['admin']}><AdminDocumentation /></ProtectedRoute>} />
       <Route path="/admin/termos" element={<ProtectedRoute allowedRoles={['admin']}><GerenciarTermosPage /></ProtectedRoute>} />
       <Route path="/admin/termos/novo" element={<ProtectedRoute allowedRoles={['admin']}><FormularioTermoPage /></ProtectedRoute>} />
+      <Route path="/admin/termos/:id" element={<ProtectedRoute allowedRoles={['admin']}><DetalhesTermoPage /></ProtectedRoute>} />
       <Route path="/admin/termos/:id/editar" element={<ProtectedRoute allowedRoles={['admin']}><FormularioTermoPage /></ProtectedRoute>} />
       <Route path="/admin/termos/:id/relatorio" element={<ProtectedRoute allowedRoles={['admin']}><RelatorioAceitesPage /></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />

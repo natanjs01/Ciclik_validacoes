@@ -134,124 +134,133 @@ export default function AdminDashboard() {
     });
   };
 
+  const colorClasses = {
+    primary: { bg: 'bg-primary/10', text: 'text-primary' },
+    accent: { bg: 'bg-accent/10', text: 'text-accent' },
+    success: { bg: 'bg-success/10', text: 'text-success' },
+    warning: { bg: 'bg-warning/10', text: 'text-warning' },
+    secondary: { bg: 'bg-secondary/10', text: 'text-secondary-foreground' },
+    muted: { bg: 'bg-muted/50', text: 'text-muted-foreground' },
+  };
+
   const menuItems = [
     {
       title: 'Documentação do Sistema',
       description: 'Gerar e visualizar documentação completa',
       icon: FileText,
-      color: 'warning',
+      color: 'warning' as const,
       path: '/admin/documentation'
     },
     {
       title: 'Gestão de Termos de Uso',
       description: 'Gerenciar termos, políticas e aceites',
       icon: FileCheck,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/termos'
     },
     {
       title: 'Gestão de Missões',
       description: 'Criar e gerenciar missões',
       icon: Trophy,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/missions'
     },
     {
       title: 'Gestão de Cupons',
       description: 'Importar e gerenciar cupons',
       icon: Gift,
-      color: 'accent',
+      color: 'accent' as const,
       path: '/admin/coupons'
     },
     {
       title: 'Gestão de Operadores Logísticos',
       description: 'Cooperativas, Rotas Ciclik e Operadores',
       icon: Recycle,
-      color: 'success',
+      color: 'success' as const,
       path: '/admin/operadores-logisticos'
     },
     {
       title: 'Gestão de Rotas de Coleta',
       description: 'Configurar rotas, áreas e adesões',
       icon: Route,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/rotas'
     },
     {
       title: 'Interesses por Funcionalidade',
       description: 'Demanda de usuários por localidade',
       icon: Target,
-      color: 'warning',
+      color: 'warning' as const,
       path: '/admin/interesses'
     },
     {
       title: 'Gestão de Empresas',
       description: 'Gerenciar empresas parceiras e métricas',
       icon: Building2,
-      color: 'secondary',
+      color: 'secondary' as const,
       path: '/admin/companies'
     },
     {
       title: 'Gestão CDV',
       description: 'Certificados Digitais Verdes e reconciliação',
       icon: Trophy,
-      color: 'success',
+      color: 'success' as const,
       path: '/admin/cdv'
     },
     {
       title: 'Gestão de Produtos',
       description: 'Cadastro de produtos Ciclik com GTIN e NCM',
       icon: Package,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/products'
     },
     {
       title: 'Relatório de Produtos',
       description: 'Produtos não cadastrados nas notas fiscais',
       icon: TrendingUp,
-      color: 'warning',
+      color: 'warning' as const,
       path: '/admin/products/report'
     },
     {
       title: 'Gestão de Usuários',
       description: 'Ver e editar usuários',
       icon: Users,
-      color: 'muted',
+      color: 'muted' as const,
       path: '/admin/users'
     },
     {
       title: 'KPIs e Relatórios',
       description: 'Visualizar métricas gerais',
       icon: BarChart3,
-      color: 'warning',
+      color: 'warning' as const,
       path: '/admin/kpis'
     },
     {
       title: 'Configurações do Sistema',
       description: 'Gerenciar configurações globais',
       icon: Settings,
-      color: 'secondary',
+      color: 'secondary' as const,
       path: '/admin/settings'
     },
     {
       title: 'Gestão de Gamificação',
       description: 'Configurar pontos de atividades',
       icon: Trophy,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/gamification'
     },
     {
       title: 'Auditoria de Pontos',
       description: 'Relatório de discrepâncias e recálculo',
       icon: BarChart3,
-      color: 'warning',
+      color: 'warning' as const,
       path: '/admin/points-audit'
     },
     {
       title: 'Promessas de Entrega',
       description: 'Rastreamento de entregas via QR Code',
       icon: Package,
-      color: 'primary',
+      color: 'primary' as const,
       path: '/admin/delivery-promises'
     },
   ];
@@ -300,7 +309,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Usuários</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
                 {stats.usuarios}
               </CardTitle>
             </CardHeader>
@@ -310,7 +321,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Missões</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                </div>
                 {stats.missoes}
               </CardTitle>
             </CardHeader>
@@ -320,7 +333,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Cupons</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <Gift className="h-5 w-5 text-accent" />
+                <div className="rounded-lg bg-accent/10 p-2">
+                  <Gift className="h-5 w-5 text-accent" />
+                </div>
                 {stats.cupons}
               </CardTitle>
             </CardHeader>
@@ -330,7 +345,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Operadores</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <Recycle className="h-5 w-5 text-success" />
+                <div className="rounded-lg bg-success/10 p-2">
+                  <Recycle className="h-5 w-5 text-success" />
+                </div>
                 {stats.cooperativas}
               </CardTitle>
             </CardHeader>
@@ -340,7 +357,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Empresas</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-secondary-foreground" />
+                <div className="rounded-lg bg-secondary/10 p-2">
+                  <Building2 className="h-5 w-5 text-secondary-foreground" />
+                </div>
                 {stats.empresas}
               </CardTitle>
             </CardHeader>
@@ -350,7 +369,9 @@ export default function AdminDashboard() {
             <CardHeader className="pb-2">
               <CardDescription className="text-xs">Entregas</CardDescription>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-warning" />
+                <div className="rounded-lg bg-warning/10 p-2">
+                  <TrendingUp className="h-5 w-5 text-warning" />
+                </div>
                 {stats.entregas}
               </CardTitle>
             </CardHeader>
@@ -359,30 +380,33 @@ export default function AdminDashboard() {
 
         {/* Menu Items */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {menuItems.map((item, index) => (
-            <Card 
-              key={item.path}
-              className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                index === 0 ? 'tour-admin-docs' : 
-                index === 2 ? 'tour-admin-missions' :
-                index === 5 ? 'tour-admin-users' :
-                index === 6 ? 'tour-admin-kpis' : ''
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`rounded-lg bg-${item.color}/10 p-3`}>
-                    <item.icon className={`h-8 w-8 text-${item.color}`} />
+          {menuItems.map((item, index) => {
+            const colors = colorClasses[item.color];
+            return (
+              <Card 
+                key={item.path}
+                className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                  index === 0 ? 'tour-admin-docs' : 
+                  index === 2 ? 'tour-admin-missions' :
+                  index === 5 ? 'tour-admin-users' :
+                  index === 6 ? 'tour-admin-kpis' : ''
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className={`rounded-lg ${colors.bg} p-3`}>
+                      <item.icon className={`h-8 w-8 ${colors.text}`} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{item.title}</CardTitle>
+                      <CardDescription>{item.description}</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
-                    <CardDescription>{item.description}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ export default function TermosPendentesPage() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/login', { replace: true });
+      navigate('/auth', { replace: true });
     } catch (err) {
       console.error('Erro ao fazer logout:', err);
     }

@@ -3,7 +3,7 @@
  * Dashboard completo para CRUD de termos de uso
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminTermos } from '@/hooks/useAdminTermos';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,7 @@ import type { TermoUso } from '@/types/termos';
 
 export default function GerenciarTermosPage() {
   const navigate = useNavigate();
-  const { termos, loading, desativar, ativar } = useAdminTermos();
+  const { termos, loading, desativar, ativar, listar } = useAdminTermos();
   
   // Estados de filtros
   const [filtroTexto, setFiltroTexto] = useState('');
@@ -71,6 +71,11 @@ export default function GerenciarTermosPage() {
   // Estado do modal de exclusão
   const [termoParaDesativar, setTermoParaDesativar] = useState<TermoUso | null>(null);
   const [processandoDesativar, setProcessandoDesativar] = useState(false);
+
+  // Carregar termos ao montar o componente
+  useEffect(() => {
+    listar();
+  }, [listar]);
 
   /**
    * Filtrar termos

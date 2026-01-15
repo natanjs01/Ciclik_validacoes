@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminTermos } from '@/hooks/useAdminTermos';
+import { buscarTermoPorId } from '@/services/termosUsoService';
 import { uploadPDF } from '@/services/termosStorageService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +45,7 @@ const ROLES_DISPONIVEIS: { value: RoleUsuario; label: string }[] = [
 export default function FormularioTermoPage() {
   const navigate = useNavigate();
   const { id: termoId } = useParams<{ id: string }>();
-  const { criar, loading: salvando, error } = useAdminTermos();
+  const { criar, atualizar, loading: salvando, error } = useAdminTermos();
   
   const isEdicao = !!termoId;
   
@@ -60,8 +61,51 @@ export default function FormularioTermoPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   
+  // Estado de carregamento do termo
+  const [carregandoTermo, setCarregandoTermo] = useState<boolean>(false);
+  
   // Validação
   const [errosValidacao, setErrosValidacao] = useState<string[]>([]);
+
+  /**
+   * Carregar dados do termo quando estiver em modo de edição
+   */
+  useEffect(() => {
+    if (isEdicao && termoId) {
+      carregarTermo();
+    }
+  }, [isEdicao, termoId]);
+
+  const carregarTermo = async () => {
+    try {
+      setCarregandoTermo(true);
+      setErrosValidacao([]);
+      
+      const termo = await buscarTermoPorId(termoId!);
+      
+      if (!termo) {
+        setErrosValidacao(['Termo não encontrado']);
+        return;
+      }
+
+      // Preencher formulário com os dados do termo
+      setTipo(termo.tipo);
+      setVersao(termo.versao);
+      setTitulo(termo.titulo);
+      setDescricao(termo.resumo || ''); // Backend usa "resumo", frontend "descricao"
+      setConteudoHtml(termo.conteudo_html || '');
+      setObrigatorio(termo.obrigatorio);
+      setAtivo(termo.ativo);
+      setRolesAplicaveis(termo.roles_aplicaveis || []);
+      setPdfUrl(termo.pdf_url || '');
+      
+    } catch (err) {
+      console.error('Erro ao carregar termo:', err);
+      setErrosValidacao([err instanceof Error ? err.message : 'Erro ao carregar termo']);
+    } finally {
+      setCarregandoTermo(false);
+    }
+  };
 
   /**
    * Validar formulário
@@ -77,7 +121,8 @@ export default function FormularioTermoPage() {
       erros.push('A versão é obrigatória');
     }
 
-    if (!pdfFile && !pdfUrl) {
+    // No modo de edição, permite não enviar novo PDF se já existe um
+    if (!isEdicao && !pdfFile && !pdfUrl) {
       erros.push('É necessário fazer upload de um PDF ou fornecer uma URL');
     }
 
@@ -120,23 +165,41 @@ export default function FormularioTermoPage() {
         return;
       }
 
-      // Preparar dados
-      const novoTermo: NovoTermo = {
-        tipo,
-        versao,
-        titulo,
-        pdf_url: urlPDF,
-        descricao: descricao || undefined,
-        conteudo_html: conteudoHtml || undefined,
-        obrigatorio,
-        roles_aplicaveis: rolesAplicaveis.length > 0 ? rolesAplicaveis : [],
-        ativo,
-      };
+      if (isEdicao) {
+        // Modo de edição - usar função atualizar
+        const dadosAtualizacao = {
+          titulo,
+          descricao, // Será mapeado para "resumo" no service
+          conteudo_html: conteudoHtml || undefined,
+          pdf_url: urlPDF,
+          obrigatorio,
+          ativo,
+        };
 
-      const termoCriado = await criar(novoTermo);
-      
-      if (termoCriado) {
-        navigate('/admin/termos');
+        const termoAtualizado = await atualizar(termoId!, dadosAtualizacao);
+        
+        if (termoAtualizado) {
+          navigate(`/admin/termos/${termoId}`);
+        }
+      } else {
+        // Modo de criação - usar função criar
+        const novoTermo: NovoTermo = {
+          tipo,
+          versao,
+          titulo,
+          pdf_url: urlPDF,
+          descricao: descricao || undefined,
+          conteudo_html: conteudoHtml || undefined,
+          obrigatorio,
+          roles_aplicaveis: rolesAplicaveis.length > 0 ? rolesAplicaveis : [],
+          ativo,
+        };
+
+        const termoCriado = await criar(novoTermo);
+        
+        if (termoCriado) {
+          navigate('/admin/termos');
+        }
       }
     } catch (err) {
       console.error('Erro ao salvar termo:', err);
@@ -185,6 +248,14 @@ export default function FormularioTermoPage() {
         </div>
       </div>
 
+      {/* Loading do termo */}
+      {carregandoTermo && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-lg">Carregando termo...</span>
+        </div>
+      )}
+
       {/* Erros de validação */}
       {errosValidacao.length > 0 && (
         <Alert variant="destructive" className="mb-6">
@@ -207,7 +278,9 @@ export default function FormularioTermoPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Formulário - oculto durante carregamento */}
+      {!carregandoTermo && (
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informações Básicas */}
         <Card>
           <CardHeader>
@@ -431,6 +504,7 @@ export default function FormularioTermoPage() {
           </Button>
         </div>
       </form>
+      )}
     </div>
   );
 }

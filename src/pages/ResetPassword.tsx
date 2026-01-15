@@ -115,15 +115,15 @@ export default function ResetPassword() {
 
       if (error) throw error;toast({
         title: 'Senha definida com sucesso!',
-        description: 'Você será redirecionado para o login.',
+        description: 'Você será redirecionado para a página de login.',
       });
 
       // Fazer logout após trocar a senha para garantir que o usuário faça login novamente
       await supabase.auth.signOut();
 
-      // Redirecionar para o login após sucesso
+      // Redirecionar para a página de autenticação após sucesso
       setTimeout(() => {
-        navigate('/login');
+        navigate('/auth');
       }, 2000);
     } catch (error: any) {
       console.error('Erro ao definir senha:', error);

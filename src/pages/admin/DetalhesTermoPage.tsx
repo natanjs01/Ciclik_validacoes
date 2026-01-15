@@ -9,6 +9,7 @@ import { buscarTermoPorId } from '@/services/termosUsoService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ArrowLeft, 
@@ -250,18 +251,23 @@ export default function DetalhesTermoPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {termo.roles_aplicaveis && termo.roles_aplicaveis.length > 0 ? (
-                termo.roles_aplicaveis.map((role) => (
-                  <Badge key={role} variant="secondary">
-                    {LABELS_ROLES[role]}
-                  </Badge>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Nenhum role específico
-                </p>
-              )}
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">
+                Perfis Selecionados
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {termo.roles_aplicaveis && termo.roles_aplicaveis.length > 0 ? (
+                  termo.roles_aplicaveis.map((role) => (
+                    <Badge key={role} variant="secondary" className="text-sm">
+                      {LABELS_ROLES[role]}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aplicável para todos os usuários
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -335,13 +341,5 @@ export default function DetalhesTermoPage() {
         </Card>
       )}
     </div>
-  );
-}
-
-function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <label className={`block text-sm font-medium mb-1 ${className}`}>
-      {children}
-    </label>
   );
 }

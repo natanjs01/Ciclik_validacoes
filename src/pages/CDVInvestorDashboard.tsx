@@ -138,7 +138,7 @@ const CDVInvestorDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img 
-                src={getAssetPath('ciclik-logo-full.png')} 
+                src={getAssetPath('logo-with-slogan.png')} 
                 alt="Ciclik - Recicle e Ganhe" 
                 className="h-16 md:h-20 object-contain"
               />
@@ -148,10 +148,6 @@ const CDVInvestorDashboard = () => {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/cdv")} className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Voltar</span>
-              </Button>
               <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sair</span>
@@ -357,7 +353,7 @@ const CDVInvestorDashboard = () => {
 
         {/* Footer com marca */}
         <footer className="mt-16 pt-8 border-t border-border/50 text-center">
-          <img src={getAssetPath('ciclik-logo.png')} alt="Ciclik" className="h-8 mx-auto mb-3 opacity-60" />
+          <img src={getAssetPath('logo-with-slogan.png')} alt="Ciclik" className="h-8 mx-auto mb-3 opacity-60" />
           <p className="text-xs text-muted-foreground font-body">
             © {new Date().getFullYear()} Ciclik - Digital Verde. Todos os direitos reservados.
           </p>

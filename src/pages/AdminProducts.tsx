@@ -570,8 +570,12 @@ export default function AdminProducts() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate('/admin/products/report')}>
+                <DropdownMenuItem onClick={() => navigate('/admin/products/analysis')}>
                   <AlertTriangle className="mr-2 h-4 w-4" />
+                  Produtos em Análise
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin/products/report')}>
+                  <Package className="mr-2 h-4 w-4" />
                   Relatório Produtos
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsImportDialogOpen(true)}>
@@ -677,7 +681,7 @@ export default function AdminProducts() {
                     <Label htmlFor="reciclavel">Reciclável</Label>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="percentual">
                       Percentual de Reciclabilidade: {formData.percentual_reciclabilidade}%
                     </Label>
@@ -689,6 +693,30 @@ export default function AdminProducts() {
                       value={[formData.percentual_reciclabilidade]}
                       onValueChange={(value) => setFormData({...formData, percentual_reciclabilidade: value[0]})}
                     />
+                    {/* Barra de progresso visual */}
+                    <div className="space-y-1">
+                      <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-300 ${
+                            formData.percentual_reciclabilidade >= 80 ? 'bg-green-500' :
+                            formData.percentual_reciclabilidade >= 50 ? 'bg-yellow-500' :
+                            formData.percentual_reciclabilidade >= 25 ? 'bg-orange-500' :
+                            'bg-red-500'
+                          }`}
+                          style={{ width: `${formData.percentual_reciclabilidade}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>0%</span>
+                        <span className="font-medium">
+                          {formData.percentual_reciclabilidade >= 80 ? '🟢 Excelente' :
+                           formData.percentual_reciclabilidade >= 50 ? '🟡 Bom' :
+                           formData.percentual_reciclabilidade >= 25 ? '🟠 Regular' :
+                           '🔴 Baixo'}
+                        </span>
+                        <span>100%</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -763,7 +791,7 @@ export default function AdminProducts() {
                         <Label>Reciclável</Label>
                       </div>
 
-                      <div className="col-span-2 space-y-2">
+                      <div className="col-span-2 space-y-3">
                         <Label>
                           Percentual de Reciclabilidade: {currentEmbalagem.percentual_reciclabilidade}%
                         </Label>
@@ -777,6 +805,30 @@ export default function AdminProducts() {
                             percentual_reciclabilidade: value[0]
                           })}
                         />
+                        {/* Barra de progresso visual */}
+                        <div className="space-y-1">
+                          <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full transition-all duration-300 ${
+                                currentEmbalagem.percentual_reciclabilidade >= 80 ? 'bg-green-500' :
+                                currentEmbalagem.percentual_reciclabilidade >= 50 ? 'bg-yellow-500' :
+                                currentEmbalagem.percentual_reciclabilidade >= 25 ? 'bg-orange-500' :
+                                'bg-red-500'
+                              }`}
+                              style={{ width: `${currentEmbalagem.percentual_reciclabilidade}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>0%</span>
+                            <span className="font-medium">
+                              {currentEmbalagem.percentual_reciclabilidade >= 80 ? '🟢 Excelente' :
+                               currentEmbalagem.percentual_reciclabilidade >= 50 ? '🟡 Bom' :
+                               currentEmbalagem.percentual_reciclabilidade >= 25 ? '🟠 Regular' :
+                               '🔴 Baixo'}
+                            </span>
+                            <span>100%</span>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="col-span-2 space-y-2">

@@ -57,6 +57,7 @@ import CDVLanding from "./pages/CDVLanding";
 import CDVLandingInvestor from "./pages/CDVLandingInvestor";
 import CDVInvestorDashboard from "./pages/CDVInvestorDashboard";
 import CDVCertificate from "./pages/CDVCertificate";
+import CDVCertificatePreview from "./pages/CDVCertificatePreview";
 import CDVValidate from "./pages/CDVValidate";
 import AdminCDV from "./pages/AdminCDV";
 import AdminRotasColeta from "./pages/AdminRotasColeta";
@@ -191,6 +192,7 @@ function AppRoutes() {
       <Route path="/apresentacao-investidor" element={<InvestorPresentation />} />
       <Route path="/cdv/investor" element={<ProtectedRoute allowedRoles={['investidor']}><CDVInvestorDashboard /></ProtectedRoute>} />
       <Route path="/cdv/certificate/:id" element={<ProtectedRoute allowedRoles={['investidor']}><CDVCertificate /></ProtectedRoute>} />
+      <Route path="/cdv/certificate-preview" element={<CDVCertificatePreview />} />
       <Route path="/cdv/validate/:id" element={<CDVValidate />} />
       
       {/* Test Routes */}

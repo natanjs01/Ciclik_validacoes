@@ -10,7 +10,8 @@ import { ChevronLeft, ChevronRight, Download, Loader2, AlertCircle } from 'lucid
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Configurar worker do react-pdf LOCAL (evita problemas de CORS com service worker)
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Usa import.meta.env.BASE_URL para funcionar corretamente no GitHub Pages
+pdfjs.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.min.mjs`;
 
 interface TermosPDFViewerProps {
   pdfUrl: string;

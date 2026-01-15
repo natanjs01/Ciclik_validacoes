@@ -129,11 +129,11 @@ export function TermosModal({
   return (
     <Dialog open={true} modal>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] flex flex-col"
+        className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()} // Bloqueia fechar clicando fora
         onEscapeKeyDown={(e) => e.preventDefault()} // Bloqueia ESC
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Termos e Políticas - Leitura Obrigatória
@@ -144,84 +144,88 @@ export function TermosModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Conteúdo do termo atual */}
-        <div className="flex-1 overflow-hidden">
-          <div className="mb-4 p-4 bg-muted rounded-lg">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">{termoAtual.titulo}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {termoAtual.tipoLabel} • Versão {termoAtual.versao}
-                  {termoAtual.obrigatorio && (
-                    <span className="ml-2 text-destructive font-medium">
-                      * Obrigatório
-                    </span>
-                  )}
-                </p>
-                {termoAtual.resumo && (
-                  <p className="text-sm mt-2 text-foreground/80">
-                    {termoAtual.resumo}
+        {/* Conteúdo do termo atual - COM SCROLL */}
+        <ScrollArea className="flex-1 overflow-y-auto pr-6">
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{termoAtual.titulo}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {termoAtual.tipoLabel} • Versão {termoAtual.versao}
+                    {termoAtual.obrigatorio && (
+                      <span className="ml-2 text-destructive font-medium">
+                        * Obrigatório
+                      </span>
+                    )}
                   </p>
+                  {termoAtual.resumo && (
+                    <p className="text-sm mt-2 text-foreground/80">
+                      {termoAtual.resumo}
+                    </p>
+                  )}
+                </div>
+
+                {/* Botão visualizar PDF */}
+                {termoAtual.pdf_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMostrarPDF(!mostrarPDF)}
+                  >
+                    {mostrarPDF ? 'Ocultar' : 'Ver'} PDF
+                  </Button>
                 )}
               </div>
+            </div>
 
-              {/* Botão visualizar PDF */}
-              {termoAtual.pdf_url && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMostrarPDF(!mostrarPDF)}
-                >
-                  {mostrarPDF ? 'Ocultar' : 'Ver'} PDF
-                </Button>
+            {/* Conteúdo do termo - SEM ScrollArea interno */}
+            <div>
+              {mostrarPDF && termoAtual.pdf_url ? (
+                <TermosPDFViewer
+                  pdfUrl={termoAtual.pdf_url}
+                  titulo={termoAtual.titulo}
+                />
+              ) : (
+                <div className="border rounded-lg">
+                  <TermosContent termo={termoAtual} />
+                </div>
               )}
             </div>
+
+            {/* Checkbox de aceite - DENTRO DO SCROLL */}
+            <div className="p-4 border rounded-lg bg-card">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <Checkbox
+                  checked={termoAtualAceito}
+                  onCheckedChange={(checked) =>
+                    handleToggleAceite(termoAtual.id, checked === true)
+                  }
+                  disabled={loading}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <p className="font-medium">
+                    {termoAtual.obrigatorio ? (
+                      <>Li e aceito {termoAtual.tipoLabel}</>
+                    ) : (
+                      <>Li e aceito {termoAtual.tipoLabel} (opcional)</>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {termoAtual.obrigatorio
+                      ? 'É necessário aceitar este termo para continuar'
+                      : 'Este termo é opcional, mas recomendado'}
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
+        </ScrollArea>
 
-          {/* Conteúdo do termo */}
-          <ScrollArea className="h-[400px] border rounded-lg">
-            {mostrarPDF && termoAtual.pdf_url ? (
-              <TermosPDFViewer
-                pdfUrl={termoAtual.pdf_url}
-                titulo={termoAtual.titulo}
-              />
-            ) : (
-              <TermosContent termo={termoAtual} />
-            )}
-          </ScrollArea>
-
-          {/* Checkbox de aceite */}
-          <div className="mt-4 p-4 border rounded-lg bg-card">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <Checkbox
-                checked={termoAtualAceito}
-                onCheckedChange={(checked) =>
-                  handleToggleAceite(termoAtual.id, checked === true)
-                }
-                disabled={loading}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <p className="font-medium">
-                  {termoAtual.obrigatorio ? (
-                    <>Li e aceito {termoAtual.tipoLabel}</>
-                  ) : (
-                    <>Li e aceito {termoAtual.tipoLabel} (opcional)</>
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {termoAtual.obrigatorio
-                    ? 'É necessário aceitar este termo para continuar'
-                    : 'Este termo é opcional, mas recomendado'}
-                </p>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* Mensagem de erro */}
+        {/* Mensagem de erro - FORA DO SCROLL */}
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="flex-shrink-0">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -229,7 +233,7 @@ export function TermosModal({
 
         {/* Progresso */}
         {totalTermos > 1 && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
             <div className="flex-1 bg-muted rounded-full h-2">
               <div
                 className="bg-primary rounded-full h-2 transition-all"
@@ -244,7 +248,7 @@ export function TermosModal({
           </div>
         )}
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 flex-shrink-0">
           {/* Botão Logout */}
           <Button
             variant="ghost"

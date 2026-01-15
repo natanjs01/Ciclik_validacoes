@@ -100,9 +100,9 @@ export function TermosPDFViewer({
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full max-h-[600px] flex flex-col overflow-hidden border rounded-lg">
       {/* Header com controles */}
-      <div className="flex items-center justify-between gap-4 p-4 border-b bg-muted/50">
+      <div className="flex items-center justify-between gap-4 p-4 border-b bg-muted/50 flex-shrink-0">
         {/* Navegação de páginas */}
         <div className="flex items-center gap-2">
           <Button
@@ -147,47 +147,49 @@ export function TermosPDFViewer({
       </div>
 
       {/* Conteúdo do PDF */}
-      <div className="flex-1 overflow-auto bg-muted/20 flex items-center justify-center p-4">
-        {error ? (
-          <Alert variant="destructive" className="max-w-md">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : (
-          <Document
-            file={pdfUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">
-                  Carregando PDF...
-                </p>
-              </div>
-            }
-            error={
-              <Alert variant="destructive" className="max-w-md">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Erro ao carregar o PDF. Verifique sua conexão.
-                </AlertDescription>
-              </Alert>
-            }
-          >
-            <Page
-              pageNumber={pageNumber}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              className="shadow-lg"
-              width={Math.min(window.innerWidth * 0.8, 800)}
-            />
-          </Document>
-        )}
+      <div className="flex-1 min-h-0 overflow-auto bg-muted/20 p-4">
+        <div className="flex flex-col items-center">
+          {error ? (
+            <Alert variant="destructive" className="max-w-md">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : (
+            <Document
+              file={pdfUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              loading={
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Carregando PDF...
+                  </p>
+                </div>
+              }
+              error={
+                <Alert variant="destructive" className="max-w-md">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Erro ao carregar o PDF. Verifique sua conexão.
+                  </AlertDescription>
+                </Alert>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="shadow-lg"
+                width={Math.min(window.innerWidth * 0.8, 800)}
+              />
+            </Document>
+          )}
+        </div>
       </div>
 
       {/* Footer com info */}
-      <div className="p-2 border-t bg-muted/50 text-xs text-muted-foreground text-center">
+      <div className="p-2 border-t bg-muted/50 text-xs text-muted-foreground text-center flex-shrink-0">
         {titulo}
       </div>
     </div>

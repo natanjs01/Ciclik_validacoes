@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEstatisticasTermo, useRelatorioAceites } from '@/hooks/useAdminTermos';
+import { useEstatisticasTermo } from '@/hooks/useAdminTermos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,13 +25,45 @@ export default function RelatorioAceitesPage() {
   
   // Hook para estatísticas e aceites do termo específico
   const { stats, aceites, loading, error, refetch } = useEstatisticasTermo(termoId || null);
-  
-  // Hook para exportação de relatórios
-  const { exportarCSV } = useRelatorioAceites();
 
   const handleExportar = () => {
-    // Usar o hook de exportação CSV
-    exportarCSV();
+    if (aceites.length === 0) {
+      console.warn('Nenhum dado para exportar');
+      return;
+    }
+
+    // Cabeçalhos do CSV
+    const headers = [
+      'Nome',
+      'Email',
+      'Versão',
+      'Data do Aceite',
+      'IP'
+    ];
+
+    // Dados
+    const rows = aceites.map(aceite => [
+      aceite.profiles?.nome || 'Nome não disponível',
+      aceite.profiles?.email || 'N/A',
+      aceite.versao_aceita,
+      formatarData(aceite.aceito_em),
+      aceite.ip_aceite || 'N/A'
+    ]);
+
+    // Montar CSV
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `relatorio-aceites-termo-${termoId}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    console.log('✅ CSV exportado');
   };
 
   const formatarData = (data: string) => {
@@ -136,7 +168,16 @@ export default function RelatorioAceitesPage() {
               <TableBody>
                 {aceites.map((aceite) => (
                   <TableRow key={aceite.id}>
-                    <TableCell>{aceite.user_id}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {aceite.profiles?.nome || 'Nome não disponível'}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {aceite.profiles?.email || aceite.user_id}
+                        </span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{aceite.versao_aceita}</Badge>
                     </TableCell>

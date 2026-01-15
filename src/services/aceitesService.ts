@@ -271,7 +271,7 @@ export async function buscarAceitesTermo(
 
     // Buscar aceites com contagem
     const inicio = (pagina - 1) * porPagina;
-    const { data, error, count } = await supabase
+    const { data: aceitesData, error, count } = await supabase
       .from('aceites_termos')
       .select('*', { count: 'exact' })
       .eq('termo_id', termoId)
@@ -283,8 +283,41 @@ export async function buscarAceitesTermo(
       throw new Error('Não foi possível carregar os aceites');
     }
 
+    // Se não há aceites, retornar vazio
+    if (!aceitesData || aceitesData.length === 0) {
+      return {
+        aceites: [],
+        total: count || 0,
+        pagina,
+        totalPaginas: 0
+      };
+    }
+
+    // Buscar informações dos usuários
+    const userIds = aceitesData.map(a => a.user_id);
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, nome, email')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Erro ao buscar profiles:', profilesError);
+      // Continuar mesmo sem profiles
+    }
+
+    // Mapear profiles por ID para facilitar lookup
+    const profilesMap = new Map(
+      (profilesData || []).map(p => [p.id, p])
+    );
+
+    // Combinar aceites com profiles
+    const aceitesComProfiles = aceitesData.map(aceite => ({
+      ...aceite,
+      profiles: profilesMap.get(aceite.user_id) || null
+    }));
+
     return {
-      aceites: data || [],
+      aceites: aceitesComProfiles,
       total: count || 0,
       pagina,
       totalPaginas: Math.ceil((count || 0) / porPagina)
@@ -390,16 +423,16 @@ export async function gerarRelatorioAceites(
         versao_aceita,
         aceito_em,
         ip_aceite,
-        termos_uso!inner (
+        termos_uso!aceites_termos_termo_id_fkey (
           tipo,
           versao,
           titulo
         ),
-        profiles!inner (
+        profiles!aceites_termos_user_id_fkey (
           nome,
           email
         ),
-        user_roles!inner (
+        user_roles!user_roles_user_id_fkey (
           role
         )
       `);

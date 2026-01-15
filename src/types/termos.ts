@@ -76,6 +76,11 @@ export interface AceiteTermo {
   ip_aceite: string | null;
   user_agent: string | null;
   aceito_em: string;
+  // Dados do usuário (JOIN com profiles)
+  profiles?: {
+    nome: string;
+    email: string;
+  } | null;
 }
 
 // =====================================================

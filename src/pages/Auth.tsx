@@ -385,6 +385,11 @@ export default function Auth() {
               src={getAssetPath('ciclik-logo-full.png')}
               alt="Ciclik - Recicle e Ganhe" 
               className="h-24 w-auto object-contain"
+              onError={(e) => {
+                console.error('Erro ao carregar logo, tentando fallback...');
+                // Fallback para logo alternativa
+                e.currentTarget.src = getAssetPath('ciclik-logo.png');
+              }}
             />
           </div>
           <p className="text-center text-sm text-muted-foreground mt-4">

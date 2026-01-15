@@ -51,32 +51,34 @@ const CDVInvestorDashboard = () => {
   const fetchQuotas = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
 
-      const { data: investidor } = await supabase
+      // Remover .single() para evitar erro 400 e usar array
+      const { data: investidores, error: investidorError } = await supabase
         .from("cdv_investidores")
-        .select("id, primeiro_acesso, razao_social")
-        .eq("id_user", user.id)
-        .single();
+        .select("id, razao_social, status")
+        .eq("id_user", user.id);
 
-      if (!investidor) {
+      if (investidorError) {
+        throw investidorError;
+      }
+
+      if (!investidores || investidores.length === 0) {
         toast({
           title: "Erro",
-          description: "Investidor não encontrado",
+          description: "Investidor não encontrado. Entre em contato com o suporte.",
           variant: "destructive"
         });
         return;
       }
 
-      setInvestorName(investidor.razao_social || "");
+      // Pegar o primeiro investidor se houver múltiplos (não deveria acontecer)
+      const investidor = investidores[0];
 
-      // Marcar primeiro acesso se ainda não foi marcado
-      if (!investidor.primeiro_acesso) {
-        await supabase
-          .from("cdv_investidores")
-          .update({ primeiro_acesso: true, status: "ativo" })
-          .eq("id", investidor.id);
-      }
+      setInvestorName(investidor.razao_social || "");
 
       const { data, error } = await supabase
         .from("cdv_quotas")
@@ -89,7 +91,7 @@ const CDVInvestorDashboard = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao carregar quotas",
-        description: error.message,
+        description: error.message || "Ocorreu um erro desconhecido",
         variant: "destructive"
       });
     } finally {
@@ -137,8 +139,8 @@ const CDVInvestorDashboard = () => {
             <div className="flex items-center gap-4">
               <img 
                 src={getAssetPath('ciclik-logo-full.png')} 
-                alt="Ciclik" 
-                className="h-10 object-contain"
+                alt="Ciclik - Recicle e Ganhe" 
+                className="h-16 md:h-20 object-contain"
               />
               <div className="hidden md:block h-8 w-px bg-border/50" />
               <Badge variant="outline" className="hidden md:flex bg-primary/5 text-primary border-primary/20 font-display">

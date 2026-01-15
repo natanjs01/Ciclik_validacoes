@@ -207,7 +207,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <PWAInstallPrompt />
-      <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/Ciclik_validacoes' : '/'}>
+      <BrowserRouter 
+        basename={import.meta.env.MODE === 'production' ? '/Ciclik_validacoes' : '/'}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
         <AuthProvider>
           <NotificationProvider>
             <AppRoutes />

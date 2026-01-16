@@ -199,8 +199,6 @@ export default function AdminProductsAnalysis() {
   const [produtoComDadosAPI, setProdutoComDadosAPI] = useState<ProdutoEmAnalise | null>(null);
   
   // Contador de consultas API realizadas hoje
-  // TODO: Implementar busca real quando tabela log_consultas_api for criada
-  // Query: SELECT COUNT(*) FROM log_consultas_api WHERE DATE(timestamp) = CURRENT_DATE AND admin_id = auth.uid()
   const [consultasHoje, setConsultasHoje] = useState(0);
   
   const navigate = useNavigate();
@@ -208,7 +206,7 @@ export default function AdminProductsAnalysis() {
 
   useEffect(() => {
     loadProdutos();
-    // TODO: Adicionar loadConsultasHoje() quando implementar
+    loadConsultasHoje();
   }, []);
 
   const loadProdutos = async () => {
@@ -232,6 +230,23 @@ export default function AdminProductsAnalysis() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadConsultasHoje = async () => {
+    try {
+      // Chama função RPC que conta consultas do dia atual
+      const { data, error } = await supabase.rpc('contar_consultas_hoje');
+      
+      if (error) {
+        console.error('Erro ao carregar contador de consultas:', error);
+        return;
+      }
+      
+      setConsultasHoje(data || 0);
+    } catch (error) {
+      console.error('Erro ao carregar contador de consultas:', error);
+      // Em caso de erro, mantém 0 (não bloqueia a interface)
     }
   };
 
@@ -623,12 +638,36 @@ export default function AdminProductsAnalysis() {
           if (!produto) continue;
 
           // 2. Consultar API OnRender (usando mock por enquanto)
+          const inicioConsulta = Date.now();
           const dadosAPI = await consultarAPIMock(produto.ean_gtin);
+          const tempoResposta = Date.now() - inicioConsulta;
 
-          // 3. Atualizar produto com dados da API (simulado - será real depois)
+          // 3. Registrar consulta no log
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from('log_consultas_api').insert({
+                admin_id: user.id,
+                produto_id: produtoId,
+                ean_gtin: produto.ean_gtin,
+                sucesso: dadosAPI.encontrado,
+                tempo_resposta_ms: tempoResposta,
+                resposta_api: dadosAPI,
+                erro_mensagem: dadosAPI.encontrado ? null : dadosAPI.mensagem
+              });
+              
+              // Atualizar contador local
+              setConsultasHoje(prev => prev + 1);
+            }
+          } catch (logError) {
+            console.error('Erro ao registrar consulta no log:', logError);
+            // Não bloqueia o fluxo se falhar o log
+          }
+
+          // 4. Atualizar produto com dados da API (simulado - será real depois)
           // await atualizarProdutoComDadosAPI(produtoId, dadosAPI);
 
-          // 4. Decidir: cadastro automático ou revisão manual
+          // 5. Decidir: cadastro automático ou revisão manual
           if (validarDadosCompletos(dadosAPI)) {
             // CADASTRO AUTOMÁTICO
             // await cadastrarProdutoAutomatico(dadosAPI);

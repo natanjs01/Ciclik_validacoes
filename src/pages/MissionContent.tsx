@@ -34,22 +34,25 @@ export default function MissionContent() {
   }>>([]);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { canEarnPoints, MONTHLY_LIMIT } = useEducationMonthlyLimit();
 
   useEffect(() => {
-    loadMissionData();
-  }, [id]);
+    if (user) {
+      loadMissionData();
+    }
+  }, [id, user]);
 
   const loadMissionData = async () => {
-    const { data: missionData } = await supabase
+    const { data: missionData, error: missionError } = await supabase
       .from('missoes')
       .select('*')
       .eq('id', id)
       .single();
 
-    const { data: questionsData } = await supabase
+    const { data: questionsData, error: questionsError } = await supabase
       .from('questoes_missao')
       .select('*')
       .eq('id_missao', id)
@@ -57,12 +60,71 @@ export default function MissionContent() {
 
     if (missionData) setMission(missionData);
     if (questionsData) setQuestions(questionsData);
+
+    // Verificar se o usuário já completou esta missão
+    if (user) {
+      const { data: completedMissions, error: completedError } = await supabase
+        .from('missoes_usuarios')
+        .select('*')
+        .eq('id_usuario', user.id)
+        .eq('id_missao', id)
+        .eq('quiz_completo', true)
+        .gte('percentual_acerto', 80)
+        .order('data_conclusao', { ascending: false })
+        .limit(1);
+
+      // Se já completou com sucesso, ir direto para review
+      const completedMission = completedMissions && completedMissions.length > 0 ? completedMissions[0] : null;
+      
+      if (completedMission) {
+        setIsAlreadyCompleted(true); // Marcar como já completada
+        
+        const { data: savedAnswers, error: answersError } = await supabase
+          .from('respostas_quiz')
+          .select('*, questoes_missao(*)')
+          .eq('id_usuario', user.id)
+          .eq('id_missao', id);
+
+        if (savedAnswers && savedAnswers.length > 0) {
+          // Reconstruir o estado de review
+          const results = savedAnswers.map(answer => ({
+            question: answer.questoes_missao,
+            userAnswer: answer.resposta_usuario,
+            isCorrect: answer.correta,
+          }));
+
+          const correctCount = savedAnswers.filter(a => a.correta).length;
+          const percentualAcerto = (correctCount / savedAnswers.length) * 100;
+
+          setQuizResults(results);
+          setScore(percentualAcerto);
+          setEarnedPoints(missionData?.pontos || 0);
+          setCurrentStep('review');
+        }
+      }
+    }
   };
 
   const handleNextStep = () => {
     if (currentStep === 'video') {
+      // Se já completou, não pode fazer o quiz novamente
+      if (isAlreadyCompleted) {
+        toast({
+          title: 'Missão já completada! 🎉',
+          description: 'Você já completou esta missão e ganhou os pontos. Continue assistindo para revisar o conteúdo!',
+        });
+        return;
+      }
       setCurrentStep('quiz');
     }
+  };
+
+  const handleWatchVideoAgain = () => {
+    setCurrentStep('video');
+    toast({
+      title: 'Revendo conteúdo 📺',
+      description: 'Você pode assistir o vídeo quantas vezes quiser para revisar o conteúdo!',
+    });
   };
 
   const handleAnswer = (questionId: string, answer: string) => {
@@ -113,10 +175,21 @@ export default function MissionContent() {
     setCurrentStep('review');
 
     try {
-      // Salvar respostas do quiz
+      // Primeiro, deletar respostas antigas deste usuário para esta missão (se existirem)
+      const { error: deleteError } = await supabase
+        .from('respostas_quiz')
+        .delete()
+        .eq('id_usuario', user.id)
+        .eq('id_missao', mission.id);
+
+      if (deleteError) {
+        console.warn('Aviso ao limpar respostas antigas:', deleteError);
+      }
+
+      // Salvar novas respostas do quiz
       const { error: answersError } = await supabase
         .from('respostas_quiz')
-        .upsert(quizAnswers, { onConflict: 'id_usuario,id_questao' });
+        .insert(quizAnswers);
 
       if (answersError) throw answersError;
 
@@ -138,6 +211,7 @@ export default function MissionContent() {
               id_missao: mission.id,
               percentual_acerto: percentualAcerto,
               quiz_completo: true,
+              data_conclusao: new Date().toISOString(),
             });
 
           if (missionError) {
@@ -168,11 +242,38 @@ export default function MissionContent() {
               id_missao: mission.id,
               data_hora: new Date().toISOString(),
               descricao_origem: `Missão concluída - ${mission.titulo} (${duracaoMinutos} min)`,
-              processado: false
+              processado: true // Mudado para true pois vamos processar agora
             });
 
           if (impactoError) {
             console.error('Erro ao registrar educação no impacto_bruto:', impactoError);
+          } else {
+            // ✅ ATUALIZAÇÃO AUTOMÁTICA DO SALDO_PARCIAL
+            // Busca o saldo atual de educação
+            const { data: saldoAtual } = await supabase
+              .from('saldo_parcial')
+              .select('saldo')
+              .eq('tipo', 'educacao')
+              .single();
+
+            const novoSaldo = (saldoAtual?.saldo || 0) + duracaoHoras;
+
+            // Atualiza o saldo incrementando
+            const { error: saldoError } = await supabase
+              .from('saldo_parcial')
+              .upsert({
+                tipo: 'educacao',
+                saldo: novoSaldo,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'tipo'
+              });
+            
+            if (saldoError) {
+              console.error('Erro ao atualizar saldo_parcial:', saldoError);
+            } else {
+              console.log(`✅ Saldo educação atualizado: ${saldoAtual?.saldo || 0} → ${novoSaldo} (+${duracaoHoras} horas)`);
+            }
           }
 
           await refreshProfile();
@@ -204,13 +305,14 @@ export default function MissionContent() {
               id_missao: mission.id,
               percentual_acerto: percentualAcerto,
               quiz_completo: true,
+              data_conclusao: new Date().toISOString(),
             });
 
           // Ainda registra impacto para UIB
           const duracaoMinutos = mission.duracao_minutos || 10;
           const duracaoHoras = duracaoMinutos / 60;
           
-          await supabase
+          const { error: impactoError } = await supabase
             .from('impacto_bruto')
             .insert({
               tipo: 'educacao',
@@ -219,8 +321,35 @@ export default function MissionContent() {
               id_missao: mission.id,
               data_hora: new Date().toISOString(),
               descricao_origem: `Missão concluída (limite atingido) - ${mission.titulo} (${duracaoMinutos} min)`,
-              processado: false
+              processado: true // Mudado para true pois vamos processar agora
             });
+
+          if (!impactoError) {
+            // ✅ ATUALIZAÇÃO AUTOMÁTICA DO SALDO_PARCIAL (mesmo com limite atingido)
+            const { data: saldoAtual } = await supabase
+              .from('saldo_parcial')
+              .select('saldo')
+              .eq('tipo', 'educacao')
+              .single();
+
+            const novoSaldo = (saldoAtual?.saldo || 0) + duracaoHoras;
+
+            const { error: saldoError } = await supabase
+              .from('saldo_parcial')
+              .upsert({
+                tipo: 'educacao',
+                saldo: novoSaldo,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'tipo'
+              });
+            
+            if (saldoError) {
+              console.error('Erro ao atualizar saldo_parcial:', saldoError);
+            } else {
+              console.log(`✅ Saldo educação atualizado (limite): ${saldoAtual?.saldo || 0} → ${novoSaldo} (+${duracaoHoras} horas)`);
+            }
+          }
 
           toast({
             title: 'Limite mensal atingido! 📚',
@@ -266,6 +395,17 @@ export default function MissionContent() {
       <CiclikHeader showBackButton backTo="/missions" />
       
       <div className="mx-auto max-w-4xl p-4 md:p-8 space-y-6">
+
+        {/* Alerta de Missão Já Completada */}
+        {isAlreadyCompleted && currentStep === 'video' && (
+          <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+            <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              <strong>Missão já completada! 🎉</strong> Você já ganhou os pontos desta missão. 
+              Você pode assistir o vídeo quantas vezes quiser para revisar o conteúdo, mas não poderá refazer o quiz.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Alerta de Limite Mensal */}
         {limitReached && (
@@ -364,9 +504,23 @@ export default function MissionContent() {
                 )}
               </div>
               <div className="sticky bottom-0 bg-card pt-4 pb-2 -mx-6 px-6">
-                <Button onClick={handleNextStep} className="w-full" size="lg">
-                  Continuar para o Quiz
-                </Button>
+                {isAlreadyCompleted ? (
+                  <div className="space-y-2">
+                    <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription className="text-green-800 dark:text-green-200">
+                        Você já completou esta missão e ganhou os pontos! Continue assistindo para revisar.
+                      </AlertDescription>
+                    </Alert>
+                    <Button onClick={() => setCurrentStep('review')} className="w-full" size="lg">
+                      Ver Resultados do Quiz
+                    </Button>
+                  </div>
+                ) : (
+                  <Button onClick={handleNextStep} className="w-full" size="lg">
+                    Continuar para o Quiz
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -529,9 +683,14 @@ export default function MissionContent() {
 
                 <div className="flex gap-3 sticky bottom-0 bg-card pt-4 pb-4 -mx-6 px-6 border-t border-border">
                   {score >= 80 ? (
-                    <Button onClick={() => navigate('/missions')} className="flex-1" size="lg">
-                      Voltar para Missões
-                    </Button>
+                    <>
+                      <Button onClick={handleWatchVideoAgain} variant="outline" className="flex-1" size="lg">
+                        📺 Assistir Vídeo Novamente
+                      </Button>
+                      <Button onClick={() => navigate('/missions')} className="flex-1" size="lg">
+                        Voltar para Missões
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button onClick={() => navigate('/missions')} variant="outline" className="flex-1" size="lg">

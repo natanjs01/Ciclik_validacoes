@@ -322,9 +322,9 @@ export default function AdminProductsAnalysis() {
         return;
       }
 
-      // 1. Inserir produto em produto_ciclik
+      // 1. Inserir produto em produtos_ciclik
       const { data: novoProduto, error: errorProduto } = await supabase
-        .from('produto_ciclik')
+        .from('produtos_ciclik')
         .insert({
           gtin: formData.gtin,
           ncm: formData.ncm,
@@ -1463,9 +1463,12 @@ export default function AdminProductsAnalysis() {
               <div className="mt-4 p-4 bg-muted rounded-lg">
                 <p className="text-sm font-medium mb-2">Informações de Origem:</p>
                 <div className="text-xs space-y-1 text-muted-foreground">
-                  <p>• Detectado via: <Badge variant="outline" className="ml-1">
-                    {produtoParaCadastro.origem === 'qrcode' ? '🔲 QR Code' : '✏️ Manual'}
-                  </Badge></p>
+                  <div className="flex items-center gap-1">
+                    <span>• Detectado via:</span>
+                    <Badge variant="outline" className="ml-1">
+                      {produtoParaCadastro.origem === 'qrcode' ? '🔲 QR Code' : '✏️ Manual'}
+                    </Badge>
+                  </div>
                   <p>• Ocorrências: {produtoParaCadastro.quantidade_ocorrencias}x</p>
                   <p>• Primeira detecção: {new Date(produtoParaCadastro.data_primeira_deteccao).toLocaleString('pt-BR')}</p>
                 </div>

@@ -2,24 +2,36 @@
   "name": "Ciclik - Recicle e Ganhe",
   "short_name": "Ciclik",
   "description": "A plataforma de benefícios onde você recicla e todos ganham. Transforme seus resíduos em pontos e troque por produtos e serviços.",
-  "start_url": "/Ciclik_validacoes/?source=pwa",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#8CC63F",
   "orientation": "any",
-  "scope": "/Ciclik_validacoes/",
+  "scope": "/",
   "icons": [
     {
-      "src": "/Ciclik_validacoes/ciclik-desktop-192.png",
+      "src": "pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/Ciclik_validacoes/ciclik-desktop-512.png",
+      "src": "pwa-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["lifestyle", "utilities"],

@@ -49,14 +49,14 @@ interface EducacaoDetalhada {
 
 interface EmbalagemDetalhada {
   id: string;
-  data: string;
+  data_cadastro: string | null;
   gtin: string;
-  nome_produto: string;
-  tipo_embalagem: string | null;
-  reciclabilidade: number | null;
-  status: string;
-  id_cdv: string | null;
-  cdv_quotas: { numero_quota: string; cdv_projetos: { titulo: string } | null } | null;
+  ncm: string;
+  descricao: string;
+  tipo_embalagem: string;
+  reciclavel: boolean;
+  percentual_reciclabilidade: number;
+  peso_medio_gramas: number | null;
 }
 
 interface AdminCDVStockProps {
@@ -96,27 +96,75 @@ const AdminCDVStock = ({ onNavigateToReconciliation }: AdminCDVStockProps) => {
         .select("kg")
         .eq("status", "atribuido");
 
-      // Fetch educacao stats
-      const { data: educDisp } = await supabase
-        .from("estoque_educacao")
-        .select("minutos_assistidos")
-        .eq("status", "disponivel");
-      
-      const { data: educAtrib } = await supabase
-        .from("estoque_educacao")
-        .select("minutos_assistidos")
-        .eq("status", "atribuido");
+      // ✅ NOVO: Buscar educação do saldo_parcial (sistema automático)
+      const { data: saldoEducacao } = await supabase
+        .from("saldo_parcial")
+        .select("saldo")
+        .eq("tipo", "educacao")
+        .single();
 
-      // Fetch embalagens stats
-      const { data: embDisp } = await supabase
-        .from("estoque_embalagens")
-        .select("*")
-        .eq("status", "disponivel");
+      // Buscar detalhes de educação do impacto_bruto
+      const { data: educacaoDetail, error: educacaoError } = await supabase
+        .from("impacto_bruto")
+        .select("id, valor_bruto, data_hora, descricao_origem, processado, id_usuario, id_missao")
+        .eq("tipo", "educacao")
+        .order("data_hora", { ascending: false })
+        .limit(100);
+
+      console.log("📚 Registros de educação do impacto_bruto:", educacaoDetail);
+
+      if (educacaoError) {
+        console.error("Erro ao buscar educação:", educacaoError);
+      }
+
+      // ✅ Buscar nomes dos usuários separadamente
+      let usuariosMap: { [key: string]: string } = {};
+      if (educacaoDetail && educacaoDetail.length > 0) {
+        const userIds = [...new Set(educacaoDetail.map((e: any) => e.id_usuario).filter(Boolean))];
+        
+        console.log("🔍 IDs de usuários encontrados:", userIds);
+        
+        if (userIds.length > 0) {
+          // ✅ Para 1 ID, usar .eq() direto
+          let query;
+          if (userIds.length === 1) {
+            query = supabase
+              .from("profiles")
+              .select("id, nome")  // ✅ CORRIGIDO: usar 'nome' ao invés de 'nome_completo'
+              .eq("id", userIds[0]);
+          } else {
+            // Para múltiplos IDs, construir filtro OR manualmente
+            const orFilters = userIds.map(id => `id.eq.${id}`).join(',');
+            query = supabase
+              .from("profiles")
+              .select("id, nome")  // ✅ CORRIGIDO: usar 'nome' ao invés de 'nome_completo'
+              .or(orFilters);
+          }
+
+          const { data: usuarios, error: usuariosError } = await query;
+
+          console.log("👥 Resposta da query de usuários:", { usuarios, usuariosError });
+
+          if (usuarios) {
+            // Se for resultado único, transformar em array
+            const usuariosArray = Array.isArray(usuarios) ? usuarios : [usuarios];
+            usuariosMap = usuariosArray.reduce((acc, u) => {
+              acc[u.id] = u.nome;  // ✅ CORRIGIDO: usar 'nome' ao invés de 'nome_completo'
+              return acc;
+            }, {} as { [key: string]: string });
+            console.log("📋 Mapa de usuários criado:", usuariosMap);
+          }
+        }
+      }
+
+      // Fetch embalagens stats - contagem de produtos cadastrados
+      const { data: produtosCatalogados, count: totalProdutos } = await supabase
+        .from("produtos_ciclik")
+        .select("*", { count: 'exact' });
       
-      const { data: embAtrib } = await supabase
-        .from("estoque_embalagens")
-        .select("*")
-        .eq("status", "atribuido");
+      // Manter compatibilidade com sistema de atribuição futuro
+      const embDisp = produtosCatalogados || [];
+      const embAtrib: any[] = []; // Futuro: produtos já atribuídos a quotas
 
       // Fetch detailed records with CDV and project info
       const { data: residuosDetail } = await supabase
@@ -125,29 +173,40 @@ const AdminCDVStock = ({ onNavigateToReconciliation }: AdminCDVStockProps) => {
         .order("data_entrega", { ascending: false })
         .limit(100);
 
-      const { data: educacaoDetail } = await supabase
-        .from("estoque_educacao")
-        .select("*, profiles(nome), cdv_quotas(numero_quota, cdv_projetos(titulo))")
-        .order("data", { ascending: false })
-        .limit(100);
-
       const { data: embalagensDetail } = await supabase
-        .from("estoque_embalagens")
-        .select("*, cdv_quotas(numero_quota, cdv_projetos(titulo))")
-        .order("data", { ascending: false })
+        .from("produtos_ciclik")
+        .select("*")
+        .order("data_cadastro", { ascending: false })
         .limit(100);
 
+      // ✅ ATUALIZADO: Usar saldo_parcial para educação
+      const saldoHoras = Number(saldoEducacao?.saldo || 0);
+      
       setStats({
         residuos_disponiveis: residuosDisp?.reduce((sum, r) => sum + Number(r.kg), 0) || 0,
         residuos_atribuidos: residuosAtrib?.reduce((sum, r) => sum + Number(r.kg), 0) || 0,
-        educacao_disponivel: educDisp?.reduce((sum, e) => sum + Number(e.minutos_assistidos), 0) / 60 || 0,
-        educacao_atribuida: educAtrib?.reduce((sum, e) => sum + Number(e.minutos_assistidos), 0) / 60 || 0,
+        educacao_disponivel: saldoHoras, // ✅ Saldo disponível em horas
+        educacao_atribuida: 0, // Será calculado quando houver atribuições
         embalagens_disponiveis: embDisp?.length || 0,
         embalagens_atribuidas: embAtrib?.length || 0
       });
 
       setResiduosDetalhados(residuosDetail as ResiduoDetalhado[] || []);
-      setEducacaoDetalhada(educacaoDetail as EducacaoDetalhada[] || []);
+      
+      // ✅ Mapear impacto_bruto para o formato esperado com nomes reais
+      const educacaoMapeada = (educacaoDetail || []).map((e: any) => ({
+        id: e.id,
+        data: e.data_hora,
+        modulo: e.descricao_origem || 'Missão Educacional',
+        minutos_assistidos: Math.round(Number(e.valor_bruto) * 60),
+        status: e.processado ? 'disponivel' : 'em_geracao',
+        profiles: { nome: usuariosMap[e.id_usuario] || 'Usuário não encontrado' },
+        cdv_quotas: null,
+        id_usuario: e.id_usuario,
+        id_missao: e.id_missao
+      }));
+      
+      setEducacaoDetalhada(educacaoMapeada as any);
       setEmbalagensDetalhadas(embalagensDetail as EmbalagemDetalhada[] || []);
     } catch (error: any) {
       toast({
@@ -320,8 +379,10 @@ const AdminCDVStock = ({ onNavigateToReconciliation }: AdminCDVStockProps) => {
               </CardTitle>
               <CardDescription>
                 Visualização consolidada dos impactos acumulados no sistema
+                {/* ✅ Processamento automático - atualizado em tempo real quando usuários completam atividades */}
               </CardDescription>
             </div>
+            {/* BOTÃO REMOVIDO - Processamento agora é automático via MissionContent.tsx
             <Button 
               onClick={processarHistoricoCompleto}
               disabled={processandoHistorico}
@@ -330,6 +391,7 @@ const AdminCDVStock = ({ onNavigateToReconciliation }: AdminCDVStockProps) => {
             >
               {processandoHistorico ? "Processando..." : "🔄 Processar Histórico"}
             </Button>
+            */}
           </div>
         </CardHeader>
         <CardContent>
@@ -562,51 +624,43 @@ const AdminCDVStock = ({ onNavigateToReconciliation }: AdminCDVStockProps) => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data</TableHead>
+                      <TableHead>Data Cadastro</TableHead>
                       <TableHead>GTIN</TableHead>
-                      <TableHead>Produto</TableHead>
+                      <TableHead>NCM</TableHead>
+                      <TableHead>Descrição</TableHead>
                       <TableHead>Tipo Embalagem</TableHead>
+                      <TableHead>Reciclável</TableHead>
                       <TableHead>Reciclabilidade</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Quota CDV</TableHead>
-                      <TableHead>Projeto</TableHead>
+                      <TableHead>Peso (g)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {embalagensDetalhadas.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-muted-foreground">
-                          Nenhum registro de embalagem encontrado
+                          Nenhum produto cadastrado encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
                       embalagensDetalhadas.map((embalagem) => (
                         <TableRow key={embalagem.id}>
                           <TableCell className="font-medium">
-                            {formatDate(embalagem.data)}
+                            {embalagem.data_cadastro ? formatDate(embalagem.data_cadastro) : "-"}
                           </TableCell>
                           <TableCell>{embalagem.gtin}</TableCell>
-                          <TableCell>{embalagem.nome_produto}</TableCell>
+                          <TableCell>{embalagem.ncm}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{embalagem.descricao}</TableCell>
                           <TableCell>{embalagem.tipo_embalagem || "-"}</TableCell>
                           <TableCell>
-                            {embalagem.reciclabilidade !== null 
-                              ? `${formatNumber(Number(embalagem.reciclabilidade), 0)}%`
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={embalagem.status === "disponivel" ? "default" : "secondary"}>
-                              {embalagem.status === "disponivel" ? "Disponível" : "Atribuído"}
+                            <Badge variant={embalagem.reciclavel ? "default" : "secondary"}>
+                              {embalagem.reciclavel ? "Sim" : "Não"}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {embalagem.cdv_quotas?.numero_quota ? (
-                              <Badge variant="outline" className="text-xs">
-                                {embalagem.cdv_quotas.numero_quota}
-                              </Badge>
-                            ) : "-"}
+                            {formatNumber(embalagem.percentual_reciclabilidade, 0)}%
                           </TableCell>
-                          <TableCell className="max-w-[150px] truncate">
-                            {embalagem.cdv_quotas?.cdv_projetos?.titulo || "-"}
+                          <TableCell>
+                            {embalagem.peso_medio_gramas ? `${embalagem.peso_medio_gramas}g` : "-"}
                           </TableCell>
                         </TableRow>
                       ))

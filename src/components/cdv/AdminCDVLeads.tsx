@@ -111,17 +111,67 @@ const AdminCDVLeads = () => {
 
   const convertToInvestorMutation = useMutation({
     mutationFn: async (lead: CDVLead) => {
-      // Criar investidor
+      // Verificar se já existe um investidor com este email ou CNPJ válido
+      let existingCheck = null;
+      
+      // Se o lead tem email, verificar por email
+      if (lead.email && lead.email.trim() !== '') {
+        const { data: byEmail, error: emailCheckError } = await supabase
+          .from("cdv_investidores")
+          .select("id, razao_social, email")
+          .eq("email", lead.email.trim())
+          .maybeSingle();
+        
+        if (emailCheckError) throw emailCheckError;
+        if (byEmail) {
+          existingCheck = { field: 'email', value: lead.email, investor: byEmail };
+        }
+      }
+      
+      // Se o lead tem CNPJ válido (não é placeholder), verificar por CNPJ
+      if (!existingCheck && lead.empresa) {
+        // Extrair CNPJ se houver na empresa ou usar como está
+        const cnpjPattern = /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/;
+        const cnpjMatch = lead.empresa.match(cnpjPattern);
+        
+        if (cnpjMatch) {
+          const cnpj = cnpjMatch[0];
+          const { data: byCnpj, error: cnpjCheckError } = await supabase
+            .from("cdv_investidores")
+            .select("id, razao_social, cnpj")
+            .eq("cnpj", cnpj)
+            .maybeSingle();
+          
+          if (cnpjCheckError) throw cnpjCheckError;
+          if (byCnpj) {
+            existingCheck = { field: 'CNPJ', value: cnpj, investor: byCnpj };
+          }
+        }
+      }
+      
+      if (existingCheck) {
+        throw new Error(
+          `Já existe um investidor cadastrado:\n` +
+          `Empresa: ${existingCheck.investor.razao_social}\n` +
+          `${existingCheck.field}: ${existingCheck.value}`
+        );
+      }
+
+      // Gerar CNPJ único temporário se não houver um válido
+      // Formato: TEMP-{timestamp}-{random}
+      const tempCnpj = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Criar investidor com um UUID único para id_user (será substituído ao criar usuário auth)
       const { data: investidor, error: investorError } = await supabase
         .from("cdv_investidores")
         .insert({
           razao_social: lead.empresa,
-          cnpj: "00.000.000/0000-00", // Placeholder - admin deve atualizar
+          cnpj: tempCnpj, // CNPJ temporário único - admin deve atualizar
           nome_responsavel: lead.nome,
-          email: lead.email,
+          email: lead.email || `temp-${Date.now()}@aguardando-email.com`, // Email temporário se não houver
           telefone: lead.telefone,
-          id_user: (await supabase.auth.getUser()).data.user?.id, // Temporário
-          status: "ativo"
+          id_user: crypto.randomUUID(), // ID único temporário
+          status: "aguardando_quotas"
         })
         .select()
         .single();
@@ -144,10 +194,11 @@ const AdminCDVLeads = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cdv-leads"] });
       queryClient.invalidateQueries({ queryKey: ["cdv-investidores"] });
-      toast.success("Lead convertido para investidor!");
+      toast.success("Lead convertido para investidor com sucesso!");
     },
-    onError: () => {
-      toast.error("Erro ao converter lead");
+    onError: (error: any) => {
+      const errorMessage = error.message || "Erro ao converter lead";
+      toast.error(errorMessage);
     }
   });
 

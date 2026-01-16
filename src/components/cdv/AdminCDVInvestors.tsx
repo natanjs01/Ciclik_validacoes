@@ -187,8 +187,7 @@ const AdminCDVInvestors = () => {
           email: formData.email,
           nome_responsavel: formData.nome_responsavel,
           telefone: formData.telefone || null,
-          status: "aguardando_quotas",
-          convite_enviado: false
+          status: "aguardando_quotas"
         });
 
       if (investorError) throw investorError;

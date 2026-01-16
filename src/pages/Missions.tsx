@@ -68,14 +68,8 @@ export default function Missions() {
   };
 
   const handleMissionClick = (mission: any) => {
-    if (completedMissions.has(mission.id)) {
-      toast({
-        title: 'Missão já completada',
-        description: 'Você já completou esta missão!',
-      });
-      return;
-    }
-
+    // Sempre permite entrar na missão, mesmo se já completou
+    // Agora o usuário pode revisar o conteúdo
     navigate(`/mission/content/${mission.id}`);
   };
 
@@ -132,7 +126,7 @@ export default function Missions() {
               <Card 
                 key={mission.id}
                 className={`cursor-pointer transition-all hover:shadow-lg ${
-                  isCompleted ? 'opacity-60 bg-muted/50' : 'hover:scale-[1.02]'
+                  isCompleted ? 'border-success/20' : 'hover:scale-[1.02]'
                 }`}
                 onClick={() => handleMissionClick(mission)}
               >
@@ -153,20 +147,32 @@ export default function Missions() {
                           {mission.titulo}
                           {isCompleted && (
                             <Badge variant="outline" className="bg-success/10 text-success border-success">
-                              Concluída
+                              ✓ Completada - Clique para revisar
                             </Badge>
                           )}
                         </CardTitle>
                         <CardDescription className="mt-1">
                           {mission.descricao}
+                          {isCompleted && (
+                            <span className="block mt-2 text-xs text-success">
+                              📺 Você pode assistir o vídeo novamente para revisar o conteúdo
+                            </span>
+                          )}
                         </CardDescription>
                         <div className="flex items-center gap-2 mt-3">
                           <Badge variant="secondary">
                             {getMissionTypeName(mission.tipo)}
                           </Badge>
-                          <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-                            +{mission.pontos} pontos
-                          </Badge>
+                          {!isCompleted && (
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                              +{mission.pontos} pontos
+                            </Badge>
+                          )}
+                          {isCompleted && (
+                            <Badge className="bg-success/10 text-success hover:bg-success/20">
+                              Pontos já ganhos
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>

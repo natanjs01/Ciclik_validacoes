@@ -2226,17 +2226,20 @@ export type Database = {
       }
       saldo_parcial: {
         Row: {
-          saldo_decimal: number | null
+          id: string
+          saldo: number | null
           tipo: string
           updated_at: string | null
         }
         Insert: {
-          saldo_decimal?: number | null
+          id?: string
+          saldo?: number | null
           tipo: string
           updated_at?: string | null
         }
         Update: {
-          saldo_decimal?: number | null
+          id?: string
+          saldo?: number | null
           tipo?: string
           updated_at?: string | null
         }

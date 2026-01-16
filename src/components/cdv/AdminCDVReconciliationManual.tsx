@@ -118,7 +118,7 @@ const AdminCDVReconciliationManual = () => {
       const [resRes, eduRes, prodRes, projRes, pendentesRes] = await Promise.all([
         supabase.from('uib').select('id', { count: 'exact' }).eq('tipo', 'residuo').eq('status', 'disponivel'),
         supabase.from('uib').select('id', { count: 'exact' }).eq('tipo', 'educacao').eq('status', 'disponivel'),
-        supabase.from('uib').select('id', { count: 'exact' }).eq('tipo', 'produto').eq('status', 'disponivel'),
+        supabase.from('produtos_ciclik').select('id', { count: 'exact' }), // ✅ ALTERADO: Contagem direta de produtos cadastrados
         supabase.from('cdv_projetos').select('id, titulo').eq('status', 'ativo'),
         supabase.from('impacto_bruto').select('id', { count: 'exact' }).eq('processado', false)
       ]);
@@ -126,7 +126,7 @@ const AdminCDVReconciliationManual = () => {
       setUibStock({
         residuo: resRes.count || 0,
         educacao: eduRes.count || 0,
-        produto: prodRes.count || 0
+        produto: prodRes.count || 0 // ✅ Total de produtos cadastrados na tabela produtos_ciclik
       });
 
       setProjetos(projRes.data || []);

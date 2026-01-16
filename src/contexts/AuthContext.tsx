@@ -165,32 +165,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Primeiro limpar o estado local antes de tentar fazer logout no servidor
+      // Verificar se há uma sessão ativa antes de tentar fazer logout
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      // Limpar o estado local primeiro
       setUser(null);
       setSession(null);
       setUserRole(null);
       setProfile(null);
       
-      // Tentar fazer logout no servidor
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ [LOGOUT] Erro ao fazer logout no servidor:', error);
-        // Mesmo com erro no servidor, limpar o storage local
-        localStorage.removeItem('supabase.auth.token');
-        sessionStorage.clear();
+      // Apenas tentar logout no servidor se houver uma sessão ativa
+      if (currentSession) {
+        try {
+          // Usar scope local ao invés de global para evitar erros de permissão
+          const { error } = await supabase.auth.signOut({ scope: 'local' });
+          
+          if (error) {
+            console.warn('⚠️ [LOGOUT] Aviso ao fazer logout no servidor:', error.message);
+            // Não é crítico - continuar com limpeza local
+          }
+        } catch (signOutError) {
+          console.warn('⚠️ [LOGOUT] Aviso ao fazer logout no servidor:', signOutError);
+          // Não é crítico - continuar com limpeza local
+        }
       }
+      
+      // Limpar storage local de forma mais completa
+      localStorage.clear();
+      sessionStorage.clear();
       
       // Redirecionar para a página de login
       navigate('/auth', { replace: true });
     } catch (error) {
-      console.error('💥 [LOGOUT] Erro crítico ao fazer logout:', error);
+      console.error('💥 [LOGOUT] Erro ao processar logout:', error);
       // Forçar limpeza e redirecionamento mesmo com erro
       setUser(null);
       setSession(null);
       setUserRole(null);
       setProfile(null);
-      localStorage.removeItem('supabase.auth.token');
+      localStorage.clear();
       sessionStorage.clear();
       navigate('/auth', { replace: true });
     }

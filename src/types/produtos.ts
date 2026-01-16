@@ -5,11 +5,14 @@ export interface ProdutoCiclik {
   gtin: string;
   ncm: string;
   descricao: string;
+  marca?: string; // ✅ NOVO - Marca do produto (da API)
+  categoria_api?: string; // ✅ NOVO - Categoria original da API
   tipo_embalagem: TipoEmbalagem;
   reciclavel: boolean;
   percentual_reciclabilidade: number;
   peso_medio_gramas: number | null;
   observacoes?: string;
+  imagem_url?: string; // ✅ NOVO - URL da imagem do produto
   data_cadastro: string;
   data_atualizacao: string;
 }

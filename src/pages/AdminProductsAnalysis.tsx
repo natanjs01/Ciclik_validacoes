@@ -9,10 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TipoEmbalagem, TIPOS_EMBALAGEM_LABELS } from '@/types/produtos';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 
 interface ProdutoEmAnalise {
   id: string;
@@ -33,10 +37,121 @@ interface ProdutoEmAnalise {
   quantidade_ocorrencias: number;
   data_primeira_deteccao: string;
   data_ultima_deteccao: string;
-  status: 'pendente' | 'em_analise' | 'aprovado' | 'rejeitado';
+  status: 'pendente' | 'em_analise' | 'aprovado' | 'rejeitado' | 'acao_manual' | 'consultado';
   observacoes: string | null;
   created_at: string;
   updated_at: string;
+  dados_api?: any; // Dados retornados da API OnRender
+  consultado_em?: string; // Data da consulta
+}
+
+// Interface para resposta da API OnRender (placeholder)
+interface DadosAPIOnRender {
+  // Campos básicos
+  ean_gtin: string;
+  descricao?: string;
+  marca?: string;
+  fabricante?: string;
+  
+  // NCM (vem formatado: "17019900 - Outros")
+  ncm?: string;
+  ncm_descricao?: string; // Descrição do NCM
+  
+  // Preços (para análise/contexto)
+  preco_minimo?: number;
+  preco_maximo?: number;
+  preco_medio?: number;
+  
+  // Pesos (geralmente None, mas pode vir)
+  peso_liquido?: number;
+  peso_bruto?: number;
+  
+  // Categoria da API (texto livre - ex: "Açúcar Refinado")
+  categoria_api?: string;
+  
+  // Imagem oficial do produto
+  imagem_url?: string;
+  
+  // Campos que NÃO vem da API (preenchimento inteligente ou manual)
+  tipo_embalagem?: TipoEmbalagem;
+  peso_medio_gramas?: number;
+  reciclavel?: boolean;
+  percentual_reciclabilidade?: number;
+  observacoes?: string;
+  
+  // Controle
+  encontrado: boolean;
+  mensagem?: string;
+  
+  // Campos obsoletos (mantidos para retrocompatibilidade)
+  categoria?: string;
+  peso_gramas?: number;
+}
+
+// 🧠 FUNÇÃO INTELIGENTE: Inferir tipo de embalagem pela categoria/descrição da API
+function inferirTipoEmbalagem(dadosAPI: DadosAPIOnRender): TipoEmbalagem {
+  const texto = `${dadosAPI.categoria_api || ''} ${dadosAPI.descricao || ''}`.toLowerCase();
+  
+  // Vidro: cervejas, vinhos, sucos em garrafa de vidro
+  if (texto.includes('vidro') || texto.includes('garrafa') && (
+    texto.includes('cerveja') || texto.includes('vinho') || texto.includes('suco')
+  )) {
+    return 'vidro';
+  }
+  
+  // Alumínio: latas de bebida, conservas em lata
+  if (texto.includes('lata') || texto.includes('alumínio') || texto.includes('aluminio')) {
+    return 'aluminio';
+  }
+  
+  // Papel: caixas de leite, suco em caixa, papel de embrulho
+  if (texto.includes('caixa') || texto.includes('tetra pak') || texto.includes('embalagem longa vida')) {
+    return 'papel';
+  }
+  
+  // Papelão: caixas de papelão, embalagens secundárias
+  if (texto.includes('papelão') || texto.includes('papelao') || texto.includes('caixa de papelão')) {
+    return 'papelao';
+  }
+  
+  // Laminado: salgadinhos, biscoitos, café
+  if (texto.includes('salgadinho') || texto.includes('biscoito') || texto.includes('café') || 
+      texto.includes('snack') || texto.includes('chips')) {
+    return 'laminado';
+  }
+  
+  // Plástico: padrão para a maioria (garrafas PET, potes, sacolas)
+  return 'plastico';
+}
+
+// 🧠 FUNÇÃO INTELIGENTE: Estimar reciclabilidade pela embalagem
+function estimarReciclabilidade(tipoEmbalagem: TipoEmbalagem): { reciclavel: boolean; percentual: number } {
+  switch (tipoEmbalagem) {
+    case 'aluminio':
+      return { reciclavel: true, percentual: 100 }; // Alumínio é 100% reciclável
+    case 'vidro':
+      return { reciclavel: true, percentual: 100 }; // Vidro é 100% reciclável
+    case 'plastico':
+      return { reciclavel: true, percentual: 85 };  // PET/PEAD são altamente recicláveis
+    case 'papel':
+      return { reciclavel: true, percentual: 90 };  // Papel é altamente reciclável
+    case 'papelao':
+      return { reciclavel: true, percentual: 95 };  // Papelão é muito reciclável
+    case 'laminado':
+      return { reciclavel: false, percentual: 20 }; // Laminado é difícil de reciclar
+    case 'misto':
+      return { reciclavel: false, percentual: 30 }; // Misto é difícil de separar
+    default:
+      return { reciclavel: true, percentual: 70 };  // Padrão conservador
+  }
+}
+
+// 🧠 FUNÇÃO INTELIGENTE: Extrair apenas o código NCM (remove descrição)
+function extrairCodigoNCM(ncmCompleto?: string): string {
+  if (!ncmCompleto) return '';
+  // Exemplo: "17019900 - Outros" → "17019900"
+  const match = ncmCompleto.match(/^(\d{8})/);
+  return match ? match[1] : '';
 }
 
 export default function AdminProductsAnalysis() {
@@ -54,13 +169,13 @@ export default function AdminProductsAnalysis() {
   const [produtoParaCadastro, setProdutoParaCadastro] = useState<ProdutoEmAnalise | null>(null);
   const [formData, setFormData] = useState({
     gtin: '',
+    ncm: '',
     descricao: '',
-    categoria: '',
-    peso_gramas: '',
+    tipo_embalagem: 'plastico',
     reciclavel: true,
     percentual_reciclabilidade: 100,
-    pontos: '',
-    imagem_url: ''
+    peso_medio_gramas: null as number | null,
+    observacoes: '',
   });
   const [processing, setProcessing] = useState(false);
   
@@ -68,6 +183,21 @@ export default function AdminProductsAnalysis() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploadProcessing, setUploadProcessing] = useState(false);
+  
+  // Estados para consulta API OnRender
+  const [produtosSelecionados, setProdutosSelecionados] = useState<Set<string>>(new Set());
+  const [consultaAPIDialogOpen, setConsultaAPIDialogOpen] = useState(false);
+  const [consultandoAPI, setConsultandoAPI] = useState(false);
+  const [progressoConsulta, setProgressoConsulta] = useState(0);
+  const [resultadosConsulta, setResultadosConsulta] = useState<{
+    autoCadastrados: string[];
+    precisamRevisao: string[];
+    naoEncontrados: string[];
+    erros: Array<{ id: string; erro: string }>;
+  } | null>(null);
+  const [modalDadosAPIOpen, setModalDadosAPIOpen] = useState(false);
+  const [produtoComDadosAPI, setProdutoComDadosAPI] = useState<ProdutoEmAnalise | null>(null);
+  const [consultasHoje] = useState(15); // Mock: será calculado do backend depois
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -145,13 +275,13 @@ export default function AdminProductsAnalysis() {
     setProdutoParaCadastro(produto);
     setFormData({
       gtin: produto.ean_gtin,
+      ncm: '',
       descricao: produto.descricao,
-      categoria: '',
-      peso_gramas: '',
+      tipo_embalagem: 'plastico' as TipoEmbalagem,
       reciclavel: true,
       percentual_reciclabilidade: 100,
-      pontos: '',
-      imagem_url: ''
+      peso_medio_gramas: null,
+      observacoes: ''
     });
     setCadastroDialogOpen(true);
   };
@@ -162,10 +292,10 @@ export default function AdminProductsAnalysis() {
     setProcessing(true);
     try {
       // Validações básicas
-      if (!formData.gtin || !formData.descricao || !formData.categoria) {
+      if (!formData.gtin || !formData.ncm || !formData.descricao) {
         toast({
           title: 'Campos obrigatórios',
-          description: 'Preencha EAN, Descrição e Categoria.',
+          description: 'Preencha GTIN, NCM e Descrição.',
           variant: 'destructive',
         });
         setProcessing(false);
@@ -177,13 +307,16 @@ export default function AdminProductsAnalysis() {
         .from('produto_ciclik')
         .insert({
           gtin: formData.gtin,
+          ncm: formData.ncm,
           descricao: formData.descricao,
-          categoria: formData.categoria,
-          peso_gramas: formData.peso_gramas ? parseFloat(formData.peso_gramas) : null,
+          marca: produtoParaCadastro?.dados_api?.marca || null, // ✅ NOVO
+          categoria_api: produtoParaCadastro?.dados_api?.categoria_api || null, // ✅ NOVO
+          tipo_embalagem: formData.tipo_embalagem,
           reciclavel: formData.reciclavel,
           percentual_reciclabilidade: formData.percentual_reciclabilidade,
-          pontos: formData.pontos ? parseInt(formData.pontos) : 0,
-          imagem_url: formData.imagem_url || null,
+          peso_medio_gramas: formData.peso_medio_gramas,
+          observacoes: formData.observacoes || null,
+          imagem_url: produtoParaCadastro?.dados_api?.imagem_url || null, // ✅ NOVO
         })
         .select()
         .single();
@@ -212,13 +345,13 @@ export default function AdminProductsAnalysis() {
       setProdutoParaCadastro(null);
       setFormData({
         gtin: '',
+        ncm: '',
         descricao: '',
-        categoria: '',
-        peso_gramas: '',
+        tipo_embalagem: 'plastico' as TipoEmbalagem,
         reciclavel: true,
         percentual_reciclabilidade: 100,
-        pontos: '',
-        imagem_url: ''
+        peso_medio_gramas: null,
+        observacoes: ''
       });
     } catch (error: any) {
       console.error('Erro ao cadastrar produto:', error);
@@ -374,6 +507,180 @@ export default function AdminProductsAnalysis() {
     }
   };
 
+  // ==================== FUNÇÕES DE CONSULTA API ====================
+  
+  const toggleSelecionarProduto = (produtoId: string) => {
+    const novaSelecao = new Set(produtosSelecionados);
+    if (novaSelecao.has(produtoId)) {
+      novaSelecao.delete(produtoId);
+    } else {
+      novaSelecao.add(produtoId);
+    }
+    setProdutosSelecionados(novaSelecao);
+  };
+
+  const toggleSelecionarTodos = () => {
+    // Apenas produtos pendentes ou acao_manual podem ser consultados
+    const produtosConsultaveis = filteredProdutos.filter(p => 
+      p.status === 'pendente' || p.status === 'acao_manual'
+    );
+
+    if (produtosSelecionados.size === produtosConsultaveis.length) {
+      setProdutosSelecionados(new Set());
+    } else {
+      setProdutosSelecionados(new Set(produtosConsultaveis.map(p => p.id)));
+    }
+  };
+
+  const abrirModalConfirmacaoConsulta = () => {
+    if (produtosSelecionados.size === 0) {
+      toast({
+        title: 'Nenhum produto selecionado',
+        description: 'Selecione pelo menos um produto para consultar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (consultasHoje >= 100) {
+      toast({
+        title: 'Limite de consultas atingido',
+        description: 'Você já realizou 100 consultas hoje. Tente novamente amanhã.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setConsultaAPIDialogOpen(true);
+  };
+
+  const consultarAPIComCadastroAutomatico = async () => {
+    setConsultaAPIDialogOpen(false);
+    setConsultandoAPI(true);
+    setProgressoConsulta(0);
+    
+    const resultados = {
+      autoCadastrados: [] as string[],
+      precisamRevisao: [] as string[],
+      naoEncontrados: [] as string[],
+      erros: [] as Array<{ id: string; erro: string }>,
+    };
+
+    const produtosParaConsultar = Array.from(produtosSelecionados);
+    const total = produtosParaConsultar.length;
+
+    try {
+      for (let i = 0; i < produtosParaConsultar.length; i++) {
+        const produtoId = produtosParaConsultar[i];
+        
+        try {
+          // 1. Buscar produto do banco
+          const produto = produtos.find(p => p.id === produtoId);
+          if (!produto) continue;
+
+          // 2. Consultar API OnRender (usando mock por enquanto)
+          const dadosAPI = await consultarAPIMock(produto.ean_gtin);
+
+          // 3. Atualizar produto com dados da API (simulado - será real depois)
+          // await atualizarProdutoComDadosAPI(produtoId, dadosAPI);
+
+          // 4. Decidir: cadastro automático ou revisão manual
+          if (validarDadosCompletos(dadosAPI)) {
+            // CADASTRO AUTOMÁTICO
+            // await cadastrarProdutoAutomatico(dadosAPI);
+            // await handleUpdateStatus(produtoId, 'aprovado');
+            resultados.autoCadastrados.push(produto.descricao);
+          } else if (dadosAPI.encontrado) {
+            // DADOS INCOMPLETOS - revisão manual
+            // await handleUpdateStatus(produtoId, 'consultado');
+            resultados.precisamRevisao.push(produto.descricao);
+          } else {
+            // NÃO ENCONTRADO
+            // await handleUpdateStatus(produtoId, 'consultado');
+            resultados.naoEncontrados.push(produto.descricao);
+          }
+        } catch (error: any) {
+          resultados.erros.push({ 
+            id: produtoId, 
+            erro: error.message 
+          });
+        }
+
+        // Atualizar progresso
+        setProgressoConsulta(((i + 1) / total) * 100);
+      }
+
+      // Mostrar resultados
+      setResultadosConsulta(resultados);
+      
+      toast({
+        title: '✅ Consulta concluída!',
+        description: `${resultados.autoCadastrados.length} cadastrados, ${resultados.precisamRevisao.length} precisam revisão`,
+      });
+
+      // Limpar seleção e recarregar
+      setProdutosSelecionados(new Set());
+      await loadProdutos();
+
+    } catch (error: any) {
+      toast({
+        title: 'Erro na consulta',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setConsultandoAPI(false);
+      setProgressoConsulta(0);
+    }
+  };
+
+  const abrirModalDadosAPI = (produto: ProdutoEmAnalise) => {
+    setProdutoComDadosAPI(produto);
+    setModalDadosAPIOpen(true);
+  };
+
+  const preencherFormularioComDadosAPI = (produto: ProdutoEmAnalise) => {
+    if (!produto.dados_api) return;
+
+    const dados = produto.dados_api as DadosAPIOnRender;
+    
+    // 🧠 INTELIGÊNCIA: Inferir tipo de embalagem pela categoria
+    const tipoEmbalagem = dados.tipo_embalagem || inferirTipoEmbalagem(dados);
+    
+    // 🧠 INTELIGÊNCIA: Estimar reciclabilidade baseado no tipo de embalagem
+    const { reciclavel, percentual } = estimarReciclabilidade(tipoEmbalagem);
+    
+    // 🧠 INTELIGÊNCIA: Extrair apenas o código NCM (remove descrição)
+    const ncmLimpo = extrairCodigoNCM(dados.ncm);
+    
+    // Montar observações inteligentes
+    const observacoesAuto = [
+      dados.marca ? `Marca: ${dados.marca}` : null,
+      dados.categoria_api ? `Categoria: ${dados.categoria_api}` : null,
+      dados.preco_medio ? `Preço médio: R$ ${dados.preco_medio.toFixed(2)}` : null,
+    ].filter(Boolean).join(' | ');
+    
+    setFormData({
+      gtin: dados.ean_gtin || produto.ean_gtin,
+      ncm: ncmLimpo, // ✅ NCM limpo (apenas números)
+      descricao: dados.descricao || produto.descricao,
+      tipo_embalagem: tipoEmbalagem, // ✅ Inferido inteligentemente
+      reciclavel: dados.reciclavel ?? reciclavel, // ✅ Estimado por tipo
+      percentual_reciclabilidade: dados.percentual_reciclabilidade || percentual, // ✅ Estimado
+      peso_medio_gramas: dados.peso_medio_gramas || dados.peso_liquido || dados.peso_bruto || null,
+      observacoes: dados.observacoes || observacoesAuto // ✅ Observações automáticas
+    });
+    
+    setProdutoParaCadastro(produto);
+    setModalDadosAPIOpen(false);
+    setCadastroDialogOpen(true);
+
+    toast({
+      title: '🧠 Dados carregados com inteligência!',
+      description: `NCM: ${ncmLimpo} | Embalagem: ${TIPOS_EMBALAGEM_LABELS[tipoEmbalagem]} | Reciclabilidade: ${percentual}%`,
+    });
+  };
+
   const openDialog = (produto: ProdutoEmAnalise, action: 'aprovar' | 'rejeitar' | 'observacao') => {
     setSelectedProduct(produto);
     setActionType(action);
@@ -383,8 +690,8 @@ export default function AdminProductsAnalysis() {
 
   // Função para calcular a prioridade baseada no tempo (72 horas para produtos QR Code)
   const getPrioridade = (produto: ProdutoEmAnalise) => {
-    // Apenas produtos via QR Code tem prazo de 72 horas
-    if (produto.origem !== 'qrcode' || produto.status !== 'pendente') {
+    // Apenas produtos via QR Code tem prazo de 72 horas (independente do status)
+    if (produto.origem !== 'qrcode') {
       return null;
     }
 
@@ -477,7 +784,7 @@ export default function AdminProductsAnalysis() {
   };
 
   const filteredProdutos = produtos
-    .filter(produto => produto.status === 'pendente') // Mostra APENAS produtos pendentes
+    .filter(produto => produto.status === 'pendente' || produto.status === 'acao_manual') // Mostra produtos pendentes e ação manual
     .filter(produto => {
       const matchesSearch = 
         produto.ean_gtin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -488,12 +795,13 @@ export default function AdminProductsAnalysis() {
       return matchesSearch && matchesOrigem;
     });
 
-  // Estatísticas - Apenas produtos PENDENTES
-  const produtosPendentes = produtos.filter(p => p.status === 'pendente');
+  // Estatísticas - Apenas produtos PENDENTES e ACAO_MANUAL
+  const produtosPendentes = produtos.filter(p => p.status === 'pendente' || p.status === 'acao_manual');
   
   const stats = {
     total: produtosPendentes.length,
-    pendentes: produtosPendentes.length,
+    pendentes: produtosPendentes.filter(p => p.status === 'pendente').length,
+    acaoManual: produtosPendentes.filter(p => p.status === 'acao_manual').length,
     qrcode: produtosPendentes.filter(p => p.origem === 'qrcode').length,
     manual: produtosPendentes.filter(p => p.origem === 'manual').length,
     // Estatísticas de urgência (apenas QR Code pendentes)
@@ -517,6 +825,8 @@ export default function AdminProductsAnalysis() {
       em_analise: { variant: 'outline', label: 'Em Análise', className: 'bg-blue-50 text-blue-700 border-blue-200' },
       aprovado: { variant: 'outline', label: 'Aprovado', className: 'bg-green-50 text-green-700 border-green-200' },
       rejeitado: { variant: 'outline', label: 'Rejeitado', className: 'bg-red-50 text-red-700 border-red-200' },
+      acao_manual: { variant: 'outline', label: 'Ação Manual', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+      consultado: { variant: 'outline', label: 'Consultado', className: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
     };
 
     const config = variants[status] || variants.pendente;
@@ -572,6 +882,18 @@ export default function AdminProductsAnalysis() {
               Baixar Template CSV
             </Button>
             <Button
+              variant="outline"
+              onClick={abrirModalConfirmacaoConsulta}
+              disabled={produtosSelecionados.size === 0 || consultasHoje >= 100}
+              className="relative"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Consultar API
+              {produtosSelecionados.size > 0 && (
+                <Badge className="ml-2 bg-blue-600">{produtosSelecionados.size}</Badge>
+              )}
+            </Button>
+            <Button
               variant="default"
               onClick={() => setUploadDialogOpen(true)}
             >
@@ -579,6 +901,16 @@ export default function AdminProductsAnalysis() {
               Upload em Massa
             </Button>
           </div>
+        </div>
+
+        {/* Contador de Consultas API */}
+        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <Badge variant={consultasHoje >= 100 ? "destructive" : "outline"}>
+            {consultasHoje}/100 consultas hoje
+          </Badge>
+          {consultasHoje >= 100 && (
+            <span className="text-red-600">Limite diário atingido</span>
+          )}
         </div>
       </div>
 
@@ -676,6 +1008,22 @@ export default function AdminProductsAnalysis() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Card de Ação Manual */}
+        {stats.acaoManual > 0 && (
+          <Card className="col-span-1 border-orange-200 bg-orange-25">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-col">
+                <p className="text-xs text-orange-600 font-medium mb-1">Ação Manual</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold text-orange-600">{stats.acaoManual}</p>
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                </div>
+                <p className="text-[10px] text-orange-600/70 mt-1">Sem GTIN válido</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filtros */}
@@ -735,9 +1083,20 @@ export default function AdminProductsAnalysis() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={
+                          produtosSelecionados.size > 0 &&
+                          produtosSelecionados.size === 
+                            filteredProdutos.filter(p => p.status === 'pendente' || p.status === 'acao_manual').length
+                        }
+                        onCheckedChange={toggleSelecionarTodos}
+                      />
+                    </TableHead>
                     <TableHead className="w-[130px]">EAN/GTIN</TableHead>
                     <TableHead className="min-w-[250px]">Descrição</TableHead>
                     <TableHead className="w-[130px]">Origem</TableHead>
+                    <TableHead className="w-[130px]">Status</TableHead>
                     <TableHead className="w-[200px]">Urgência</TableHead>
                     <TableHead className="w-[110px]">Ocorrências</TableHead>
                     <TableHead className="w-[150px]">Última Detecção</TableHead>
@@ -745,15 +1104,29 @@ export default function AdminProductsAnalysis() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProdutos.map((produto) => (
+                  {filteredProdutos.map((produto) => {
+                    const podeConsultar = produto.status === 'pendente' || produto.status === 'acao_manual';
+                    
+                    return (
                     <TableRow key={produto.id} className={getRowClassName(produto)}>
+                      <TableCell>
+                        {podeConsultar ? (
+                          <Checkbox
+                            checked={produtosSelecionados.has(produto.id)}
+                            onCheckedChange={() => toggleSelecionarProduto(produto.id)}
+                          />
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="font-mono font-medium text-sm">
-                        {produto.ean_gtin}
+                        {produto.ean_gtin.startsWith('SEM_GTIN_') ? 'SEM GTIN' : produto.ean_gtin}
                       </TableCell>
                       <TableCell className="font-medium">
                         {produto.descricao}
                       </TableCell>
                       <TableCell>{getOrigemBadge(produto.origem)}</TableCell>
+                      <TableCell>{getStatusBadge(produto.status)}</TableCell>
                       <TableCell>{getUrgenciaBadge(produto)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -789,7 +1162,8 @@ export default function AdminProductsAnalysis() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -873,6 +1247,22 @@ export default function AdminProductsAnalysis() {
               />
             </div>
 
+            {/* NCM - OBRIGATÓRIO */}
+            <div className="space-y-2">
+              <Label htmlFor="ncm">NCM *</Label>
+              <Input
+                id="ncm"
+                value={formData.ncm}
+                onChange={(e) => setFormData({ ...formData, ncm: e.target.value })}
+                placeholder="12345678"
+                maxLength={8}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Nomenclatura Comum do Mercosul - obrigatório para nota fiscal
+              </p>
+            </div>
+
             {/* Descrição */}
             <div className="space-y-2">
               <Label htmlFor="descricao">Descrição do Produto *</Label>
@@ -884,58 +1274,54 @@ export default function AdminProductsAnalysis() {
               />
             </div>
 
-            {/* Categoria */}
+            {/* Tipo de Embalagem */}
             <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria *</Label>
-              <Select 
-                value={formData.categoria} 
-                onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+              <Label htmlFor="tipo_embalagem">Tipo de Embalagem *</Label>
+              <Select
+                value={formData.tipo_embalagem}
+                onValueChange={(value) => setFormData({ ...formData, tipo_embalagem: value as TipoEmbalagem })}
               >
-                <SelectTrigger id="categoria">
-                  <SelectValue placeholder="Selecione a categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="plastico">Plástico</SelectItem>
-                  <SelectItem value="papel">Papel/Papelão</SelectItem>
-                  <SelectItem value="vidro">Vidro</SelectItem>
-                  <SelectItem value="metal">Metal/Alumínio</SelectItem>
-                  <SelectItem value="eletronico">Eletrônico</SelectItem>
-                  <SelectItem value="organico">Orgânico</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Peso em Gramas */}
-            <div className="space-y-2">
-              <Label htmlFor="peso_gramas">Peso (gramas)</Label>
-              <Input
-                id="peso_gramas"
-                type="number"
-                value={formData.peso_gramas}
-                onChange={(e) => setFormData({ ...formData, peso_gramas: e.target.value })}
-                placeholder="Ex: 50"
-                min="0"
-                step="0.1"
-              />
-              <p className="text-xs text-muted-foreground">Peso aproximado da embalagem em gramas</p>
-            </div>
-
-            {/* Reciclável */}
-            <div className="space-y-2">
-              <Label htmlFor="reciclavel">Material Reciclável?</Label>
-              <Select 
-                value={formData.reciclavel ? 'sim' : 'nao'} 
-                onValueChange={(value) => setFormData({ ...formData, reciclavel: value === 'sim' })}
-              >
-                <SelectTrigger id="reciclavel">
+                <SelectTrigger id="tipo_embalagem">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sim">✅ Sim - Reciclável</SelectItem>
-                  <SelectItem value="nao">❌ Não - Não reciclável</SelectItem>
+                  {Object.entries(TIPOS_EMBALAGEM_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Peso Médio da Embalagem */}
+            <div className="space-y-2">
+              <Label htmlFor="peso_medio">Peso Médio da Embalagem (kg)</Label>
+              <Input
+                id="peso_medio"
+                type="number"
+                step="0.001"
+                min="0"
+                value={formData.peso_medio_gramas ? (formData.peso_medio_gramas / 1000).toFixed(3) : ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  peso_medio_gramas: e.target.value ? parseFloat(e.target.value) * 1000 : null
+                })}
+                placeholder="Ex: 0.250"
+              />
+              <p className="text-xs text-muted-foreground">
+                Peso médio da embalagem vazia em quilos (para cálculo de peso total)
+              </p>
+            </div>
+
+            {/* Reciclável */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="reciclavel"
+                checked={formData.reciclavel}
+                onCheckedChange={(checked) => setFormData({ ...formData, reciclavel: checked })}
+              />
+              <Label htmlFor="reciclavel">Material Reciclável</Label>
             </div>
 
             {/* Percentual de Reciclabilidade */}
@@ -977,31 +1363,16 @@ export default function AdminProductsAnalysis() {
               </div>
             </div>
 
-            {/* Pontos */}
+            {/* Observações */}
             <div className="space-y-2">
-              <Label htmlFor="pontos">Pontos de Recompensa</Label>
-              <Input
-                id="pontos"
-                type="number"
-                value={formData.pontos}
-                onChange={(e) => setFormData({ ...formData, pontos: e.target.value })}
-                placeholder="Ex: 10"
-                min="0"
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Informações adicionais sobre o produto"
+                rows={3}
               />
-              <p className="text-xs text-muted-foreground">Pontos que o usuário ganha ao reciclar este item</p>
-            </div>
-
-            {/* URL da Imagem */}
-            <div className="space-y-2">
-              <Label htmlFor="imagem_url">URL da Imagem (opcional)</Label>
-              <Input
-                id="imagem_url"
-                type="url"
-                value={formData.imagem_url}
-                onChange={(e) => setFormData({ ...formData, imagem_url: e.target.value })}
-                placeholder="https://exemplo.com/imagem.jpg"
-              />
-              <p className="text-xs text-muted-foreground">Link para imagem ilustrativa do produto</p>
             </div>
 
             {/* Preview das informações */}
@@ -1032,7 +1403,7 @@ export default function AdminProductsAnalysis() {
             </Button>
             <Button 
               onClick={handleSalvarProduto}
-              disabled={processing || !formData.gtin || !formData.descricao || !formData.categoria}
+              disabled={processing || !formData.gtin || !formData.ncm || !formData.descricao}
             >
               {processing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               <Package className="h-4 w-4 mr-2" />
@@ -1147,6 +1518,306 @@ export default function AdminProductsAnalysis() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmação de Consulta API */}
+      <Dialog open={consultaAPIDialogOpen} onOpenChange={setConsultaAPIDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-blue-600" />
+              Consultar API OnRender
+            </DialogTitle>
+            <DialogDescription>
+              Você está prestes a consultar a API externa para buscar informações dos produtos selecionados.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-blue-900">Produtos selecionados:</span>
+                <Badge className="bg-blue-600">{produtosSelecionados.size}</Badge>
+              </div>
+              <p className="text-sm text-blue-700">
+                Produtos com dados completos serão <strong>cadastrados automaticamente</strong>.
+              </p>
+              <p className="text-sm text-blue-700">
+                Produtos com dados incompletos ficarão com status <strong>"Consultado"</strong> para revisão manual.
+              </p>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                <strong>Limite de consultas:</strong> {consultasHoje + produtosSelecionados.size}/100 consultas hoje
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConsultaAPIDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={consultarAPIComCadastroAutomatico}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Confirmar Consulta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Progresso da Consulta */}
+      <Dialog open={consultandoAPI} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              Consultando API...
+            </DialogTitle>
+            <DialogDescription>
+              Aguarde enquanto processamos os produtos
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Progress value={progressoConsulta} className="h-2" />
+            <p className="text-center text-sm text-muted-foreground">
+              {Math.round(progressoConsulta)}% concluído
+            </p>
+            <p className="text-xs text-center text-muted-foreground">
+              Este processo pode levar alguns minutos. Por favor, não feche esta janela.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Resultados da Consulta */}
+      <Dialog open={resultadosConsulta !== null} onOpenChange={() => setResultadosConsulta(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-600" />
+              Consulta Concluída
+            </DialogTitle>
+            <DialogDescription>
+              Veja o resumo dos resultados da consulta à API
+            </DialogDescription>
+          </DialogHeader>
+
+          {resultadosConsulta && (
+            <div className="space-y-4">
+              {/* Cadastrados Automaticamente */}
+              {resultadosConsulta.autoCadastrados.length > 0 && (
+                <Card className="bg-green-50 border-green-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+                      <Check className="h-4 w-4" />
+                      Cadastrados Automaticamente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl font-bold text-green-700">
+                        {resultadosConsulta.autoCadastrados.length}
+                      </span>
+                      <span className="text-sm text-green-600">produtos</span>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="text-xs text-green-700 cursor-pointer hover:underline">
+                        Ver lista de produtos
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-xs text-green-600">
+                        {resultadosConsulta.autoCadastrados.map((desc, i) => (
+                          <li key={i}>• {desc}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Precisam Revisão */}
+              {resultadosConsulta.precisamRevisao.length > 0 && (
+                <Card className="bg-cyan-50 border-cyan-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
+                      <AlertCircle className="h-4 w-4" />
+                      Precisam Revisão Manual
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl font-bold text-cyan-700">
+                        {resultadosConsulta.precisamRevisao.length}
+                      </span>
+                      <span className="text-sm text-cyan-600">produtos (dados incompletos)</span>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="text-xs text-cyan-700 cursor-pointer hover:underline">
+                        Ver lista de produtos
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-xs text-cyan-600">
+                        {resultadosConsulta.precisamRevisao.map((desc, i) => (
+                          <li key={i}>• {desc}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Não Encontrados */}
+              {resultadosConsulta.naoEncontrados.length > 0 && (
+                <Card className="bg-gray-50 border-gray-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-gray-800">
+                      <Search className="h-4 w-4" />
+                      Não Encontrados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl font-bold text-gray-700">
+                        {resultadosConsulta.naoEncontrados.length}
+                      </span>
+                      <span className="text-sm text-gray-600">produtos</span>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="text-xs text-gray-700 cursor-pointer hover:underline">
+                        Ver lista de produtos
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                        {resultadosConsulta.naoEncontrados.map((desc, i) => (
+                          <li key={i}>• {desc}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Erros */}
+              {resultadosConsulta.erros.length > 0 && (
+                <Card className="bg-red-50 border-red-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-red-800">
+                      <X className="h-4 w-4" />
+                      Erros Durante Consulta
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl font-bold text-red-700">
+                        {resultadosConsulta.erros.length}
+                      </span>
+                      <span className="text-sm text-red-600">erros</span>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="text-xs text-red-700 cursor-pointer hover:underline">
+                        Ver detalhes dos erros
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-xs text-red-600">
+                        {resultadosConsulta.erros.map((erro, i) => (
+                          <li key={i}>• {erro.erro}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setResultadosConsulta(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// ==================== FUNÇÕES MOCK DA API ====================
+// TODO: Substituir por integração real quando API OnRender estiver pronta
+
+/**
+ * Mock da API OnRender para consulta de produtos
+ * Simula resposta da API externa com delay artificial
+ * 
+ * @param eanGtin - Código EAN/GTIN do produto
+ * @returns Promise com dados do produto ou erro
+ */
+async function consultarAPIMock(eanGtin: string): Promise<DadosAPIOnRender> {
+  // Simula delay de rede (500ms a 2s)
+  await new Promise(resolve => setTimeout(resolve, Math.random() * 1500 + 500));
+
+  // Simula produtos SEM GTIN (não encontrados)
+  if (eanGtin.startsWith('SEM_GTIN_') || eanGtin === 'SEM GTIN') {
+    return {
+      ean_gtin: eanGtin,
+      encontrado: false,
+      mensagem: 'Produto sem código válido - consulta impossível'
+    };
+  }
+
+  // Simula 70% de chance de encontrar o produto
+  if (Math.random() < 0.7) {
+    // Produtos encontrados com dados COMPLETOS (50% dos encontrados)
+    if (Math.random() < 0.5) {
+      return {
+        ean_gtin: eanGtin,
+        descricao: `Produto Teste ${eanGtin.substring(0, 8)}`,
+        categoria: ['Alimentos', 'Bebidas', 'Higiene', 'Limpeza'][Math.floor(Math.random() * 4)],
+        peso_gramas: Math.floor(Math.random() * 1000) + 100,
+        marca: ['Marca A', 'Marca B', 'Marca C'][Math.floor(Math.random() * 3)],
+        fabricante: 'Fabricante Exemplo LTDA',
+        imagem_url: `https://via.placeholder.com/150?text=${eanGtin}`,
+        reciclavel: Math.random() > 0.3,
+        percentual_reciclabilidade: Math.floor(Math.random() * 100),
+        encontrado: true
+      };
+    } 
+    // Produtos encontrados com dados INCOMPLETOS (50% dos encontrados)
+    else {
+      return {
+        ean_gtin: eanGtin,
+        descricao: `Produto Parcial ${eanGtin.substring(0, 8)}`,
+        // Faltam categoria e outros dados obrigatórios
+        encontrado: true,
+        mensagem: 'Dados parciais - requer revisão manual'
+      };
+    }
+  }
+
+  // 30% não encontrado na API
+  return {
+    ean_gtin: eanGtin,
+    encontrado: false,
+    mensagem: 'Produto não encontrado na base de dados'
+  };
+}
+
+/**
+ * Valida se os dados da API estão completos para cadastro automático
+ * 
+ * @param dados - Dados retornados pela API
+ * @returns true se dados completos, false se incompletos
+ */
+function validarDadosCompletos(dados: DadosAPIOnRender): boolean {
+  if (!dados.encontrado) return false;
+  
+  // Campos obrigatórios para cadastro automático
+  const camposObrigatorios = [
+    dados.ean_gtin,
+    dados.descricao,
+    dados.categoria
+  ];
+
+  return camposObrigatorios.every(campo => 
+    campo !== undefined && 
+    campo !== null && 
+    String(campo).trim().length > 0
   );
 }

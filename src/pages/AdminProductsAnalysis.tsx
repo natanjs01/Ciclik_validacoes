@@ -433,6 +433,7 @@ export default function AdminProductsAnalysis() {
 
       const produtos = [];
       const erros = [];
+      const gtinsNoArquivo = new Set<string>(); // ✅ Rastrear GTINs no arquivo
 
       for (let i = 0; i < dataLines.length; i++) {
         const line = dataLines[i];
@@ -451,6 +452,14 @@ export default function AdminProductsAnalysis() {
           continue;
         }
 
+        // ✅ NOVA VALIDAÇÃO: Verificar duplicata no próprio arquivo
+        if (gtinsNoArquivo.has(ean_gtin)) {
+          erros.push(`Linha ${i + 2}: EAN/GTIN "${ean_gtin}" duplicado no arquivo (já existe em linha anterior)`);
+          continue;
+        }
+
+        gtinsNoArquivo.add(ean_gtin);
+
         produtos.push({
           ean_gtin,
           descricao,
@@ -466,24 +475,54 @@ export default function AdminProductsAnalysis() {
         throw new Error('Nenhum produto válido encontrado no CSV.');
       }
 
-      // Inserir produtos na tabela produtos_em_analise
+      // ✅ NOVA VALIDAÇÃO: Verificar se já existem no banco com status pendente/em_analise
+      const gtinsParaVerificar = produtos.map(p => p.ean_gtin);
+      const { data: existentes, error: errorVerificacao } = await supabase
+        .from('produtos_em_analise')
+        .select('ean_gtin')
+        .in('ean_gtin', gtinsParaVerificar)
+        .in('status', ['pendente', 'em_analise']);
+
+      if (errorVerificacao) {
+        console.error('Erro ao verificar duplicatas:', errorVerificacao);
+      }
+
+      // Filtrar produtos que já existem no banco
+      const gtinsExistentes = new Set(existentes?.map(e => e.ean_gtin) || []);
+      const produtosNovos = produtos.filter(p => {
+        if (gtinsExistentes.has(p.ean_gtin)) {
+          erros.push(`EAN/GTIN "${p.ean_gtin}" já está pendente de análise no sistema`);
+          return false;
+        }
+        return true;
+      });
+
+      if (produtosNovos.length === 0) {
+        throw new Error('Todos os produtos do CSV já estão registrados como pendentes de análise.');
+      }
+
+      // Inserir apenas produtos novos na tabela produtos_em_analise
       const { data, error } = await supabase
         .from('produtos_em_analise')
-        .insert(produtos)
+        .insert(produtosNovos)
         .select();
 
       if (error) throw error;
 
+      const mensagemSucesso = produtosNovos.length === produtos.length
+        ? `${produtosNovos.length} produto(s) adicionado(s) para análise!`
+        : `${produtosNovos.length} de ${produtos.length} produto(s) adicionado(s)`;
+
       toast({
         title: 'Upload concluído!',
-        description: `${produtos.length} produto(s) adicionado(s) para análise!${erros.length > 0 ? ` (${erros.length} linha(s) com erro)` : ''}`,
+        description: `${mensagemSucesso}${erros.length > 0 ? ` (${erros.length} ignorado(s) por duplicação ou erro)` : ''}`,
       });
 
       if (erros.length > 0) {
-        console.warn('Erros no CSV:', erros);
+        console.warn('Produtos não processados:', erros);
         toast({
-          title: 'Atenção',
-          description: `${erros.length} linha(s) não foram processadas. Verifique o console para detalhes.`,
+          title: 'Alguns produtos não foram adicionados',
+          description: `${erros.length} produto(s) ignorado(s) por duplicação ou erro. Veja os detalhes no console.`,
           variant: 'destructive',
         });
       }

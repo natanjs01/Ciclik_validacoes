@@ -197,13 +197,18 @@ export default function AdminProductsAnalysis() {
   } | null>(null);
   const [modalDadosAPIOpen, setModalDadosAPIOpen] = useState(false);
   const [produtoComDadosAPI, setProdutoComDadosAPI] = useState<ProdutoEmAnalise | null>(null);
-  const [consultasHoje] = useState(15); // Mock: será calculado do backend depois
+  
+  // Contador de consultas API realizadas hoje
+  // TODO: Implementar busca real quando tabela log_consultas_api for criada
+  // Query: SELECT COUNT(*) FROM log_consultas_api WHERE DATE(timestamp) = CURRENT_DATE AND admin_id = auth.uid()
+  const [consultasHoje, setConsultasHoje] = useState(0);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     loadProdutos();
+    // TODO: Adicionar loadConsultasHoje() quando implementar
   }, []);
 
   const loadProdutos = async () => {

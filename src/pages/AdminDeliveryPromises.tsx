@@ -7,9 +7,58 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Package, TrendingUp, Users, Recycle, Clock, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
+import { Package, TrendingUp, Users, Recycle, Clock, CheckCircle, XCircle, ArrowLeft, Pencil } from "lucide-react";
 import CiclikHeader from "@/components/CiclikHeader";
+
+// ✅ VALORES PARA SELEÇÃO DE MATERIAIS
+const TIPOS_MATERIAL = {
+  'Plástico': ['PET', 'PP', 'PEAD', 'PEBD', 'PVC', 'PS', 'OUTROS_PLASTICOS'],
+  'Papel': ['PAPEL_BRANCO', 'PAPEL_MISTO', 'PAPELAO', 'PAPELAO_ONDULADO', 'JORNAL', 'REVISTA'],
+  'Vidro': ['VIDRO_INCOLOR', 'VIDRO_VERDE', 'VIDRO_AMBAR'],
+  'Metal': ['ALUMINIO', 'ACO', 'COBRE', 'OUTROS_METAIS'],
+  'Laminado': ['TETRAPACK'],
+  'Rejeito': ['REJEITO']
+};
+
+const LABELS_SUBMATERIAL: Record<string, string> = {
+  // Plásticos
+  'PET': 'PET (Garrafas)',
+  'PP': 'PP (Potes)',
+  'PEAD': 'PEAD (Embalagens rígidas)',
+  'PEBD': 'PEBD (Sacolas)',
+  'PVC': 'PVC',
+  'PS': 'PS (Isopor)',
+  'OUTROS_PLASTICOS': 'Outros Plásticos',
+  
+  // Papéis
+  'PAPEL_BRANCO': 'Papel Branco',
+  'PAPEL_MISTO': 'Papel Misto',
+  'PAPELAO': 'Papelão',
+  'PAPELAO_ONDULADO': 'Papelão Ondulado',
+  'JORNAL': 'Jornal',
+  'REVISTA': 'Revista',
+  
+  // Vidros
+  'VIDRO_INCOLOR': 'Vidro Incolor',
+  'VIDRO_VERDE': 'Vidro Verde',
+  'VIDRO_AMBAR': 'Vidro Âmbar',
+  
+  // Metais
+  'ALUMINIO': 'Alumínio',
+  'ACO': 'Aço',
+  'COBRE': 'Cobre',
+  'OUTROS_METAIS': 'Outros Metais',
+  
+  // Laminados
+  'TETRAPACK': 'Tetra Pak (Caixa de Leite)',
+  
+  // Rejeito
+  'REJEITO': 'Rejeito (Não Reciclável)'
+};
 
 interface Entrega {
   id: string;
@@ -67,6 +116,12 @@ const AdminDeliveryPromises = () => {
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
+  const [abaAtiva, setAbaAtiva] = useState<string>("entregas");
+  
+  // Estados para edição de material
+  const [editandoMaterial, setEditandoMaterial] = useState<MaterialColetado | null>(null);
+  const [dialogAberto, setDialogAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -172,6 +227,44 @@ const AdminDeliveryPromises = () => {
         {config.label}
       </Badge>
     );
+  };
+
+  const abrirEdicaoMaterial = (material: MaterialColetado) => {
+    setEditandoMaterial({ ...material });
+    setDialogAberto(true);
+  };
+
+  const fecharDialog = () => {
+    setDialogAberto(false);
+    setEditandoMaterial(null);
+  };
+
+  const salvarEdicao = async () => {
+    if (!editandoMaterial) return;
+
+    setSalvando(true);
+    try {
+      const { error } = await supabase
+        .from('materiais_coletados_detalhado')
+        .update({
+          tipo_material: editandoMaterial.tipo_material,
+          subtipo_material: editandoMaterial.subtipo_material,
+          peso_kg: editandoMaterial.peso_kg
+        })
+        .eq('id', editandoMaterial.id);
+
+      if (error) throw error;
+
+      toast.success('Material atualizado com sucesso!');
+      fecharDialog();
+      loadData(); // Recarregar dados
+    } catch (error: any) {
+      toast.error('Erro ao atualizar material', {
+        description: error.message
+      });
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const entregasFiltradas = entregas.filter(e => 
@@ -290,7 +383,7 @@ const AdminDeliveryPromises = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="entregas" className="space-y-4">
+        <Tabs value={abaAtiva} onValueChange={setAbaAtiva} className="space-y-4">
           <TabsList>
             <TabsTrigger value="entregas">Entregas</TabsTrigger>
             <TabsTrigger value="materiais">Materiais Coletados</TabsTrigger>
@@ -382,6 +475,7 @@ const AdminDeliveryPromises = () => {
                         <TableHead>Material</TableHead>
                         <TableHead>Submaterial</TableHead>
                         <TableHead>Peso (kg)</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -407,6 +501,17 @@ const AdminDeliveryPromises = () => {
                           <TableCell className="font-bold">
                             {material.peso_kg.toFixed(2)} kg
                           </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirEdicaoMaterial(material)}
+                              className="gap-2"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Editar
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -417,6 +522,118 @@ const AdminDeliveryPromises = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialog de Edição de Material */}
+      <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Material Coletado</DialogTitle>
+            <DialogDescription>
+              Altere os campos do material coletado
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editandoMaterial && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="tipo_material">Tipo de Material</Label>
+                <Select
+                  value={editandoMaterial.tipo_material}
+                  onValueChange={(value) => {
+                    setEditandoMaterial({
+                      ...editandoMaterial,
+                      tipo_material: value,
+                      subtipo_material: '' // Limpar subtipo ao mudar tipo
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(TIPOS_MATERIAL).map((tipo) => (
+                      <SelectItem key={tipo} value={tipo}>
+                        {tipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subtipo_material">Subtipo de Material</Label>
+                <Select
+                  value={editandoMaterial.subtipo_material}
+                  onValueChange={(value) => {
+                    setEditandoMaterial({
+                      ...editandoMaterial,
+                      subtipo_material: value
+                    });
+                  }}
+                  disabled={!editandoMaterial.tipo_material}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={
+                      editandoMaterial.tipo_material 
+                        ? "Selecione o subtipo" 
+                        : "Primeiro selecione o tipo"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {editandoMaterial.tipo_material && 
+                     TIPOS_MATERIAL[editandoMaterial.tipo_material as keyof typeof TIPOS_MATERIAL]?.map((subtipo) => (
+                      <SelectItem key={subtipo} value={subtipo}>
+                        {LABELS_SUBMATERIAL[subtipo] || subtipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="peso_kg">Peso (kg)</Label>
+                <Input
+                  id="peso_kg"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editandoMaterial.peso_kg}
+                  onChange={(e) => setEditandoMaterial({
+                    ...editandoMaterial,
+                    peso_kg: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Data:</strong> {new Date(editandoMaterial.registrado_em).toLocaleString('pt-BR')}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Cooperativa:</strong> {editandoMaterial.cooperativas?.nome_fantasia}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={fecharDialog}
+              disabled={salvando}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={salvarEdicao}
+              disabled={salvando}
+            >
+              {salvando ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

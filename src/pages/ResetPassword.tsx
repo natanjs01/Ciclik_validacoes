@@ -27,38 +27,84 @@ export default function ResetPassword() {
       // Tokens podem vir do hash (#) ou da query (?)
       const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
-      const type = hashParams.get('type') || queryParams.get('type');// Se temos tokens de recovery, estabelecer sessão manualmente
-      if (accessToken && type === 'recovery') {// 🔧 CORREÇÃO DO BUG: Verificar se há sessão ativa e fazer logout primeiro
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
+      const type = hashParams.get('type') || queryParams.get('type');
+
+      // 🔍 LOG TEMPORÁRIO PARA DIAGNÓSTICO DE LINK EXPIRADO
+      console.log('=== DIAGNÓSTICO DE LINK DE RECUPERAÇÃO ===');
+      console.log('URL completa:', window.location.href);
+      console.log('Hash params:', window.location.hash);
+      console.log('Query params:', window.location.search);
+      console.log('Type:', type);
+      console.log('Tem access_token?:', !!accessToken);
+      console.log('Tem refresh_token?:', !!refreshToken);
+      if (accessToken) {
+        console.log('Access token (primeiros 50 chars):', accessToken.substring(0, 50) + '...');
+      }
+      console.log('==========================================');
+
+      // Se temos tokens de recovery, estabelecer sessão manualmente
+      if (accessToken && type === 'recovery') {
+        console.log('✅ Tokens de recovery detectados - processando...');
+        console.log('🔄 Estabelecendo nova sessão com token de recovery...');
         
-        if (existingSession) {// Faz logout da sessão atual para evitar que updateUser() use a sessão errada
-          await supabase.auth.signOut();
+        try {
+          // � DIAGNÓSTICO: Verificar se havia sessão ativa antes do recovery
+          const { data: sessionBefore } = await supabase.auth.getSession();
+          if (sessionBefore.session) {
+            console.log('⚠️ HAVIA SESSÃO ATIVA ANTES DO RECOVERY!');
+            console.log('   Usuário logado:', sessionBefore.session.user.email);
+            console.log('   User ID:', sessionBefore.session.user.id);
+            console.log('   Sessão expira em:', new Date(sessionBefore.session.expires_at! * 1000).toLocaleString());
+          } else {
+            console.log('✅ Nenhuma sessão ativa encontrada - tudo OK');
+          }
           
-          toast({
-            title: 'Preparando redefinição de senha',
-            description: 'Sessão anterior encerrada para garantir segurança.',
+          // �🔧 SOLUÇÃO DEFINITIVA: Usar setSession DIRETAMENTE sem fazer signOut
+          // O setSession substitui automaticamente qualquer sessão existente
+          // Fazer signOut (mesmo local) invalida tokens no servidor
+          console.log('🔐 Substituindo sessão atual pela sessão de recovery...');
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
           });
-        }
         
-        // Agora estabelece a sessão com o token de recovery
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
-        
-        if (error) {
-          console.error('Erro ao estabelecer sessão:', error);
+          if (error) {
+            console.error('❌ ERRO ao estabelecer sessão:', error);
+            console.error('Tipo do erro:', error.name);
+            console.error('Mensagem:', error.message);
+            console.error('Status:', error.status);
+            console.error('Detalhes completos:', JSON.stringify(error, null, 2));
+            toast({
+              title: 'Erro',
+              description: 'Link de recuperação inválido ou expirado.',
+              variant: 'destructive',
+            });
+            setSessionReady(false);
+          } else if (data.session) {
+            console.log('✅ Sessão estabelecida com SUCESSO!');
+            console.log('Email do usuário:', data.session.user.email);
+            console.log('User ID:', data.session.user.id);
+            setSessionReady(true);
+          } else {
+            console.warn('⚠️ SetSession retornou sem erro, mas sem sessão');
+            setSessionReady(false);
+          }
+        } catch (err) {
+          console.error('❌ Erro inesperado ao processar token:', err);
           toast({
             title: 'Erro',
-            description: 'Link de recuperação inválido ou expirado.',
+            description: 'Não foi possível processar o link de recuperação.',
             variant: 'destructive',
           });
           setSessionReady(false);
-        } else if (data.session) {setSessionReady(true);
         }
+        
         setCheckingSession(false);
         return;
       }
+
+      console.log('ℹ️ Não há tokens de recovery na URL - verificando outras formas de autenticação...');
 
       // Escutar eventos de autenticação para detectar quando a sessão está pronta
       const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -499,6 +499,27 @@ export default function AdminOperadoresLogisticos() {
 
     setLoading(true);
     try {
+      // ✅ Validar se o email já está cadastrado (permitir mesmo CNPJ com emails diferentes)
+      const { data: emailExists, error: emailCheckError } = await supabase
+        .from('cooperativas')
+        .select('id, nome_fantasia, email')
+        .eq('email', formData.email)
+        .maybeSingle();
+
+      if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+        throw emailCheckError;
+      }
+
+      if (emailExists) {
+        toast({
+          title: 'Email já cadastrado',
+          description: `Este email já está registrado para: ${emailExists.nome_fantasia}. Por favor, utilize outro email.`,
+          variant: 'destructive'
+        });
+        setLoading(false);
+        return;
+      }
+
       // Criar usuário (signUp envia email de confirmação automaticamente)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,

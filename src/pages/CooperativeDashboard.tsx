@@ -24,7 +24,8 @@ import {
   AlertCircle,
   HelpCircle,
   Filter,
-  RefreshCw
+  RefreshCw,
+  User
 } from 'lucide-react';
 import { formatWeight } from '@/lib/formatters';
 
@@ -194,6 +195,21 @@ export default function CooperativeDashboard() {
     );
   };
 
+  const getEntregadorInfo = (profiles: any) => {
+    if (!profiles?.cpf || !profiles?.nome) {
+      return 'Entregador não identificado';
+    }
+    
+    // Pegar os 3 primeiros dígitos do CPF (removendo formatação)
+    const cpfLimpo = profiles.cpf.replace(/\D/g, '');
+    const tresPrimeirosCpf = cpfLimpo.substring(0, 3);
+    
+    // Pegar o primeiro nome
+    const primeiroNome = profiles.nome.split(' ')[0];
+    
+    return `${tresPrimeirosCpf} - ${primeiroNome}`;
+  };
+
   const loadEntregasPrevistas = async () => {
     if (!user) return;
 
@@ -262,7 +278,20 @@ export default function CooperativeDashboard() {
     }
 
     if (data) {
-      setEntregasEmColeta(data);
+      // Buscar dados dos usuários separadamente
+      const userIds = [...new Set(data.map(e => e.id_usuario))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, cpf')
+        .in('id', userIds);
+
+      // Mapear profiles para as entregas
+      const entregasComProfiles = data.map(entrega => ({
+        ...entrega,
+        profiles: profilesData?.find(p => p.id === entrega.id_usuario) || null
+      }));
+
+      setEntregasEmColeta(entregasComProfiles);
     }
   };
 
@@ -309,7 +338,20 @@ export default function CooperativeDashboard() {
       .limit(50);
 
     if (data) {
-      setEntregasRealizadas(data);
+      // Buscar dados dos usuários separadamente
+      const userIds = [...new Set(data.map(e => e.id_usuario))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, cpf')
+        .in('id', userIds);
+
+      // Mapear profiles para as entregas
+      const entregasComProfiles = data.map(entrega => ({
+        ...entrega,
+        profiles: profilesData?.find(p => p.id === entrega.id_usuario) || null
+      }));
+
+      setEntregasRealizadas(entregasComProfiles);
     }
   };
 
@@ -497,11 +539,15 @@ export default function CooperativeDashboard() {
                   <Card key={entrega.id} className="border-2 border-primary/30">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-5 w-5 text-primary" />
-                          <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
-                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-5 w-5 text-primary" />
+                            <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-foreground">{getEntregadorInfo(entrega.profiles)}</span>
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>Recebido: {new Date(entrega.data_recebimento).toLocaleString('pt-BR')}</span>
                             <span>•</span>
@@ -603,6 +649,10 @@ export default function CooperativeDashboard() {
                       <div key={entrega.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="space-y-1">
                           <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-foreground">{getEntregadorInfo(entrega.profiles)}</span>
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{new Date(entrega.data_validacao).toLocaleDateString('pt-BR')}</span>
                             <span>•</span>

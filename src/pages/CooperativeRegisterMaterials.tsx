@@ -31,16 +31,17 @@ interface MaterialRegistrado {
   peso_kg: number;
 }
 
+// ✅ VALORES ATUALIZADOS PARA CORRESPONDER AO BANCO DE DADOS
 const TIPOS_MATERIAL = {
   'Plástico': ['PET', 'PP', 'PEAD', 'PEBD', 'PVC', 'PS', 'OUTROS_PLASTICOS'],
-  'Papel': ['PAPEL_BRANCO', 'PAPEL_COLORIDO', 'PAPELAO_ONDULADO'],
-  'Vidro': ['VIDRO_TRANSPARENTE', 'VIDRO_COLORIDO', 'VIDRO_TEMPERADO'],
-  'Metal': ['ALUMINIO_LATA', 'ALUMINIO_PERFIL', 'ACO'],
-  'Alumínio': ['ALUMINIO_LATA', 'ALUMINIO_PERFIL'],
-  'Laminado': ['LAMINADO_CAFE', 'LAMINADO_SALGADINHO', 'LAMINADO_OUTROS']
+  'Papel': ['PAPEL_BRANCO', 'PAPEL_MISTO', 'PAPELAO', 'PAPELAO_ONDULADO', 'JORNAL', 'REVISTA'],
+  'Vidro': ['VIDRO_INCOLOR', 'VIDRO_VERDE', 'VIDRO_AMBAR'],
+  'Metal': ['ALUMINIO', 'ACO', 'COBRE', 'OUTROS_METAIS'],
+  'Laminado': ['TETRAPACK']
 };
 
 const LABELS_SUBMATERIAL: Record<string, string> = {
+  // Plásticos
   'PET': 'PET (Garrafas)',
   'PP': 'PP (Potes)',
   'PEAD': 'PEAD (Embalagens rígidas)',
@@ -48,18 +49,30 @@ const LABELS_SUBMATERIAL: Record<string, string> = {
   'PVC': 'PVC',
   'PS': 'PS (Isopor)',
   'OUTROS_PLASTICOS': 'Outros Plásticos',
+  
+  // Papéis
   'PAPEL_BRANCO': 'Papel Branco',
-  'PAPEL_COLORIDO': 'Papel Colorido',
+  'PAPEL_MISTO': 'Papel Misto',
+  'PAPELAO': 'Papelão',
   'PAPELAO_ONDULADO': 'Papelão Ondulado',
-  'VIDRO_TRANSPARENTE': 'Vidro Transparente',
-  'VIDRO_COLORIDO': 'Vidro Colorido',
-  'VIDRO_TEMPERADO': 'Vidro Temperado',
-  'ALUMINIO_LATA': 'Lata de Alumínio',
-  'ALUMINIO_PERFIL': 'Perfil de Alumínio',
+  'JORNAL': 'Jornal',
+  'REVISTA': 'Revista',
+  
+  // Vidros
+  'VIDRO_INCOLOR': 'Vidro Incolor',
+  'VIDRO_VERDE': 'Vidro Verde',
+  'VIDRO_AMBAR': 'Vidro Âmbar',
+  
+  // Metais
+  'ALUMINIO': 'Alumínio',
   'ACO': 'Aço',
-  'LAMINADO_CAFE': 'Laminado de Café',
-  'LAMINADO_SALGADINHO': 'Laminado de Salgadinho',
-  'LAMINADO_OUTROS': 'Outros Laminados',
+  'COBRE': 'Cobre',
+  'OUTROS_METAIS': 'Outros Metais',
+  
+  // Laminados
+  'TETRAPACK': 'Tetra Pak (Caixa de Leite)',
+  
+  // Rejeito
   'REJEITO': 'Rejeito (Não Reciclável)'
 };
 
@@ -76,6 +89,7 @@ export default function CooperativeRegisterMaterials() {
   const [peso, setPeso] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [salvandoAuto, setSalvandoAuto] = useState(false);
+  const [adicionandoMaterial, setAdicionandoMaterial] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -143,6 +157,13 @@ export default function CooperativeRegisterMaterials() {
   };
 
   const adicionarMaterial = async () => {
+    // Evitar cliques duplos
+    if (adicionandoMaterial) {
+      console.log('⚠️ Já existe uma operação em andamento');
+      return;
+    }
+
+    // Validações de campos
     if (!tipoSelecionado || !peso) {
       toast.error("Preencha tipo e peso");
       return;
@@ -159,20 +180,48 @@ export default function CooperativeRegisterMaterials() {
       return;
     }
 
+    // ✅ NOVA VALIDAÇÃO: Verificar se IDs estão carregados
+    if (!cooperativaId || !entregaId) {
+      console.error('❌ IDs não carregados:', { cooperativaId, entregaId });
+      toast.error("Aguarde o carregamento completo da página");
+      return;
+    }
+
+    setAdicionandoMaterial(true);
+
     try {
+      const payload = {
+        id_entrega: entregaId,
+        id_cooperativa: cooperativaId,
+        tipo_material: tipoSelecionado,
+        subtipo_material: tipoSelecionado === 'Rejeito' ? 'REJEITO' : subtipoSelecionado,
+        peso_kg: pesoNum
+      };
+
+      // ✅ LOG: Registrar tentativa de inserção
+      console.log('📦 Inserindo material:', payload);
+
       const { data, error } = await supabase
         .from('materiais_coletados_detalhado')
-        .insert({
-          id_entrega: entregaId,
-          id_cooperativa: cooperativaId,
-          tipo_material: tipoSelecionado,
-          subtipo_material: tipoSelecionado === 'Rejeito' ? 'REJEITO' : subtipoSelecionado,
-          peso_kg: pesoNum
-        })
+        .insert(payload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // ✅ LOG: Erro detalhado
+        console.error('❌ Erro ao inserir material:', {
+          error,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          message: error.message,
+          payload
+        });
+        throw error;
+      }
+
+      // ✅ LOG: Sucesso
+      console.log('✅ Material inserido com sucesso:', data);
 
       setMateriaisRegistrados([...materiaisRegistrados, data]);
       
@@ -184,8 +233,10 @@ export default function CooperativeRegisterMaterials() {
       toast.success("✓ Salvo", { duration: 1500 });
     } catch (error: any) {
       toast.error("Erro ao registrar", {
-        description: error.message
+        description: error.message || "Tente novamente"
       });
+    } finally {
+      setAdicionandoMaterial(false);
     }
   };
 
@@ -508,9 +559,13 @@ export default function CooperativeRegisterMaterials() {
                   </div>
                 </div>
 
-                <Button onClick={adicionarMaterial} className="w-full">
+                <Button 
+                  onClick={adicionarMaterial} 
+                  className="w-full"
+                  disabled={adicionandoMaterial || !cooperativaId || !entregaId}
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Material
+                  {adicionandoMaterial ? "Salvando..." : "Adicionar Material"}
                 </Button>
               </CardContent>
             </Card>

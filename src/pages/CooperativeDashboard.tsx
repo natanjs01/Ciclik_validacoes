@@ -200,14 +200,22 @@ export default function CooperativeDashboard() {
       return 'Entregador não identificado';
     }
     
-    // Pegar os 3 primeiros dígitos do CPF (removendo formatação)
-    const cpfLimpo = profiles.cpf.replace(/\D/g, '');
-    const tresPrimeirosCpf = cpfLimpo.substring(0, 3);
+    // Remover formatação do CPF/CNPJ
+    const documentoLimpo = profiles.cpf.replace(/\D/g, '');
     
-    // Pegar o primeiro nome
-    const primeiroNome = profiles.nome.split(' ')[0];
+    // Verificar se é CNPJ (14 dígitos) ou CPF (11 dígitos)
+    const isCNPJ = documentoLimpo.length === 14;
     
-    return `${tresPrimeirosCpf} - ${primeiroNome}`;
+    if (isCNPJ) {
+      // Para CNPJ: mostrar os 3 primeiros dígitos + nome completo
+      const tresPrimeirosDigitos = documentoLimpo.substring(0, 3);
+      return `${tresPrimeirosDigitos} - ${profiles.nome}`;
+    } else {
+      // Para CPF: mostrar os 3 primeiros dígitos + apenas primeiro nome
+      const tresPrimeirosDigitos = documentoLimpo.substring(0, 3);
+      const primeiroNome = profiles.nome.split(' ')[0];
+      return `${tresPrimeirosDigitos} - ${primeiroNome}`;
+    }
   };
 
   const loadEntregasPrevistas = async () => {

@@ -3,12 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Package, ChevronRight, AlertTriangle, CheckCircle2, Truck } from "lucide-react";
+import { Clock, Package, ChevronRight, AlertTriangle, CheckCircle2, Truck, QrCode, Download, Printer } from "lucide-react";
 import { formatDistanceToNow, differenceInHours, isWithinInterval, subHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { formatWeight } from "@/lib/formatters";
 import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
+import { toast } from "sonner";
 
 interface PendingDelivery {
   id: string;
@@ -28,6 +31,8 @@ export const PendingDeliveries = () => {
   const navigate = useNavigate();
   const [deliveries, setDeliveries] = useState<PendingDelivery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDelivery, setSelectedDelivery] = useState<PendingDelivery | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -130,6 +135,131 @@ export const PendingDeliveries = () => {
     }
   };
 
+  const handleCardClick = (delivery: PendingDelivery) => {
+    const timeInfo = getTimeInfo(delivery.data_geracao);
+    
+    // Só abre o modal se não estiver expirado
+    if (timeInfo.text !== 'Expirado') {
+      setSelectedDelivery(delivery);
+      setShowQRModal(true);
+    } else {
+      toast.error('Esta entrega expirou', {
+        description: 'O prazo de 24 horas já passou.'
+      });
+    }
+  };
+
+  const handleDownloadQR = () => {
+    if (!selectedDelivery) return;
+    
+    const svg = document.getElementById('pending-qrcode-svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `qrcode-entrega-${selectedDelivery.qrcode_id}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.success('QR Code baixado com sucesso!');
+        }
+      });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handlePrintQR = () => {
+    if (!selectedDelivery) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const qrcodeElement = document.getElementById('pending-qrcode-svg');
+    if (!qrcodeElement) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - Entrega ${selectedDelivery.qrcode_id}</title>
+          <style>
+            body {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              margin: 0;
+              font-family: system-ui, -apple-system, sans-serif;
+            }
+            .container {
+              text-align: center;
+              padding: 40px;
+            }
+            h1 {
+              font-size: 24px;
+              margin-bottom: 8px;
+              color: #333;
+            }
+            .subtitle {
+              font-size: 16px;
+              color: #666;
+              margin-bottom: 32px;
+            }
+            .qrcode {
+              margin: 20px 0;
+            }
+            .footer {
+              margin-top: 32px;
+              font-size: 14px;
+              color: #888;
+            }
+            @media print {
+              body { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🌱 Ciclik - Entrega de Recicláveis</h1>
+            <div class="subtitle">
+              <strong>${selectedDelivery.cooperativa.nome_fantasia}</strong><br>
+              ${formatWeight(selectedDelivery.peso_estimado || 0)}
+            </div>
+            <div class="qrcode">
+              ${qrcodeElement.outerHTML}
+            </div>
+            <div class="footer">
+              Código: ${selectedDelivery.qrcode_id}
+            </div>
+          </div>
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 100);
+              }, 250);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   if (loading) {
     return (
       <div className="space-y-2">
@@ -187,7 +317,10 @@ export const PendingDeliveries = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ delay: index * 0.05 }}
-              className={`relative overflow-hidden rounded-xl border ${timeInfo.urgent ? 'border-destructive/30 bg-destructive/5' : 'border-border/50 bg-card/50'}`}
+              className={`relative overflow-hidden rounded-xl border cursor-pointer hover:shadow-md transition-all ${
+                timeInfo.urgent ? 'border-destructive/30 bg-destructive/5 hover:border-destructive/50' : 'border-border/50 bg-card/50 hover:border-primary/30'
+              }`}
+              onClick={() => handleCardClick(delivery)}
             >
               {/* Progress bar no topo */}
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-muted/30">
@@ -276,6 +409,90 @@ export const PendingDeliveries = () => {
         Ver histórico completo
         <ChevronRight className="h-3.5 w-3.5 ml-1" />
       </Button>
+
+      {/* Modal do QR Code */}
+      <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              QR Code da Entrega
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDelivery && (
+                <>
+                  Entrega para <strong>{selectedDelivery.cooperativa.nome_fantasia}</strong>
+                  <br />
+                  {formatWeight(selectedDelivery.peso_estimado || 0)} estimado
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDelivery && (
+            <div className="space-y-4">
+              {/* QR Code */}
+              <div className="flex justify-center p-6 bg-white rounded-lg border-2 border-dashed">
+                <QRCodeSVG 
+                  id="pending-qrcode-svg"
+                  value={selectedDelivery.qrcode_id}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+
+              {/* Código em texto */}
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-xs text-muted-foreground mb-1">Código da Entrega:</p>
+                <p className="font-mono text-sm font-medium break-all">{selectedDelivery.qrcode_id}</p>
+              </div>
+
+              {/* Tempo restante */}
+              {(() => {
+                const timeInfo = getTimeInfo(selectedDelivery.data_geracao);
+                return timeInfo.text !== 'Expirado' && (
+                  <div className={`p-3 rounded-md border ${timeInfo.color}`}>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {timeInfo.text} restantes para entrega
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Botões de ação */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleDownloadQR}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handlePrintQR}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Imprimir
+                </Button>
+              </div>
+
+              <Button 
+                className="w-full"
+                onClick={() => setShowQRModal(false)}
+              >
+                Fechar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

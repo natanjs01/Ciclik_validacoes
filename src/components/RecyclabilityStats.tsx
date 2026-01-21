@@ -14,6 +14,7 @@ interface ImpactoStats {
   totalEntregasFinalizadas: number;
   pesoTotalEntregue: number;
   pesoRejeito: number;
+  pesoEstimadoPromessas: number;
   percentualEntregue: number;
 }
 
@@ -62,7 +63,7 @@ const StatPill = ({ icon: Icon, label, value, color, delay = 0 }: {
 export default function RecyclabilityStats() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<ImpactoStats>({ totalNotasFiscais: 0, pesoTotalNotas: 0, totalEntregasFinalizadas: 0, pesoTotalEntregue: 0, pesoRejeito: 0, percentualEntregue: 0 });
+  const [stats, setStats] = useState<ImpactoStats>({ totalNotasFiscais: 0, pesoTotalNotas: 0, totalEntregasFinalizadas: 0, pesoTotalEntregue: 0, pesoRejeito: 0, pesoEstimadoPromessas: 0, percentualEntregue: 0 });
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -75,7 +76,12 @@ export default function RecyclabilityStats() {
       const { count: totalNotas } = await supabase.from('notas_fiscais').select('id', { count: 'exact' }).eq('id_usuario', user.id);
       const { data: materiaisNotas } = await supabase.from('materiais_reciclaveis_usuario').select('peso_total_estimado_gramas, peso_unitario_gramas, quantidade').eq('id_usuario', user.id).not('id_nota_fiscal', 'is', null);
       const pesoTotalNotas = materiaisNotas?.reduce((acc, m) => acc + (m.peso_total_estimado_gramas || ((m.peso_unitario_gramas || 0) * (m.quantidade || 1))), 0) || 0;
-      const { data: entregas } = await supabase.from('entregas_reciclaveis').select('id').eq('id_usuario', user.id).eq('status_promessa', 'finalizada');
+      
+      const { data: entregas } = await supabase.from('entregas_reciclaveis').select('id, peso_estimado').eq('id_usuario', user.id).eq('status_promessa', 'finalizada');
+      
+      // Calcular peso estimado total das promessas de entrega
+      const pesoEstimadoPromessas = entregas?.reduce((acc, e) => acc + (e.peso_estimado || 0), 0) || 0;
+      
       let pesoTotalEntregue = 0, pesoRejeito = 0;
       if (entregas && entregas.length > 0) {
         const entregaIds = entregas.map(e => e.id);
@@ -87,8 +93,17 @@ export default function RecyclabilityStats() {
       const pesoNotasKg = Math.round((pesoTotalNotas / 1000) * 1000) / 1000;
       const pesoEntregueKg = Math.round(pesoTotalEntregue * 1000) / 1000;
       const pesoRejeitoKg = Math.round(pesoRejeito * 1000) / 1000;
-      const percentualEntregue = pesoNotasKg > 0 ? Math.round((pesoEntregueKg / pesoNotasKg) * 100) : 0;
-      setStats({ totalNotasFiscais: totalNotas || 0, pesoTotalNotas: pesoNotasKg, totalEntregasFinalizadas: entregas?.length || 0, pesoTotalEntregue: pesoEntregueKg, pesoRejeito: pesoRejeitoKg, percentualEntregue });
+      const pesoEstimadoKg = Math.round(pesoEstimadoPromessas * 1000) / 1000;
+      
+      // Lógica de cálculo: prioriza peso estimado das entregas, depois notas fiscais
+      let pesoReferencia = pesoEstimadoKg;
+      if (pesoReferencia === 0 && pesoNotasKg > 0) {
+        pesoReferencia = pesoNotasKg;
+      }
+      
+      const percentualEntregue = pesoReferencia > 0 ? Math.round((pesoEntregueKg / pesoReferencia) * 100) : 0;
+      
+      setStats({ totalNotasFiscais: totalNotas || 0, pesoTotalNotas: pesoNotasKg, totalEntregasFinalizadas: entregas?.length || 0, pesoTotalEntregue: pesoEntregueKg, pesoRejeito: pesoRejeitoKg, pesoEstimadoPromessas: pesoEstimadoKg, percentualEntregue });
     } catch (error) { console.error('Erro ao carregar estatísticas:', error); } finally { setLoading(false); }
   };
 
@@ -115,7 +130,11 @@ export default function RecyclabilityStats() {
 
   const getProgressColor = () => stats.percentualEntregue >= 80 ? "hsl(var(--success))" : stats.percentualEntregue >= 50 ? "hsl(var(--warning))" : "hsl(var(--destructive))";
   const status = stats.percentualEntregue > 80 ? { title: "Excelente!", message: "Você está fazendo a diferença!", color: "success" as const } : stats.percentualEntregue >= 50 ? { title: "Bom trabalho!", message: "Continue assim!", color: "warning" as const } : { title: "Vamos melhorar!", message: "Entregue mais materiais", color: "destructive" as const };
-  const diferencaPeso = stats.pesoTotalNotas - stats.pesoTotalEntregue;
+  
+  // Define qual peso usar como referência (prioriza peso estimado das entregas)
+  const pesoReferencia = stats.pesoEstimadoPromessas > 0 ? stats.pesoEstimadoPromessas : stats.pesoTotalNotas;
+  const labelReferencia = stats.pesoEstimadoPromessas > 0 ? "Prometido nas Entregas" : "Registrado em Notas";
+  const diferencaPeso = pesoReferencia - stats.pesoTotalEntregue;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -169,7 +188,7 @@ export default function RecyclabilityStats() {
               </motion.div>
             </div>
             <div className="space-y-3">
-              <StatPill icon={FileText} label="Registrado em Notas" value={formatWeight(stats.pesoTotalNotas)} color="primary" delay={0.2} />
+              <StatPill icon={FileText} label={labelReferencia} value={formatWeight(pesoReferencia)} color="primary" delay={0.2} />
               <StatPill icon={Truck} label="Entregue às Cooperativas" value={formatWeight(stats.pesoTotalEntregue)} color="success" delay={0.3} />
               {stats.pesoRejeito > 0 && <StatPill icon={AlertTriangle} label="Rejeito" value={formatWeight(stats.pesoRejeito)} color="destructive" delay={0.4} />}
               {diferencaPeso > 0 && (

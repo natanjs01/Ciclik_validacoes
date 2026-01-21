@@ -65,7 +65,9 @@ export default defineConfig(({ mode }) => ({
         categories: ['lifestyle', 'utilities']
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globIgnores: ['**/logo_qrcod.png'], // Ignorar logo grande
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -122,9 +124,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          'chart-vendor': ['recharts'],
+          'pdf-vendor': ['jspdf', 'html2canvas', 'react-pdf'],
+        },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   publicDir: 'public',
 }));

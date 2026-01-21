@@ -10,8 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { formatWeight } from "@/lib/formatters";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { generateQRCodeWithLogo } from "@/utils/qrCodeWithLogo";
 
 interface PendingDelivery {
   id: string;
@@ -33,6 +33,7 @@ export const PendingDeliveries = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDelivery, setSelectedDelivery] = useState<PendingDelivery | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
     if (user) {
@@ -135,13 +136,26 @@ export const PendingDeliveries = () => {
     }
   };
 
-  const handleCardClick = (delivery: PendingDelivery) => {
+  const handleCardClick = async (delivery: PendingDelivery) => {
     const timeInfo = getTimeInfo(delivery.data_geracao);
     
     // Só abre o modal se não estiver expirado
     if (timeInfo.text !== 'Expirado') {
       setSelectedDelivery(delivery);
       setShowQRModal(true);
+      
+      // Gerar QR Code com logo
+      try {
+        const qrWithLogo = await generateQRCodeWithLogo({
+          data: delivery.qrcode_id,
+          width: 400,
+          margin: 2
+        });
+        setQrCodeDataUrl(qrWithLogo);
+      } catch (error) {
+        console.error('Erro ao gerar QR Code com logo:', error);
+        toast.error('Erro ao gerar QR Code');
+      }
     } else {
       toast.error('Esta entrega expirou', {
         description: 'O prazo de 24 horas já passou.'
@@ -150,45 +164,20 @@ export const PendingDeliveries = () => {
   };
 
   const handleDownloadQR = () => {
-    if (!selectedDelivery) return;
+    if (!selectedDelivery || !qrCodeDataUrl) return;
     
-    const svg = document.getElementById('pending-qrcode-svg');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `qrcode-entrega-${selectedDelivery.qrcode_id}.png`;
-          link.click();
-          URL.revokeObjectURL(url);
-          toast.success('QR Code baixado com sucesso!');
-        }
-      });
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    const link = document.createElement('a');
+    link.href = qrCodeDataUrl;
+    link.download = `qrcode-entrega-${selectedDelivery.qrcode_id}.png`;
+    link.click();
+    toast.success('QR Code baixado com sucesso!');
   };
 
   const handlePrintQR = () => {
-    if (!selectedDelivery) return;
+    if (!selectedDelivery || !qrCodeDataUrl) return;
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
-    const qrcodeElement = document.getElementById('pending-qrcode-svg');
-    if (!qrcodeElement) return;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -222,6 +211,10 @@ export const PendingDeliveries = () => {
             .qrcode {
               margin: 20px 0;
             }
+            .qrcode img {
+              max-width: 400px;
+              height: auto;
+            }
             .footer {
               margin-top: 32px;
               font-size: 14px;
@@ -240,7 +233,7 @@ export const PendingDeliveries = () => {
               ${formatWeight(selectedDelivery.peso_estimado || 0)}
             </div>
             <div class="qrcode">
-              ${qrcodeElement.outerHTML}
+              <img src="${qrCodeDataUrl}" alt="QR Code" />
             </div>
             <div class="footer">
               Código: ${selectedDelivery.qrcode_id}
@@ -431,15 +424,19 @@ export const PendingDeliveries = () => {
           
           {selectedDelivery && (
             <div className="space-y-4">
-              {/* QR Code */}
+              {/* QR Code com Logo */}
               <div className="flex justify-center p-6 bg-white rounded-lg border-2 border-dashed">
-                <QRCodeSVG 
-                  id="pending-qrcode-svg"
-                  value={selectedDelivery.qrcode_id}
-                  size={256}
-                  level="H"
-                  includeMargin={true}
-                />
+                {qrCodeDataUrl ? (
+                  <img 
+                    src={qrCodeDataUrl} 
+                    alt="QR Code da Entrega"
+                    className="w-64 h-64"
+                  />
+                ) : (
+                  <div className="w-64 h-64 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                )}
               </div>
 
               {/* Código em texto */}

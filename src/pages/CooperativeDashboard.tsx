@@ -25,7 +25,8 @@ import {
   HelpCircle,
   Filter,
   RefreshCw,
-  User
+  User,
+  Scale
 } from 'lucide-react';
 import { formatWeight } from '@/lib/formatters';
 
@@ -34,6 +35,7 @@ export default function CooperativeDashboard() {
   const [cooperativa, setCooperativa] = useState<any>(null);
   const [entregasPrevistas, setEntregasPrevistas] = useState<any[]>([]);
   const [entregasEmColeta, setEntregasEmColeta] = useState<any[]>([]);
+  const [entregasEmTriagem, setEntregasEmTriagem] = useState<any[]>([]);
   const [entregasRealizadas, setEntregasRealizadas] = useState<any[]>([]);
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [materialFilter, setMaterialFilter] = useState<string>('all');
@@ -41,6 +43,7 @@ export default function CooperativeDashboard() {
     totalEntregas: 0,
     entregasPendentes: 0,
     entregasEmColeta: 0,
+    entregasEmTriagem: 0,
     pesoTotal: 0,
     pontuacao: 100,
     entregasMes: 0
@@ -92,6 +95,7 @@ export default function CooperativeDashboard() {
     loadStats();
     loadEntregasPrevistas();
     loadEntregasEmColeta();
+    loadEntregasEmTriagem();
     loadEntregasRealizadas();
     
     // Atualizar a cada 30 segundos para garantir dados frescos
@@ -99,6 +103,7 @@ export default function CooperativeDashboard() {
       loadStats();
       loadEntregasPrevistas();
       loadEntregasEmColeta();
+      loadEntregasEmTriagem();
       loadEntregasRealizadas();
     }, 30000);
     
@@ -158,6 +163,7 @@ export default function CooperativeDashboard() {
 
     const pendentes = entregas?.filter(e => e.status_promessa === 'ativa').length || 0;
     const emColeta = entregas?.filter(e => e.status_promessa === 'em_coleta').length || 0;
+    const emTriagem = entregas?.filter(e => e.status_promessa === 'em_triagem').length || 0;
     const pesoTotal = entregas?.reduce((acc, e) => acc + (e.peso_validado || 0), 0) || 0;
     
     // Entregas do mês atual
@@ -173,6 +179,7 @@ export default function CooperativeDashboard() {
       totalEntregas: entregas?.length || 0,
       entregasPendentes: pendentes,
       entregasEmColeta: emColeta,
+      entregasEmTriagem: emTriagem,
       pesoTotal,
       pontuacao: coopData.pontuacao_confiabilidade,
       entregasMes
@@ -185,6 +192,7 @@ export default function CooperativeDashboard() {
         loadStats(),
         loadEntregasPrevistas(),
         loadEntregasEmColeta(),
+        loadEntregasEmTriagem(),
         loadEntregasRealizadas()
       ]),
       {
@@ -196,12 +204,19 @@ export default function CooperativeDashboard() {
   };
 
   const getEntregadorInfo = (profiles: any) => {
-    if (!profiles?.cpf || !profiles?.nome) {
+    if (!profiles?.nome) {
+      return 'Entregador não identificado';
+    }
+    
+    // Verificar se tem CPF ou CNPJ
+    const documento = profiles.cpf || profiles.cnpj;
+    
+    if (!documento) {
       return 'Entregador não identificado';
     }
     
     // Remover formatação do CPF/CNPJ
-    const documentoLimpo = profiles.cpf.replace(/\D/g, '');
+    const documentoLimpo = documento.replace(/\D/g, '');
     
     // Verificar se é CNPJ (14 dígitos) ou CPF (11 dígitos)
     const isCNPJ = documentoLimpo.length === 14;
@@ -248,7 +263,7 @@ export default function CooperativeDashboard() {
       const userIds = [...new Set(data.map(e => e.id_usuario))];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, nome, cpf')
+        .select('id, nome, cpf, cnpj')
         .in('id', userIds);
 
       // Mapear profiles para as entregas
@@ -290,7 +305,7 @@ export default function CooperativeDashboard() {
       const userIds = [...new Set(data.map(e => e.id_usuario))];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, nome, cpf')
+        .select('id, nome, cpf, cnpj')
         .in('id', userIds);
 
       // Mapear profiles para as entregas
@@ -300,6 +315,48 @@ export default function CooperativeDashboard() {
       }));
 
       setEntregasEmColeta(entregasComProfiles);
+    }
+  };
+
+  const loadEntregasEmTriagem = async () => {
+    if (!user) return;
+
+    const { data: coopData } = await supabase
+      .from('cooperativas')
+      .select('id')
+      .eq('id_user', user.id)
+      .maybeSingle();
+
+    if (!coopData) return;
+
+    const { data, error } = await supabase
+      .from('entregas_reciclaveis')
+      .select('*')
+      .eq('id_cooperativa', coopData.id)
+      .eq('status_promessa', 'em_triagem')
+      .order('data_envio_triagem', { ascending: false, nullsFirst: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Erro ao carregar entregas em triagem:', error);
+      return;
+    }
+
+    if (data) {
+      // Buscar dados dos usuários separadamente
+      const userIds = [...new Set(data.map(e => e.id_usuario))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, cpf, cnpj')
+        .in('id', userIds);
+
+      // Mapear profiles para as entregas
+      const entregasComProfiles = data.map(entrega => ({
+        ...entrega,
+        profiles: profilesData?.find(p => p.id === entrega.id_usuario) || null
+      }));
+
+      setEntregasEmTriagem(entregasComProfiles);
     }
   };
 
@@ -350,7 +407,7 @@ export default function CooperativeDashboard() {
       const userIds = [...new Set(data.map(e => e.id_usuario))];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, nome, cpf')
+        .select('id, nome, cpf, cnpj')
         .in('id', userIds);
 
       // Mapear profiles para as entregas
@@ -449,7 +506,7 @@ export default function CooperativeDashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4" data-tour="stats">
+        <div className="grid gap-4 md:grid-cols-5" data-tour="stats">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Promessas Ativas</CardDescription>
@@ -466,6 +523,16 @@ export default function CooperativeDashboard() {
               <CardTitle className="text-3xl flex items-center gap-2">
                 <Package className="h-6 w-6 text-primary" />
                 {stats.entregasEmColeta}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-2 border-amber-500/20 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardDescription>Em Triagem</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Scale className="h-6 w-6 text-amber-600" />
+                {stats.entregasEmTriagem}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -493,12 +560,15 @@ export default function CooperativeDashboard() {
 
         {/* Aba de Entregas */}
         <Tabs defaultValue="previstas" className="w-full" data-tour="tabs">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="previstas">
               Previstas ({entregasPrevistas.length})
             </TabsTrigger>
             <TabsTrigger value="em_coleta">
               Em Coleta ({entregasEmColeta.length})
+            </TabsTrigger>
+            <TabsTrigger value="em_triagem">
+              Em Triagem ({entregasEmTriagem.length})
             </TabsTrigger>
             <TabsTrigger value="realizadas">
               Finalizadas ({entregasRealizadas.length})
@@ -575,6 +645,63 @@ export default function CooperativeDashboard() {
                         >
                           <FileText className="mr-2 h-4 w-4" />
                           Continuar Registro
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="em_triagem" className="space-y-4">
+            {entregasEmTriagem.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nenhuma entrega aguardando triagem</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Entregas enviadas para triagem aparecerão aqui
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {entregasEmTriagem.map((entrega) => (
+                  <Card key={entrega.id} className="border-2 border-amber-500/30">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Scale className="h-5 w-5 text-amber-600" />
+                            <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-foreground">{getEntregadorInfo(entrega.profiles)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>Enviado para triagem: {new Date(entrega.data_envio_triagem).toLocaleString('pt-BR')}</span>
+                            <span>•</span>
+                            <Badge variant="outline" className="text-xs">
+                              {entrega.tipo_material}
+                            </Badge>
+                          </div>
+                          {entrega.peso_validado && (
+                            <p className="text-sm text-muted-foreground">
+                              Peso registrado: {entrega.peso_validado.toFixed(2)} kg
+                            </p>
+                          )}
+                        </div>
+                        <Button 
+                          onClick={() => navigate(`/cooperative/triagem/${entrega.id}`)}
+                          size="lg"
+                          className="bg-amber-600 hover:bg-amber-700"
+                        >
+                          <Scale className="mr-2 h-4 w-4" />
+                          Iniciar Triagem
                         </Button>
                       </div>
                     </CardContent>

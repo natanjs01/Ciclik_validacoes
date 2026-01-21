@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, QrCode, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import QRCode from 'qrcode';
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
 
 export default function DeliverRecyclables() {
   const { user } = useAuth();
@@ -76,13 +76,10 @@ export default function DeliverRecyclables() {
 
       if (error) throw error;
 
-      const qrDataUrl = await QRCode.toDataURL(qrcodeId, {
+      const qrDataUrl = await generateQRCodeWithLogo({
+        data: qrcodeId,
         width: 400,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
+        margin: 2
       });
 
       setQrCodeUrl(qrDataUrl);

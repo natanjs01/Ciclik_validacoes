@@ -16,6 +16,7 @@ interface DeliveryCardProps {
     profiles?: {
       nome: string;
       cpf: string;
+      cnpj: string;
     };
   };
   onScanQR: () => void;
@@ -56,18 +57,33 @@ export function CooperativeDeliveryCard({ entrega, onScanQR }: DeliveryCardProps
   };
 
   const getEntregadorInfo = () => {
-    if (!entrega.profiles?.cpf || !entrega.profiles?.nome) {
+    if (!entrega.profiles?.nome) {
+      return 'Entregador não identificado';
+    }
+
+    // Verificar se tem CPF ou CNPJ
+    const documento = entrega.profiles.cpf || entrega.profiles.cnpj;
+    
+    if (!documento) {
       return 'Entregador não identificado';
     }
     
-    // Pegar os 3 primeiros dígitos do CPF (removendo formatação)
-    const cpfLimpo = entrega.profiles.cpf.replace(/\D/g, '');
-    const tresPrimeirosCpf = cpfLimpo.substring(0, 3);
+    // Remover formatação do documento
+    const documentoLimpo = documento.replace(/\D/g, '');
     
-    // Pegar o primeiro nome
-    const primeiroNome = entrega.profiles.nome.split(' ')[0];
+    // Verificar se é CNPJ (14 dígitos) ou CPF (11 dígitos)
+    const isCNPJ = documentoLimpo.length === 14;
     
-    return `${tresPrimeirosCpf} - ${primeiroNome}`;
+    if (isCNPJ) {
+      // Para CNPJ: mostrar os 3 primeiros dígitos + nome completo
+      const tresPrimeirosDigitos = documentoLimpo.substring(0, 3);
+      return `${tresPrimeirosDigitos} - ${entrega.profiles.nome}`;
+    } else {
+      // Para CPF: mostrar os 3 primeiros dígitos + apenas primeiro nome
+      const tresPrimeirosDigitos = documentoLimpo.substring(0, 3);
+      const primeiroNome = entrega.profiles.nome.split(' ')[0];
+      return `${tresPrimeirosDigitos} - ${primeiroNome}`;
+    }
   };
 
   return (

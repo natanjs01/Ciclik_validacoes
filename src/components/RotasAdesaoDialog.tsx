@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Route, Calendar, MapPin, QrCode, Loader2, Check, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import QRCode from 'qrcode';
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
 
 interface RotaDisponivel {
   id: string;
@@ -235,13 +235,10 @@ export default function RotasAdesaoDialog({ open, onOpenChange }: Props) {
         id_rota: selectedRota.id
       });
 
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      const qrCodeDataUrl = await generateQRCodeWithLogo({
+        data: qrData,
         width: 400,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+        margin: 2
       });
 
       setQrCodeUrl(qrCodeDataUrl);
@@ -286,13 +283,10 @@ export default function RotasAdesaoDialog({ open, onOpenChange }: Props) {
         id_rota: adesao.id_rota
       });
 
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      const qrCodeDataUrl = await generateQRCodeWithLogo({
+        data: qrData,
         width: 400,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+        margin: 2
       });
 
       const link = document.createElement('a');

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Trash2, CheckCircle, Package, Save, AlertCircle, X, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, CheckCircle, Package, Save, AlertCircle, X, AlertTriangle, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -22,6 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { QRCodeSVG } from 'qrcode.react';
 import { formatWeight, formatNumber } from '@/lib/formatters';
 
 interface MaterialRegistrado {
@@ -93,6 +101,8 @@ export default function CooperativeRegisterMaterials() {
   const [finalizando, setFinalizando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
+  const [qrcodeTriagem, setQrcodeTriagem] = useState<string>("");
 
   // Auto-save quando materiais mudam
   useEffect(() => {
@@ -260,7 +270,7 @@ export default function CooperativeRegisterMaterials() {
 
   const finalizarColeta = async () => {
     if (materiaisRegistrados.length === 0) {
-      toast.error("Adicione pelo menos um material antes de finalizar");
+      toast.error("Adicione pelo menos um material antes de enviar para triagem");
       return;
     }
 
@@ -284,98 +294,43 @@ export default function CooperativeRegisterMaterials() {
 
       // Calcular totais
       const pesoTotal = materiaisRegistrados.reduce((sum, m) => sum + m.peso_kg, 0);
-      const pesoRejeito = materiaisRegistrados
-        .filter(m => m.subtipo_material === 'REJEITO')
-        .reduce((sum, m) => sum + m.peso_kg, 0);
-      const pesoReciclavel = pesoTotal - pesoRejeito;
+      
+      // Gerar QR Code para triagem
+      const qrcodeTriagem = `TRIAGEM_${entregaId}_${Date.now()}`;
 
-      // Calcular pontos
-      const { data: pontosData, error: pontosError } = await supabase
-        .rpc('calcular_pontos_entrega_finalizada', { 
-          p_id_entrega: entregaId 
-        });
-
-      if (pontosError) throw pontosError;
-      const pontos = pontosData || 0;
-
-      // Atualizar pontos do usuário
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('score_verde')
-        .eq('id', entrega.id_usuario)
-        .single();
-
-      if (profileData) {
-        await supabase
-          .from('profiles')
-          .update({ score_verde: (profileData.score_verde || 0) + pontos })
-          .eq('id', entrega.id_usuario);
-      }
-
-      // Finalizar entrega - CRÍTICO: Garantir que ambos os status sejam atualizados
-      const { error: finalizarError } = await supabase
+      // Enviar para triagem em vez de finalizar
+      const { error: enviarTriagemError } = await supabase
         .from('entregas_reciclaveis')
         .update({
-          status_promessa: 'finalizada',
-          status: 'validada',
-          peso_validado: pesoReciclavel,
-          peso_rejeito_kg: pesoRejeito,
-          data_validacao: new Date().toISOString()
+          status_promessa: 'em_triagem',
+          peso_validado: pesoTotal,
+          qrcode_triagem: qrcodeTriagem,
+          data_envio_triagem: new Date().toISOString()
         })
         .eq('id', entregaId)
         .eq('status_promessa', 'em_coleta'); // Garantir que só atualize se estiver em_coleta
 
-      if (finalizarError) throw finalizarError;
-
-      // Atualizar status dos materiais do usuário
-      if (entrega.itens_vinculados && entrega.itens_vinculados.length > 0) {
-        await supabase
-          .from('materiais_reciclaveis_usuario')
-          .update({ 
-            status: 'entregue',
-            data_entrega: new Date().toISOString()
-          })
-          .in('id', entrega.itens_vinculados);
-      }
-
-      // Inserir resíduos no estoque CDV (exceto rejeito)
-      const residuosParaEstoque = materiaisRegistrados
-        .filter(m => m.subtipo_material !== 'REJEITO')
-        .map(material => ({
-          id_usuario: entrega.id_usuario,
-          id_cooperativa: entrega.id_cooperativa,
-          id_entrega: entregaId,
-          kg: material.peso_kg,
-          submaterial: material.subtipo_material,
-          data_entrega: new Date().toISOString(),
-          status: 'disponivel'
-        }));
-
-      if (residuosParaEstoque.length > 0) {
-        await supabase
-          .from('estoque_residuos')
-          .insert(residuosParaEstoque);
-      }
+      if (enviarTriagemError) throw enviarTriagemError;
 
       // Criar notificação para o usuário
       await supabase
         .from('notificacoes')
         .insert({
           id_usuario: entrega.id_usuario,
-          tipo: 'entrega_finalizada',
-          mensagem: `Sua entrega foi processada! Peso: ${formatWeight(pesoReciclavel)} | Pontos: +${pontos}`
+          tipo: 'entrega_enviada_triagem',
+          mensagem: `Sua entrega foi registrada! Peso: ${formatWeight(pesoTotal)} | Aguardando triagem`
         });
 
-      toast.success("Coleta finalizada com sucesso!", {
-        description: `${pontos} pontos creditados ao usuário`
+      // Armazenar QR Code e mostrar modal
+      setQrcodeTriagem(qrcodeTriagem);
+      setShowQRCodeModal(true);
+
+      toast.success("Materiais enviados para triagem!", {
+        description: `QR Code gerado com sucesso`
       });
 
-      setTimeout(() => {
-        navigate('/cooperative');
-      }, 2000);
-
     } catch (error: any) {
-      toast.error("Erro ao finalizar coleta", {
+      toast.error("Erro ao enviar para triagem", {
         description: error.message
       });
     } finally {
@@ -423,6 +378,119 @@ export default function CooperativeRegisterMaterials() {
       });
       setCancelando(false);
     }
+  };
+
+  const handlePrintQRCode = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Bloqueador de pop-up impediu a impressão');
+      return;
+    }
+
+    const qrCodeElement = document.getElementById('qrcode-triagem');
+    if (!qrCodeElement) return;
+
+    const svgData = qrCodeElement.innerHTML;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - Triagem</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 40px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              font-family: Arial, sans-serif;
+            }
+            .container {
+              text-align: center;
+              border: 2px solid #000;
+              padding: 30px;
+              border-radius: 10px;
+            }
+            h1 { margin: 0 0 20px 0; font-size: 24px; }
+            .qrcode { margin: 20px 0; }
+            .code { 
+              font-family: monospace; 
+              font-size: 14px; 
+              margin-top: 20px;
+              padding: 10px;
+              background: #f0f0f0;
+              border-radius: 5px;
+            }
+            .info { margin-top: 20px; font-size: 12px; color: #666; }
+            @media print {
+              body { margin: 0; }
+              .container { border: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🔍 TRIAGEM - CICLIK</h1>
+            <div class="qrcode">${svgData}</div>
+            <div class="code">
+              <strong>Código:</strong><br/>
+              ${qrcodeTriagem}
+            </div>
+            <div class="info">
+              Entrega ID: ${entregaId?.slice(0, 8)}<br/>
+              Data: ${new Date().toLocaleString('pt-BR')}
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 100);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleDownloadQRCode = () => {
+    const qrCodeElement = document.getElementById('qrcode-triagem');
+    if (!qrCodeElement) return;
+
+    const svg = qrCodeElement.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `qrcode-triagem-${entregaId?.slice(0, 8)}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('QR Code baixado com sucesso!');
+      });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handleCloseQRModal = () => {
+    setShowQRCodeModal(false);
+    navigate('/cooperative');
   };
 
   if (loading) {
@@ -635,7 +703,7 @@ export default function CooperativeRegisterMaterials() {
                 size="lg"
               >
                 <CheckCircle className="mr-2 h-5 w-5" />
-                {finalizando ? 'Finalizando...' : 'Finalizar Coleta'}
+                {finalizando ? 'Enviando...' : 'Enviar para Triagem'}
               </Button>
             </div>
           </CardContent>
@@ -687,6 +755,77 @@ export default function CooperativeRegisterMaterials() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Modal do QR Code para Triagem */}
+        <Dialog open={showQRCodeModal} onOpenChange={setShowQRCodeModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-green-600" />
+                QR Code Gerado com Sucesso!
+              </DialogTitle>
+              <DialogDescription>
+                Escaneie este QR Code na estação de triagem para validar os materiais
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* QR Code */}
+              <div className="flex justify-center p-6 bg-white rounded-lg border-2 border-dashed" id="qrcode-triagem">
+                <QRCodeSVG 
+                  value={qrcodeTriagem}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+
+              {/* Código em texto */}
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-xs text-muted-foreground mb-1">Código de Triagem:</p>
+                <p className="font-mono text-sm font-medium break-all">{qrcodeTriagem}</p>
+              </div>
+
+              {/* Informações */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <strong>Próximo passo:</strong> Leve os materiais para a estação de triagem e escaneie este QR Code para iniciar a validação.
+                </AlertDescription>
+              </Alert>
+
+              {/* Botões de ação */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handlePrintQRCode}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Imprimir
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleDownloadQRCode}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Baixar
+                </Button>
+              </div>
+
+              {/* Botão de fechar */}
+              <Button 
+                onClick={handleCloseQRModal}
+                className="w-full"
+                size="lg"
+              >
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Concluir e Voltar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

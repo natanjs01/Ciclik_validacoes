@@ -24,6 +24,7 @@ import Profile from "./pages/Profile";
 import CooperativeDashboard from "./pages/CooperativeDashboard";
 import CooperativeScanQRCode from "./pages/CooperativeScanQRCode";
 import CooperativeRegisterMaterials from "./pages/CooperativeRegisterMaterials";
+import CooperativeTriagem from "./pages/CooperativeTriagem";
 import ValidateDelivery from "./pages/ValidateDelivery";
 import CooperativeDeliveries from "./pages/CooperativeDeliveries";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -152,6 +153,7 @@ function AppRoutes() {
       <Route path="/cooperative" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeDashboard /></ProtectedRoute>} />
       <Route path="/cooperative/scan-qrcode" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeScanQRCode /></ProtectedRoute>} />
       <Route path="/cooperative/register-materials/:entregaId" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeRegisterMaterials /></ProtectedRoute>} />
+      <Route path="/cooperative/triagem/:entregaId" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeTriagem /></ProtectedRoute>} />
       <Route path="/cooperative/validate" element={<ProtectedRoute allowedRoles={['cooperativa']}><ValidateDelivery /></ProtectedRoute>} />
       <Route path="/cooperative/deliveries" element={<ProtectedRoute allowedRoles={['cooperativa']}><CooperativeDeliveries /></ProtectedRoute>} />
       

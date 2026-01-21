@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Package, Recycle, Plus, Scale, Route, QrCode, MapPin, ChevronDown, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/formatters";
-import QRCode from "qrcode";
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
 import {
   Dialog,
   DialogContent,
@@ -305,10 +305,10 @@ const SelectMaterialsForDelivery = () => {
         validade: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       });
 
-      const qrCodeDataUrl = await QRCode.toDataURL(qrCodeData, {
+      const qrCodeDataUrl = await generateQRCodeWithLogo({
+        data: qrCodeData,
         width: 400,
-        margin: 2,
-        color: { dark: '#000000', light: '#FFFFFF' }
+        margin: 2
       });
 
       setQrCodeUrl(qrCodeDataUrl);

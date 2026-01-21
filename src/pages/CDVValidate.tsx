@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import QRCode from "qrcode";
 import { appUrl } from '@/lib/appUrl';
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
+import { getAssetPath } from '@/utils/assetPath';
 
 interface CertificateData {
   id: string;
@@ -77,13 +78,10 @@ const CDVValidate = () => {
       setIsValid(quota.status === 'pronto' || quota.status === 'certificado_emitido');
       
       const validationUrl = appUrl(`/cdv/validate/${id}`);
-      const qr = await QRCode.toDataURL(validationUrl, {
+      const qr = await generateQRCodeWithLogo({
+        data: validationUrl,
         width: 200,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
+        margin: 2
       });
       setQrCodeUrl(qr);
       

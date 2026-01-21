@@ -184,7 +184,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: "Erro ao carregar dados",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setLoading(false);
@@ -222,7 +223,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: "Erro ao carregar quotas",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     }
   };
@@ -251,7 +253,8 @@ const AdminCDVReconciliationManual = () => {
 
       toast({
         title: "✅ Motor UIB executado",
-        description: `${uibsGeradas} UIBs geradas a partir de ${impactosProcessados} impactos`
+        description: `${uibsGeradas} UIBs geradas a partir de ${impactosProcessados} impactos`,
+        duration: 3000,
       });
 
       // ⏱️ Aguardar 1.5 segundos para garantir que o banco finalizou todas as operações
@@ -266,7 +269,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: "Erro ao executar Motor UIB",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setRunningMotor(false);
@@ -284,7 +288,8 @@ const AdminCDVReconciliationManual = () => {
       const registrados = data.impactos_registrados || data.registrados || 0;
       toast({
         title: `✅ Migração de ${tipo} concluída`,
-        description: `${registrados} impactos registrados em impacto_bruto`
+        description: `${registrados} impactos registrados em impacto_bruto`,
+        duration: 3000,
       });
 
       await fetchData();
@@ -292,7 +297,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: `Erro na migração de ${tipo}`,
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setRunningMigration(null);
@@ -332,7 +338,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: "Erro ao carregar rastreabilidade",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     }
   };
@@ -366,7 +373,8 @@ const AdminCDVReconciliationManual = () => {
 
       toast({
         title: "🎉 CDV Gerado com Sucesso!",
-        description: `${data.cdv.numero_cdv} vinculado à quota selecionada`
+        description: `${data.cdv.numero_cdv} vinculado à quota selecionada`,
+        duration: 3000,
       });
 
       await fetchData();
@@ -379,7 +387,8 @@ const AdminCDVReconciliationManual = () => {
       toast({
         title: "Erro ao gerar CDV",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setProcessing(false);

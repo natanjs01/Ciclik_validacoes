@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import QRCode from "qrcode";
 import { appUrl } from '@/lib/appUrl';
 import { getAssetPath } from '@/utils/assetPath';
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
 
 // Ícones oficiais das ODS da ONU
 import ods08 from "@/assets/ods/ods-08.jpg";
@@ -89,13 +89,10 @@ const CDVCertificate = () => {
       setCertificate(quota as Certificate);
       
       const validationUrl = appUrl(`/cdv/validate/${id}`);
-      const qr = await QRCode.toDataURL(validationUrl, {
+      const qr = await generateQRCodeWithLogo({
+        data: validationUrl,
         width: 200,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
+        margin: 2
       });
       setQrCodeUrl(qr);
       

@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const READER_ID = "qr-code-reader-container";
@@ -337,63 +337,88 @@ export default function CooperativeScanQRCode() {
   // Processar e validar QR Code
   const processQRCode = async (qrData: string) => {
     try {
-      console.log('[QRCode] Dados lidos:', qrData);
+      console.log('═══════════════════════════════════════════════════');
+      console.log('[QRCode] 📱 INICIANDO PROCESSAMENTO DE QR CODE');
+      console.log('[QRCode] Dados brutos:', qrData);
+      console.log('[QRCode] Tipo de dado:', typeof qrData);
+      console.log('[QRCode] Tamanho:', qrData.length, 'caracteres');
+      console.log('═══════════════════════════════════════════════════');
       
-      // Verificar se é QR Code de triagem (formato: TRIAGEM_id_timestamp)
+      // =====================================
+      // TIPO 1: QR CODE DE TRIAGEM
+      // Formato: TRIAGEM_id_timestamp
+      // Exemplo: TRIAGEM_abc123_1234567890
+      // =====================================
       if (qrData.startsWith('TRIAGEM_')) {
-        console.log('[QRCode] QR Code de triagem detectado');
+        console.log('✅ [TIPO 1] QR Code de TRIAGEM detectado');
+        console.log('[QRCode] → Encaminhando para processTriagemQRCode()');
         await processTriagemQRCode(qrData);
         return;
       }
       
-      // Verificar se é um UUID simples (formato de entrega: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+      // =====================================
+      // TIPO 2: UUID SIMPLES (ENTREGA)
+      // Formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      // Exemplo: 25400115-c210-40ca-84e7-eb649a101758
+      // Busca pela coluna qrcode_id na tabela
+      // =====================================
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(qrData)) {
-        console.log('[QRCode] UUID de entrega detectado');
-        // Criar objeto no formato esperado
-        const entregaData = {
-          tipo: 'promessa_entrega_ciclik',
-          qrcode_id: qrData
-        };
-        await processEntregaQRCode(entregaData);
+      if (uuidRegex.test(qrData.trim())) {
+        console.log('✅ [TIPO 2] UUID de ENTREGA detectado');
+        console.log('[QRCode] UUID validado:', qrData.trim());
+        console.log('[QRCode] → Encaminhando para processEntregaSimples()');
+        await processEntregaSimples(qrData.trim());
         return;
       }
       
-      // Tentar parse JSON para outros tipos
+      // =====================================
+      // TIPO 3: JSON COMPLETO
+      // Formato: {"tipo":"...", "qrcode_id":"...", ...}
+      // Subtipos:
+      //   - promessa_entrega_ciclik (entrega)
+      //   - adesao_rota_ciclik (adesão)
+      // =====================================
       let data;
       try {
         data = JSON.parse(qrData);
+        console.log('✅ [TIPO 3] JSON parseado com sucesso');
         console.log('[QRCode] Dados parseados:', data);
+        console.log('[QRCode] Tipo identificado:', data.tipo);
       } catch (parseError) {
-        console.error('[QRCode] Erro ao fazer parse do JSON:', parseError);
+        console.error('❌ [ERRO] Não foi possível fazer parse do JSON:', parseError);
+        console.error('[QRCode] Formato não reconhecido. Dados recebidos:', qrData);
         toast.error("QR Code inválido", { 
-          description: "Formato não reconhecido. Tente escanear novamente." 
+          description: "Formato não reconhecido. Certifique-se de estar usando um QR Code válido da Ciclik." 
         });
         if (isMountedRef.current) setCameraStatus('idle');
         return;
       }
 
       // Validar tipo e rotear para o processamento correto
-      console.log('[QRCode] Validando tipo:', data.tipo);
+      console.log('[QRCode] Validando subtipo do JSON...');
       
       if (data.tipo === 'promessa_entrega_ciclik') {
-        // Processar QR Code de entrega
+        console.log('✅ [TIPO 3A] JSON de ENTREGA detectado');
+        console.log('[QRCode] → Encaminhando para processEntregaQRCode()');
         await processEntregaQRCode(data);
       } else if (data.tipo === 'adesao_rota_ciclik') {
-        // Processar QR Code de adesão a rota
+        console.log('✅ [TIPO 3B] JSON de ADESÃO À ROTA detectado');
+        console.log('[QRCode] → Encaminhando para processAdesaoRotaQRCode()');
         await processAdesaoRotaQRCode(data);
       } else {
-        console.warn('[QRCode] Tipo não suportado:', data.tipo);
+        console.warn('⚠️ [AVISO] Tipo não suportado:', data.tipo);
+        console.warn('[QRCode] Tipos suportados: promessa_entrega_ciclik, adesao_rota_ciclik');
         toast.error("QR Code não suportado", { 
-          description: `Este tipo de QR Code não pode ser processado aqui. Tipo: ${data.tipo || 'indefinido'}` 
+          description: `Este tipo de QR Code (${data.tipo || 'indefinido'}) não pode ser processado aqui.` 
         });
         if (isMountedRef.current) setCameraStatus('idle');
       }
 
     } catch (error: any) {
-      console.error("[QRCode] Erro ao processar QR Code:", error);
-      toast.error("Erro ao processar", { 
-        description: error.message || "Tente novamente" 
+      console.error("❌ [ERRO FATAL] Erro ao processar QR Code:", error);
+      console.error("[QRCode] Stack trace:", error.stack);
+      toast.error("Erro ao processar QR Code", { 
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente." 
       });
       if (isMountedRef.current) setCameraStatus('idle');
     }
@@ -613,7 +638,126 @@ export default function CooperativeScanQRCode() {
     }
   };
 
-  // Processar QR Code de entrega
+  // Processar QR Code de entrega simples (UUID)
+  const processEntregaSimples = async (qrcodeId: string) => {
+    try {
+      console.log('[QRCode] 🔍 Processando entrega simples (UUID)');
+      console.log('[QRCode] UUID:', qrcodeId);
+
+      // Buscar cooperativa do usuário
+      console.log('[QRCode] Buscando cooperativa do usuário:', user?.id);
+      const { data: coopData, error: coopError } = await supabase
+        .from('cooperativas')
+        .select('id')
+        .eq('id_user', user?.id)
+        .single();
+
+      if (coopError || !coopData) {
+        console.error('[QRCode] ❌ Erro ao buscar cooperativa:', coopError);
+        toast.error("Cooperativa não encontrada");
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] ✅ Cooperativa encontrada:', coopData.id);
+      console.log('[QRCode] Buscando entrega pela coluna qrcode_id:', qrcodeId);
+      
+      // Buscar entrega pela coluna qrcode_id
+      const { data: entrega, error: entregaError } = await supabase
+        .from('entregas_reciclaveis')
+        .select('*')
+        .eq('qrcode_id', qrcodeId)
+        .single();
+
+      if (entregaError || !entrega) {
+        console.error('[QRCode] ❌ Erro ao buscar entrega:', entregaError);
+        toast.error("QR Code inválido", { 
+          description: "Entrega não encontrada no sistema." 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] ✅ Entrega encontrada:', entrega.id, 'Status:', entrega.status_promessa);
+
+      // Verificar se a cooperativa da entrega é a mesma que está fazendo a coleta
+      if (entrega.id_cooperativa !== coopData.id) {
+        console.warn('[QRCode] ⚠️ Cooperativa diferente detectada');
+        console.warn('[QRCode] Cooperativa do QR:', entrega.id_cooperativa);
+        console.warn('[QRCode] Cooperativa atual:', coopData.id);
+        toast.error("Entrega de outra cooperativa", { 
+          description: "Esta entrega não pertence à sua cooperativa." 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      // Verificar se a entrega já foi coletada
+      if (entrega.status_promessa === 'concluida') {
+        console.warn('[QRCode] ⚠️ Entrega já foi coletada anteriormente');
+        toast.error("Entrega já coletada", { 
+          description: "Esta entrega já foi registrada como coletada." 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      // Verificar se a entrega expirou (24 horas)
+      const dataGeracao = new Date(entrega.data_geracao);
+      const now = new Date();
+      const hoursElapsed = differenceInHours(now, dataGeracao);
+      
+      if (hoursElapsed > 24) {
+        console.warn('[QRCode] ⚠️ Entrega expirada');
+        console.warn('[QRCode] Horas decorridas:', hoursElapsed);
+        toast.error("QR Code expirado", { 
+          description: "Esta entrega ultrapassou o prazo de 24 horas." 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] ✅ Entrega válida! Horas decorridas:', hoursElapsed);
+      
+      // Atualizar status para 'em_coleta'
+      console.log('[QRCode] Atualizando status para em_coleta...');
+      const { error: updateError } = await supabase
+        .from('entregas_reciclaveis')
+        .update({ 
+          status_promessa: 'em_coleta'
+        })
+        .eq('id', entrega.id);
+
+      if (updateError) {
+        console.error('[QRCode] ❌ Erro ao atualizar status:', updateError);
+        toast.error("Erro ao atualizar status");
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[QRCode] ✅ Status atualizado com sucesso!');
+      toast.success("Entrega validada!", { 
+        description: "Aguarde, você será redirecionado..." 
+      });
+
+      // Aguardar 2 segundos antes de redirecionar
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          navigate(`/cooperative/register-materials/${entrega.id}`);
+        }
+      }, 2000);
+
+    } catch (error: any) {
+      console.error("[QRCode] ❌ Erro fatal ao processar entrega simples:", error);
+      console.error("[QRCode] Stack trace:", error.stack);
+      toast.error("Erro ao processar", { 
+        description: error.message || "Tente novamente" 
+      });
+      if (isMountedRef.current) setCameraStatus('idle');
+    }
+  };
+
+  // Processar QR Code de entrega (JSON completo)
   const processEntregaQRCode = async (data: any) => {
     try {
 

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CooperativeDeliveryCard } from '@/components/CooperativeDeliveryCard';
@@ -670,39 +671,38 @@ export default function CooperativeDashboard() {
             ) : (
               <div className="space-y-3">
                 {entregasEmTriagem.map((entrega) => (
-                  <Card key={entrega.id} className="border-2 border-amber-500/30">
+                  <Card key={entrega.id} className="border-2 border-amber-500/30 hover:border-amber-500/50 transition-colors">
                     <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Scale className="h-5 w-5 text-amber-600" />
-                            <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-foreground">{getEntregadorInfo(entrega.profiles)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Enviado para triagem: {new Date(entrega.data_envio_triagem).toLocaleString('pt-BR')}</span>
-                            <span>•</span>
-                            <Badge variant="outline" className="text-xs">
-                              {entrega.tipo_material}
-                            </Badge>
-                          </div>
-                          {entrega.peso_validado && (
-                            <p className="text-sm text-muted-foreground">
-                              Peso registrado: {entrega.peso_validado.toFixed(2)} kg
-                            </p>
-                          )}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-5 w-5 text-amber-600" />
+                          <p className="font-medium">Entrega #{entrega.id.slice(0, 8)}</p>
+                          <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-900 border-amber-300">
+                            Aguardando Triagem
+                          </Badge>
                         </div>
-                        <Button 
-                          onClick={() => navigate(`/cooperative/triagem/${entrega.id}`)}
-                          size="lg"
-                          className="bg-amber-600 hover:bg-amber-700"
-                        >
-                          <Scale className="mr-2 h-4 w-4" />
-                          Iniciar Triagem
-                        </Button>
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium text-foreground">{getEntregadorInfo(entrega.profiles)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Enviado: {new Date(entrega.data_envio_triagem).toLocaleString('pt-BR')}</span>
+                          <span>•</span>
+                          <Badge variant="outline" className="text-xs">
+                            {entrega.tipo_material}
+                          </Badge>
+                        </div>
+                        {entrega.peso_validado && (
+                          <p className="text-sm text-muted-foreground">
+                            Peso registrado: {entrega.peso_validado.toFixed(2)} kg
+                          </p>
+                        )}
+                        <Alert className="bg-amber-50 border-amber-200">
+                          <QrCode className="h-4 w-4 text-amber-600" />
+                          <AlertDescription className="text-sm">
+                            Use o <strong>Scanner de QR Code</strong> com o código de triagem para iniciar o processo
+                          </AlertDescription>
+                        </Alert>
                       </div>
                     </CardContent>
                   </Card>

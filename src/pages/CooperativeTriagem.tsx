@@ -122,15 +122,34 @@ export default function CooperativeTriagem() {
     try {
       setLoading(true);
 
-      // Carregar entrega
+      // Carregar entrega (sem join com profiles para evitar erro 400)
       const { data: entregaData, error: entregaError } = await supabase
         .from('entregas_reciclaveis')
-        .select('*, profiles(nome, cpf, cnpj)')
+        .select('*')
         .eq('id', entregaId)
         .single();
 
-      if (entregaError) throw entregaError;
-      if (!entregaData) throw new Error('Entrega não encontrada');
+      if (entregaError) {
+        console.error('Erro ao buscar entrega:', entregaError);
+        throw new Error(`Erro ao buscar entrega: ${entregaError.message}`);
+      }
+      
+      if (!entregaData) {
+        throw new Error('Entrega não encontrada');
+      }
+
+      // Buscar dados do usuário separadamente
+      if (entregaData.id_usuario) {
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('nome, cpf, cnpj')
+          .eq('id', entregaData.id_usuario)
+          .single();
+        
+        if (userData) {
+          entregaData.profiles = userData;
+        }
+      }
 
       // Verificar se está em triagem
       if (entregaData.status_promessa !== 'em_triagem') {
@@ -365,6 +384,26 @@ export default function CooperativeTriagem() {
             <div className="text-center py-8">
               <Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-pulse" />
               <p className="text-muted-foreground">Carregando dados da triagem...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Proteção adicional: se entrega não foi carregada
+  if (!entrega) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
+              <p className="text-destructive font-medium mb-2">Entrega não encontrada</p>
+              <p className="text-muted-foreground mb-4">Não foi possível carregar os dados da entrega.</p>
+              <Button onClick={() => navigate('/cooperative')}>
+                Voltar para Dashboard
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -630,21 +669,23 @@ export default function CooperativeTriagem() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Finalização da Triagem</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>Você está prestes a finalizar a triagem desta entrega.</p>
-              <div className="bg-muted p-3 rounded-md space-y-1 text-sm">
-                <p><strong>Peso Final:</strong> {formatWeight(resumo.pesoTriagem)}</p>
-                {resumo.temDiferencas && (
-                  <>
-                    <p><strong>Diferença:</strong> {formatWeight(Math.abs(resumo.diferenca))}</p>
-                    <p><strong>Materiais Ajustados:</strong> {resumo.materiaisAlterados}</p>
-                    <p><strong>Materiais Removidos:</strong> {resumo.materiaisRemovidos}</p>
-                  </>
-                )}
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Você está prestes a finalizar a triagem desta entrega.</p>
+                <div className="bg-muted p-3 rounded-md space-y-1 text-sm">
+                  <p><strong>Peso Final:</strong> {formatWeight(resumo.pesoTriagem)}</p>
+                  {resumo.temDiferencas && (
+                    <>
+                      <p><strong>Diferença:</strong> {formatWeight(Math.abs(resumo.diferenca))}</p>
+                      <p><strong>Materiais Ajustados:</strong> {resumo.materiaisAlterados}</p>
+                      <p><strong>Materiais Removidos:</strong> {resumo.materiaisRemovidos}</p>
+                    </>
+                  )}
+                </div>
+                <p className="text-warning font-medium">
+                  Esta ação não poderá ser desfeita e a entrega será marcada como finalizada.
+                </p>
               </div>
-              <p className="text-warning font-medium">
-                Esta ação não poderá ser desfeita e a entrega será marcada como finalizada.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

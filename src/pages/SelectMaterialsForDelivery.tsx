@@ -296,17 +296,11 @@ const SelectMaterialsForDelivery = () => {
 
       if (updateError) throw updateError;
 
-      const qrCodeData = JSON.stringify({
-        tipo: 'promessa_entrega_ciclik',
-        id_entrega: entrega.id,
-        hash: hashQRCode,
-        id_cooperativa: selectedCooperativa,
-        peso_estimado: pesoEstimadoKg.toFixed(3),
-        validade: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      });
-
+      // Gerar dados do QR Code (apenas UUID para facilitar leitura)
+      console.log('[QRCode] Gerando QR Code com UUID simples:', qrcodeId);
+      
       const qrCodeDataUrl = await generateQRCodeWithLogo({
-        data: qrCodeData,
+        data: qrcodeId, // UUID simples - muito mais fácil de ler!
         width: 400,
         margin: 2
       });

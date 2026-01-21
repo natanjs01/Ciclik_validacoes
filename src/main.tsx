@@ -1,6 +1,30 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { registerSW } from 'virtual:pwa-register';
+
+// Registrar o Service Worker
+const updateSW = registerSW({
+  onNeedRefresh() {
+    console.log('Nova versão disponível. Atualizando...');
+  },
+  onOfflineReady() {
+    console.log('App pronto para uso offline');
+  },
+  onRegistered(registration) {
+    console.log('Service Worker registrado com sucesso');
+    // Verificar atualizações a cada hora
+    if (registration) {
+      setInterval(() => {
+        registration.update();
+      }, 60 * 60 * 1000);
+    }
+  },
+  onRegisterError(error) {
+    console.error('Erro ao registrar Service Worker:', error);
+  },
+  immediate: true
+});
 
 // Suprimir avisos desnecessários do console
 const originalWarn = console.warn;

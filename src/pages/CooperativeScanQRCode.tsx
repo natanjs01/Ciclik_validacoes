@@ -346,7 +346,20 @@ export default function CooperativeScanQRCode() {
         return;
       }
       
-      // Parse JSON para outros tipos
+      // Verificar se é um UUID simples (formato de entrega: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(qrData)) {
+        console.log('[QRCode] UUID de entrega detectado');
+        // Criar objeto no formato esperado
+        const entregaData = {
+          tipo: 'promessa_entrega_ciclik',
+          qrcode_id: qrData
+        };
+        await processEntregaQRCode(entregaData);
+        return;
+      }
+      
+      // Tentar parse JSON para outros tipos
       let data;
       try {
         data = JSON.parse(qrData);

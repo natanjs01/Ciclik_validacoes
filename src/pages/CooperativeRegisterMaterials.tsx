@@ -29,8 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { QRCodeSVG } from 'qrcode.react';
 import { formatWeight, formatNumber } from '@/lib/formatters';
+import { generateQRCodeWithLogo } from '@/utils/qrCodeWithLogo';
 
 interface MaterialRegistrado {
   id: string;
@@ -103,6 +103,7 @@ export default function CooperativeRegisterMaterials() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [qrcodeTriagem, setQrcodeTriagem] = useState<string>("");
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   // Auto-save quando materiais mudam
   useEffect(() => {
@@ -323,6 +324,19 @@ export default function CooperativeRegisterMaterials() {
 
       // Armazenar QR Code e mostrar modal
       setQrcodeTriagem(qrcodeTriagem);
+      
+      // Gerar QR Code com logo
+      try {
+        const qrWithLogo = await generateQRCodeWithLogo({
+          data: qrcodeTriagem,
+          width: 400,
+          margin: 2
+        });
+        setQrCodeDataUrl(qrWithLogo);
+      } catch (error) {
+        console.error('Erro ao gerar QR Code com logo:', error);
+      }
+      
       setShowQRCodeModal(true);
 
       toast.success("Materiais enviados para triagem!", {
@@ -381,17 +395,14 @@ export default function CooperativeRegisterMaterials() {
   };
 
   const handlePrintQRCode = () => {
+    if (!qrCodeDataUrl) return;
+    
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast.error('Bloqueador de pop-up impediu a impressão');
       return;
     }
 
-    const qrCodeElement = document.getElementById('qrcode-triagem');
-    if (!qrCodeElement) return;
-
-    const svgData = qrCodeElement.innerHTML;
-    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -416,6 +427,7 @@ export default function CooperativeRegisterMaterials() {
             }
             h1 { margin: 0 0 20px 0; font-size: 24px; }
             .qrcode { margin: 20px 0; }
+            .qrcode img { width: 400px; height: 400px; }
             .code { 
               font-family: monospace; 
               font-size: 14px; 
@@ -434,7 +446,9 @@ export default function CooperativeRegisterMaterials() {
         <body>
           <div class="container">
             <h1>🔍 TRIAGEM - CICLIK</h1>
-            <div class="qrcode">${svgData}</div>
+            <div class="qrcode">
+              <img src="${qrCodeDataUrl}" alt="QR Code" />
+            </div>
             <div class="code">
               <strong>Código:</strong><br/>
               ${qrcodeTriagem}
@@ -457,35 +471,13 @@ export default function CooperativeRegisterMaterials() {
   };
 
   const handleDownloadQRCode = () => {
-    const qrCodeElement = document.getElementById('qrcode-triagem');
-    if (!qrCodeElement) return;
-
-    const svg = qrCodeElement.querySelector('svg');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `qrcode-triagem-${entregaId?.slice(0, 8)}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('QR Code baixado com sucesso!');
-      });
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    if (!qrCodeDataUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeDataUrl;
+    link.download = `qrcode-triagem-${entregaId?.slice(0, 8)}.png`;
+    link.click();
+    toast.success('QR Code baixado com sucesso!');
   };
 
   const handleCloseQRModal = () => {
@@ -770,14 +762,19 @@ export default function CooperativeRegisterMaterials() {
             </DialogHeader>
             
             <div className="space-y-4">
-              {/* QR Code */}
+              {/* QR Code com Logo */}
               <div className="flex justify-center p-6 bg-white rounded-lg border-2 border-dashed" id="qrcode-triagem">
-                <QRCodeSVG 
-                  value={qrcodeTriagem}
-                  size={256}
-                  level="H"
-                  includeMargin={true}
-                />
+                {qrCodeDataUrl ? (
+                  <img 
+                    src={qrCodeDataUrl} 
+                    alt="QR Code de Triagem"
+                    className="w-64 h-64"
+                  />
+                ) : (
+                  <div className="w-64 h-64 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                )}
               </div>
 
               {/* Código em texto */}

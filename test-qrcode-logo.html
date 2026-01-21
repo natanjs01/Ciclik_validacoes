@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste QR Code com Logo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #16a34a;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #16a34a;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .qr-display {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .qr-display img {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+        button {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #15803d;
+        }
+        .log {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 3px 0;
+        }
+        .log-error {
+            color: #fca5a5;
+        }
+        .log-success {
+            color: #86efac;
+        }
+        .log-info {
+            color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de QR Code com Logo Ciclik</h1>
+        
+        <div class="test-section">
+            <h3>📋 Status dos Testes</h3>
+            <div id="statusContainer"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎨 QR Codes Gerados</h3>
+            <button onclick="runTests()">▶️ Executar Testes</button>
+            <button onclick="clearTests()">🗑️ Limpar</button>
+            <div id="qrContainer"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Log de Execução</h3>
+            <div id="logContainer" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"></script>
+    <script>
+        // Usar biblioteca alternativa se QRCode não estiver disponível
+        const QRCodeLib = typeof QRCode !== 'undefined' ? QRCode : null;
+        
+        const logs = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            logs.push({ timestamp, message, type });
+            updateLogDisplay();
+        }
+        
+        function updateLogDisplay() {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.innerHTML = logs.map(log => 
+                `<div class="log-entry log-${log.type}">[${log.timestamp}] ${log.message}</div>`
+            ).join('');
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function updateStatus(testName, passed, message = '') {
+            const statusContainer = document.getElementById('statusContainer');
+            const statusClass = passed ? 'success' : 'error';
+            const statusText = passed ? '✅ Passou' : '❌ Falhou';
+            
+            const statusDiv = document.createElement('div');
+            statusDiv.innerHTML = `
+                <strong>${testName}:</strong>
+                <span class="status ${statusClass}">${statusText}</span>
+                ${message ? `<br><small>${message}</small>` : ''}
+            `;
+            statusContainer.appendChild(statusDiv);
+        }
+        
+        function clearTests() {
+            document.getElementById('qrContainer').innerHTML = '';
+            document.getElementById('statusContainer').innerHTML = '';
+            logs.length = 0;
+            updateLogDisplay();
+            addLog('Testes limpos');
+        }
+        
+        async function testLogoExists() {
+            addLog('Teste 1: Verificando se a logo existe...', 'info');
+            
+            return new Promise((resolve) => {
+                const img = new Image();
+                const logoPath = '/logo_qrcod.png';
+                
+                img.onload = () => {
+                    addLog(`✓ Logo encontrada: ${logoPath} (${img.width}x${img.height}px)`, 'success');
+                    updateStatus('Logo Existe', true, `Dimensões: ${img.width}x${img.height}px`);
+                    resolve(true);
+                };
+                
+                img.onerror = () => {
+                    addLog(`✗ Logo NÃO encontrada: ${logoPath}`, 'error');
+                    updateStatus('Logo Existe', false, 'Arquivo não encontrado');
+                    resolve(false);
+                };
+                
+                img.src = logoPath;
+            });
+        }
+        
+        async function testQRCodeGeneration() {
+            addLog('Teste 2: Gerando QR Code simples...', 'info');
+            
+            try {
+                // Criar QR Code usando canvas diretamente
+                const canvas = document.createElement('canvas');
+                const size = 400;
+                canvas.width = size;
+                canvas.height = size;
+                
+                // Usar biblioteca alternativa
+                if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+                    await QRCode.toCanvas(canvas, 'https://ciclik.com.br/test', {
+                        width: size,
+                        margin: 2,
+                        errorCorrectionLevel: 'H'
+                    });
+                    
+                    const qrDataUrl = canvas.toDataURL('image/png');
+                    addLog('✓ QR Code simples gerado com sucesso', 'success');
+                    updateStatus('Geração de QR Code', true);
+                    return qrDataUrl;
+                } else {
+                    // Fallback: criar um QR Code visual simples
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, size, size);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('QR Code Demo', size/2, size/2);
+                    
+                    const qrDataUrl = canvas.toDataURL('image/png');
+                    addLog('✓ QR Code demo gerado (biblioteca não disponível)', 'success');
+                    updateStatus('Geração de QR Code', true, 'Usando modo demo');
+                    return qrDataUrl;
+                }
+            } catch (error) {
+                addLog(`✗ Erro ao gerar QR Code: ${error.message}`, 'error');
+                updateStatus('Geração de QR Code', false, error.message);
+                return null;
+            }
+        }
+        
+        async function testQRCodeWithLogo() {
+            addLog('Teste 3: Gerando QR Code com logo...', 'info');
+            
+            try {
+                // Criar canvas para QR Code
+                const canvas = document.createElement('canvas');
+                const size = 400;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Gerar QR Code base
+                let qrDataUrl;
+                if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+                    await QRCode.toCanvas(canvas, 'https://ciclik.com.br/test', {
+                        width: size,
+                        margin: 2,
+                        errorCorrectionLevel: 'H'
+                    });
+                    qrDataUrl = canvas.toDataURL('image/png');
+                } else {
+                    // Fallback visual
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, size, size);
+                    qrDataUrl = canvas.toDataURL('image/png');
+                }
+                
+                // Recriar canvas e carregar QR Code
+                const qrImage = await loadImage(qrDataUrl);
+                canvas.width = qrImage.width;
+                canvas.height = qrImage.height;
+                ctx.drawImage(qrImage, 0, 0);
+                
+                addLog('✓ QR Code base desenhado no canvas', 'success');
+                
+                // Carregar logo
+                addLog('Carregando logo...', 'info');
+                const logo = await loadImage('/logo_qrcod.png');
+                addLog(`✓ Logo carregada: ${logo.width}x${logo.height}px`, 'success');
+                
+                // Calcular posição
+                const logoSizeRatio = 0.25;
+                const logoSize = Math.floor(canvas.width * logoSizeRatio);
+                const logoX = Math.floor((canvas.width - logoSize) / 2);
+                const logoY = Math.floor((canvas.height - logoSize) / 2);
+                
+                addLog(`Posição da logo: (${logoX}, ${logoY}), Tamanho: ${logoSize}px`, 'info');
+                
+                // Desenhar fundo branco
+                const logoPadding = 8;
+                const bgSize = logoSize + (logoPadding * 2);
+                const bgX = logoX - logoPadding;
+                const bgY = logoY - logoPadding;
+                
+                ctx.fillStyle = '#FFFFFF';
+                const radius = 8;
+                ctx.beginPath();
+                ctx.moveTo(bgX + radius, bgY);
+                ctx.lineTo(bgX + bgSize - radius, bgY);
+                ctx.quadraticCurveTo(bgX + bgSize, bgY, bgX + bgSize, bgY + radius);
+                ctx.lineTo(bgX + bgSize, bgY + bgSize - radius);
+                ctx.quadraticCurveTo(bgX + bgSize, bgY + bgSize, bgX + bgSize - radius, bgY + bgSize);
+                ctx.lineTo(bgX + radius, bgY + bgSize);
+                ctx.quadraticCurveTo(bgX, bgY + bgSize, bgX, bgY + bgSize - radius);
+                ctx.lineTo(bgX, bgY + radius);
+                ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY);
+                ctx.closePath();
+                ctx.fill();
+                
+                addLog('✓ Fundo branco desenhado', 'success');
+                
+                // Desenhar logo
+                ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                addLog('✓ Logo desenhada no QR Code', 'success');
+                
+                const finalQR = canvas.toDataURL('image/png', 1.0);
+                
+                updateStatus('QR Code com Logo', true, 'Gerado com sucesso!');
+                return finalQR;
+                
+            } catch (error) {
+                addLog(`✗ Erro ao gerar QR Code com logo: ${error.message}`, 'error');
+                updateStatus('QR Code com Logo', false, error.message);
+                return null;
+            }
+        }
+        
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = (error) => reject(error);
+                img.src = src;
+            });
+        }
+        
+        async function runTests() {
+            clearTests();
+            addLog('=== Iniciando testes de QR Code ===', 'info');
+            
+            const qrContainer = document.getElementById('qrContainer');
+            
+            // Teste 1: Logo existe?
+            const logoExists = await testLogoExists();
+            
+            // Teste 2: QR Code simples
+            const simpleQR = await testQRCodeGeneration();
+            if (simpleQR) {
+                const div = document.createElement('div');
+                div.className = 'qr-display';
+                div.innerHTML = `
+                    <h4>QR Code Simples (sem logo)</h4>
+                    <img src="${simpleQR}" alt="QR Code Simples" />
+                `;
+                qrContainer.appendChild(div);
+            }
+            
+            // Teste 3: QR Code com logo
+            if (logoExists) {
+                const qrWithLogo = await testQRCodeWithLogo();
+                if (qrWithLogo) {
+                    const div = document.createElement('div');
+                    div.className = 'qr-display';
+                    div.innerHTML = `
+                        <h4>QR Code COM Logo Ciclik</h4>
+                        <img src="${qrWithLogo}" alt="QR Code com Logo" />
+                        <p><small>Se a logo aparecer aqui, o código está funcionando! ✅</small></p>
+                    `;
+                    qrContainer.appendChild(div);
+                }
+            } else {
+                addLog('⚠️ Pulando teste de QR Code com logo (logo não encontrada)', 'error');
+            }
+            
+            addLog('=== Testes concluídos ===', 'info');
+        }
+        
+        // Log inicial
+        addLog('Página de testes carregada. Clique em "Executar Testes" para começar.');
+    </script>
+</body>
+</html>

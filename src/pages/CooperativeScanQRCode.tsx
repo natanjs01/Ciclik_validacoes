@@ -4,15 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, QrCode, AlertCircle, CheckCircle2, Camera, Info, Loader2, Package, Route, User, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, QrCode, AlertCircle, CheckCircle2, Camera, Info, Loader2, Package, Route, User, Clock, Scale } from 'lucide-react';
 import { toast } from 'sonner';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { formatWeight } from '@/lib/formatters';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -26,9 +22,8 @@ export default function CooperativeScanQRCode() {
   
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [scanMode, setScanMode] = useState<'entrega' | 'rota'>('entrega');
-  const [rotaSelecionada, setRotaSelecionada] = useState<string>('');
   const [entregasAtivas, setEntregasAtivas] = useState<any[]>([]);
+  const [entregasEmTriagem, setEntregasEmTriagem] = useState<any[]>([]);
   const [rotas, setRotas] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   
@@ -73,6 +68,7 @@ export default function CooperativeScanQRCode() {
   // Carregar dados iniciais (entregas ativas e rotas)
   useEffect(() => {
     loadEntregasAtivas();
+    loadEntregasEmTriagem();
     loadRotas();
   }, [user]);
 
@@ -124,6 +120,52 @@ export default function CooperativeScanQRCode() {
       console.error('Erro ao carregar entregas:', error);
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const loadEntregasEmTriagem = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: coopData } = await supabase
+        .from('cooperativas')
+        .select('id')
+        .eq('id_user', user.id)
+        .single();
+
+      if (!coopData) return;
+
+      const { data: entregas, error } = await supabase
+        .from('entregas_reciclaveis')
+        .select('*')
+        .eq('id_cooperativa', coopData.id)
+        .eq('status_promessa', 'em_triagem')
+        .order('data_envio_triagem', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Erro ao carregar entregas em triagem:', error);
+        throw error;
+      }
+
+      if (entregas && entregas.length > 0) {
+        const userIds = [...new Set(entregas.map(e => e.id_usuario))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, nome, telefone')
+          .in('id', userIds);
+
+        const entregasComUsuarios = entregas.map(entrega => ({
+          ...entrega,
+          usuario: profilesData?.find(p => p.id === entrega.id_usuario) || null
+        }));
+
+        setEntregasEmTriagem(entregasComUsuarios);
+      } else {
+        setEntregasEmTriagem([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar entregas em triagem:', error);
     }
   };
 
@@ -297,7 +339,14 @@ export default function CooperativeScanQRCode() {
     try {
       console.log('[QRCode] Dados lidos:', qrData);
       
-      // Parse JSON
+      // Verificar se é QR Code de triagem (formato: TRIAGEM_id_timestamp)
+      if (qrData.startsWith('TRIAGEM_')) {
+        console.log('[QRCode] QR Code de triagem detectado');
+        await processTriagemQRCode(qrData);
+        return;
+      }
+      
+      // Parse JSON para outros tipos
       let data;
       try {
         data = JSON.parse(qrData);
@@ -332,6 +381,83 @@ export default function CooperativeScanQRCode() {
       console.error("[QRCode] Erro ao processar QR Code:", error);
       toast.error("Erro ao processar", { 
         description: error.message || "Tente novamente" 
+      });
+      if (isMountedRef.current) setCameraStatus('idle');
+    }
+  };
+
+  // Processar QR Code de triagem
+  const processTriagemQRCode = async (qrData: string) => {
+    try {
+      console.log('[Triagem] Processando QR Code de triagem:', qrData);
+      
+      // Buscar entrega pelo qrcode_triagem
+      const { data: entrega, error: entregaError } = await supabase
+        .from('entregas_reciclaveis')
+        .select('id, status_promessa, id_cooperativa, tipo_material')
+        .eq('qrcode_triagem', qrData)
+        .single();
+
+      if (entregaError || !entrega) {
+        console.error('[Triagem] Erro ao buscar entrega:', entregaError);
+        toast.error("QR Code inválido", { 
+          description: "Entrega não encontrada para este código de triagem" 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      console.log('[Triagem] Entrega encontrada:', entrega);
+
+      // Verificar se está em status correto
+      if (entrega.status_promessa !== 'em_triagem') {
+        toast.error("Status incorreto", { 
+          description: `Esta entrega está ${entrega.status_promessa}, não em triagem` 
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      // Buscar cooperativa do usuário
+      const { data: coopData, error: coopError } = await supabase
+        .from('cooperativas')
+        .select('id')
+        .eq('id_user', user?.id)
+        .single();
+
+      if (coopError || !coopData) {
+        console.error('[Triagem] Erro ao buscar cooperativa:', coopError);
+        toast.error("Cooperativa não encontrada");
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      // Verificar se é a mesma cooperativa
+      if (entrega.id_cooperativa !== coopData.id) {
+        toast.error("Entrega de outra cooperativa", {
+          description: "Esta entrega não pertence à sua cooperativa"
+        });
+        if (isMountedRef.current) setCameraStatus('idle');
+        return;
+      }
+
+      // Registrar início da triagem
+      await supabase
+        .from('entregas_reciclaveis')
+        .update({ data_inicio_triagem: new Date().toISOString() })
+        .eq('id', entrega.id);
+
+      toast.success("Triagem iniciada!", { 
+        description: `Material: ${entrega.tipo_material}` 
+      });
+
+      // Navegar para página de triagem
+      navigate(`/cooperative/triagem/${entrega.id}`);
+
+    } catch (error: any) {
+      console.error("[Triagem] Erro ao processar triagem:", error);
+      toast.error("Erro ao processar triagem", { 
+        description: error.message 
       });
       if (isMountedRef.current) setCameraStatus('idle');
     }
@@ -619,6 +745,14 @@ export default function CooperativeScanQRCode() {
     }
   };
 
+  // Auto-iniciar scanner ao montar componente
+  useEffect(() => {
+    // Iniciar automaticamente após carregar os dados
+    if (!loadingData) {
+      handleStartScanning();
+    }
+  }, [loadingData]);
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -631,328 +765,270 @@ export default function CooperativeScanQRCode() {
           Voltar
         </Button>
 
-        {/* Abas para diferenciar tipo de scan */}
-        <Tabs value={scanMode} onValueChange={(v) => setScanMode(v as 'entrega' | 'rota')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="entrega" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Entrega Direta
-            </TabsTrigger>
-            <TabsTrigger value="rota" className="flex items-center gap-2">
-              <Route className="h-4 w-4" />
-              Coleta de Rota
-            </TabsTrigger>
-          </TabsList>
+        {/* Card Principal - Scanner Universal */}
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <QrCode className="h-6 w-6 text-primary" />
+              <div className="flex-1">
+                <CardTitle>Scanner Universal de QR Code</CardTitle>
+                <CardDescription>
+                  Escaneie qualquer QR Code da Ciclik - o sistema detecta automaticamente o tipo
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
 
-          {/* ABA: Entrega Direta */}
-          <TabsContent value="entrega" className="space-y-4">
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
-                  <div>
-                    <CardTitle>Escanear Entrega Direta</CardTitle>
-                    <CardDescription>
-                      Para usuários que vêm até a cooperativa entregar materiais
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {/* Lista de entregas esperadas */}
-                {!loadingData && entregasAtivas.length > 0 && (
-                  <div className="space-y-3">
+          <CardContent className="space-y-6">
+            {/* Informações das entregas e estatísticas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Entregas Diretas Esperando */}
+              {!loadingData && entregasAtivas.length > 0 && (
+                <Alert className="bg-primary/5">
+                  <Package className="h-4 w-4 text-primary" />
+                  <AlertDescription>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Esperando agora:</p>
-                      <Badge variant="secondary">{entregasAtivas.length} {entregasAtivas.length === 1 ? 'entrega' : 'entregas'}</Badge>
+                      <span className="text-sm font-medium">Entregas Diretas</span>
+                      <Badge variant="secondary">{entregasAtivas.length}</Badge>
                     </div>
-                    
-                    {/* Área com scroll limitado - max 4 cards visíveis */}
-                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-                      {entregasAtivas.map((entrega) => (
-                        <Alert key={entrega.id} className="bg-primary/5">
-                          <User className="h-4 w-4 text-primary" />
-                          <AlertDescription>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <strong>{entrega.usuario?.nome || 'Usuário'}</strong>
-                                <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                                  <span>{entrega.tipo_material}</span>
-                                  <span>•</span>
-                                  <span>{formatWeight(entrega.peso_estimado || 0)}</span>
-                                  <span>•</span>
-                                  <Clock className="h-3 w-3 inline" />
-                                  <span>{formatDistanceToNow(new Date(entrega.data_geracao), { locale: ptBR, addSuffix: true })}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </AlertDescription>
-                        </Alert>
-                      ))}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Rotas Ativas */}
+              {!loadingData && rotas.length > 0 && (
+                <Alert className="bg-accent/5">
+                  <Route className="h-4 w-4 text-accent" />
+                  <AlertDescription>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Rotas Ativas</span>
+                      <Badge variant="secondary">{rotas.length}</Badge>
                     </div>
-                  </div>
-                )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-                {!loadingData && entregasAtivas.length === 0 && (
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Nenhuma entrega direta aguardando no momento
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Container do scanner */}
-                <div 
-                  id={READER_ID} 
-                  className={`w-full rounded-lg overflow-hidden bg-muted/30 ${
-                    cameraStatus === 'scanning' ? 'min-h-[300px]' : 'h-0 overflow-hidden'
-                  }`}
-                  style={{ 
-                    transition: 'height 0.3s ease-in-out',
-                    visibility: cameraStatus === 'scanning' ? 'visible' : 'hidden'
-                  }}
-                />
-
-                {/* Estados do scanner */}
-                {cameraStatus === 'idle' && (
-                  <div className="space-y-4">
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription>
-                        Para escanear QR Codes, precisamos acessar a câmera do seu dispositivo.
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                      <p className="font-medium text-sm">Validações Automáticas:</p>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>✓ Verifica se o QR Code pertence à sua cooperativa</li>
-                        <li>✓ Verifica se está dentro do prazo de 24h</li>
-                        <li>✓ Verifica se ainda não foi usado</li>
-                      </ul>
+              {/* Entregas em Triagem */}
+              {!loadingData && entregasEmTriagem.length > 0 && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <Scale className="h-4 w-4 text-amber-600" />
+                  <AlertDescription>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Aguardando Triagem</span>
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+                        {entregasEmTriagem.length}
+                      </Badge>
                     </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
 
-                    <Button onClick={handleStartScanning} className="w-full" size="lg">
-                      <Camera className="mr-2 h-5 w-5" />
-                      Iniciar Scanner
-                    </Button>
-                  </div>
-                )}
-
-                {cameraStatus === 'requesting' && (
-                  <div className="text-center py-8 space-y-4">
-                    <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
-                    <div>
-                      <p className="font-medium text-lg">Solicitando acesso à câmera...</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Autorize o acesso quando o navegador solicitar
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {cameraStatus === 'granted' && (
-                  <div className="text-center py-8 space-y-4">
-                    <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
-                    <div>
-                      <p className="font-medium text-lg">Permissão concedida!</p>
-                      <p className="text-sm text-muted-foreground mt-2">Iniciando câmera...</p>
-                    </div>
-                  </div>
-                )}
-
-                {cameraStatus === 'denied' && (
-                  <div className="space-y-4">
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        {errorMessage || 'Acesso à câmera foi negado.'}
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Como permitir:</strong> Clique no ícone de cadeado na barra de endereço 
-                        e altere a permissão da câmera para "Permitir".
-                      </p>
-                    </div>
-
-                    <Button onClick={handleStartScanning} className="w-full" size="lg">
-                      <Camera className="mr-2 h-5 w-5" />
-                      Tentar Novamente
-                    </Button>
-                  </div>
-                )}
-
-                {cameraStatus === 'processing' && (
-                  <div className="text-center py-8 space-y-4">
-                    <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
-                    <div>
-                      <p className="font-medium text-lg">Processando QR Code...</p>
-                      <p className="text-sm text-muted-foreground mt-2">Aguarde...</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ABA: Coleta de Rota */}
-          <TabsContent value="rota" className="space-y-4">
-            <Card className="border-l-4 border-l-accent">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Route className="h-5 w-5 text-accent" />
+            {/* Informações sobre tipos de QR Code aceitos */}
+            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+              <p className="font-medium text-sm flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Tipos de QR Code Aceitos
+              </p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <Package className="h-4 w-4 mt-0.5 text-primary" />
                   <div>
-                    <CardTitle>Escanear Coleta de Rota</CardTitle>
-                    <CardDescription>
-                      Para coletas em rotas programadas
-                    </CardDescription>
+                    <span className="font-medium text-foreground">Entrega Direta:</span> Usuários que vêm entregar na cooperativa
                   </div>
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {/* Seletor de rota */}
-                {!loadingData && rotas.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Selecione a rota que está coletando</Label>
-                    <Select value={rotaSelecionada} onValueChange={setRotaSelecionada}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Escolha a rota" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {rotas.map((rota) => (
-                          <SelectItem key={rota.id} value={rota.id}>
-                            {rota.nome} ({rota.adesoes_ativas?.[0]?.count || 0} adesões)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-start gap-2">
+                  <Route className="h-4 w-4 mt-0.5 text-accent" />
+                  <div>
+                    <span className="font-medium text-foreground">Coleta de Rota:</span> QR Code de adesão a rotas programadas
                   </div>
-                )}
+                </div>
+                <div className="flex items-start gap-2">
+                  <Scale className="h-4 w-4 mt-0.5 text-amber-600" />
+                  <div>
+                    <span className="font-medium text-foreground">Triagem:</span> Validação de materiais na estação de triagem
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                {!loadingData && rotas.length === 0 && (
-                  <Alert>
-                    <Info className="h-4 w-4" />
+            {/* Container do scanner */}
+            <div 
+              id={READER_ID} 
+              className={`w-full rounded-lg overflow-hidden bg-muted/30 ${
+                cameraStatus === 'scanning' ? 'min-h-[300px]' : 'h-0 overflow-hidden'
+              }`}
+              style={{ 
+                transition: 'height 0.3s ease-in-out',
+                visibility: cameraStatus === 'scanning' ? 'visible' : 'hidden'
+              }}
+            />
+
+            {/* Estados do scanner */}
+            {cameraStatus === 'idle' && (
+              <div className="space-y-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Para escanear QR Codes, precisamos acessar a câmera do seu dispositivo.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <p className="font-medium text-sm">Validações Automáticas:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>✓ Detecta automaticamente o tipo de QR Code</li>
+                    <li>✓ Verifica se pertence à sua cooperativa</li>
+                    <li>✓ Valida prazo de validade (24h para entregas diretas)</li>
+                    <li>✓ Confirma se ainda não foi usado</li>
+                  </ul>
+                </div>
+
+                <Button onClick={handleStartScanning} className="w-full" size="lg">
+                  <Camera className="mr-2 h-5 w-5" />
+                  Iniciar Scanner
+                </Button>
+              </div>
+            )}
+
+            {cameraStatus === 'requesting' && (
+              <div className="text-center py-8 space-y-4">
+                <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
+                <div>
+                  <p className="font-medium text-lg">Solicitando permissão...</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Aguardando autorização para acessar a câmera
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {cameraStatus === 'granted' && (
+              <div className="text-center py-8 space-y-4">
+                <CheckCircle2 className="h-12 w-12 text-success mx-auto" />
+                <div>
+                  <p className="font-medium text-lg">Permissão concedida!</p>
+                  <p className="text-sm text-muted-foreground mt-2">Iniciando câmera...</p>
+                </div>
+              </div>
+            )}
+
+            {cameraStatus === 'denied' && (
+              <div className="space-y-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Permissão negada!</strong><br/>
+                    Você precisa permitir o acesso à câmera nas configurações do navegador.
+                  </AlertDescription>
+                </Alert>
+                <Button onClick={handleStartScanning} variant="outline" className="w-full">
+                  <Camera className="mr-2 h-5 w-5" />
+                  Tentar Novamente
+                </Button>
+              </div>
+            )}
+
+            {cameraStatus === 'scanning' && (
+              <div className="space-y-4">
+                <Alert className="bg-primary/5">
+                  <QrCode className="h-4 w-4 text-primary" />
+                  <AlertDescription>
+                    <strong>Aponte a câmera para qualquer QR Code Ciclik</strong><br/>
+                    O sistema identificará automaticamente o tipo
+                  </AlertDescription>
+                </Alert>
+                <Button onClick={stopScanner} variant="outline" className="w-full">
+                  Parar Scanner
+                </Button>
+              </div>
+            )}
+
+            {cameraStatus === 'processing' && (
+              <div className="text-center py-8 space-y-4">
+                <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
+                <div>
+                  <p className="font-medium text-lg">Processando QR Code...</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Identificando tipo e validando informações...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {cameraStatus === 'error' && errorMessage && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seções expansíveis com detalhes */}
+        {!loadingData && entregasAtivas.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Entregas Diretas Esperando ({entregasAtivas.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
+                {entregasAtivas.map((entrega) => (
+                  <Alert key={entrega.id} className="bg-primary/5">
+                    <User className="h-4 w-4 text-primary" />
                     <AlertDescription>
-                      Nenhuma rota ativa atribuída à sua cooperativa
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Info da rota selecionada */}
-                {rotaSelecionada && rotas.find(r => r.id === rotaSelecionada) && (
-                  <Alert className="bg-accent/5 border-accent/20">
-                    <Route className="h-4 w-4 text-accent" />
-                    <AlertDescription>
-                      <div>
-                        <strong className="text-accent">
-                          {rotas.find(r => r.id === rotaSelecionada)?.nome}
-                        </strong>
-                        <p className="text-sm mt-1">
-                          {rotas.find(r => r.id === rotaSelecionada)?.adesoes_ativas?.[0]?.count || 0} adesões ativas nesta rota
-                        </p>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Container do scanner */}
-                {rotaSelecionada && (
-                  <>
-                    <div 
-                      id={READER_ID} 
-                      className={`w-full rounded-lg overflow-hidden bg-muted/30 ${
-                        cameraStatus === 'scanning' ? 'min-h-[300px]' : 'h-0 overflow-hidden'
-                      }`}
-                      style={{ 
-                        transition: 'height 0.3s ease-in-out',
-                        visibility: cameraStatus === 'scanning' ? 'visible' : 'hidden'
-                      }}
-                    />
-
-                    {/* Estados do scanner */}
-                    {cameraStatus === 'idle' && (
-                      <div className="space-y-4">
-                        <Alert>
-                          <Info className="h-4 w-4" />
-                          <AlertDescription>
-                            Escaneie o QR Code do morador que aderiu a esta rota.
-                          </AlertDescription>
-                        </Alert>
-
-                        <Button onClick={handleStartScanning} className="w-full" size="lg">
-                          <Camera className="mr-2 h-5 w-5" />
-                          Iniciar Scanner
-                        </Button>
-                      </div>
-                    )}
-
-                    {cameraStatus === 'requesting' && (
-                      <div className="text-center py-8 space-y-4">
-                        <Loader2 className="h-12 w-12 text-accent animate-spin mx-auto" />
+                      <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-lg">Solicitando acesso à câmera...</p>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            Autorize o acesso quando o navegador solicitar
+                          <p className="font-medium">{entrega.usuario_nome || 'Usuário'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(entrega.data_geracao), { locale: ptBR, addSuffix: true })}
                           </p>
                         </div>
+                        <Badge variant="secondary">{entrega.tipo_material || 'Diversos'}</Badge>
                       </div>
-                    )}
-
-                    {cameraStatus === 'granted' && (
-                      <div className="text-center py-8 space-y-4">
-                        <CheckCircle2 className="h-12 w-12 text-accent mx-auto" />
-                        <div>
-                          <p className="font-medium text-lg">Permissão concedida!</p>
-                          <p className="text-sm text-muted-foreground mt-2">Iniciando câmera...</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {cameraStatus === 'denied' && (
-                      <div className="space-y-4">
-                        <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {errorMessage || 'Acesso à câmera foi negado.'}
-                          </AlertDescription>
-                        </Alert>
-
-                        <Button onClick={handleStartScanning} className="w-full" size="lg">
-                          <Camera className="mr-2 h-5 w-5" />
-                          Tentar Novamente
-                        </Button>
-                      </div>
-                    )}
-
-                    {cameraStatus === 'processing' && (
-                      <div className="text-center py-8 space-y-4">
-                        <Loader2 className="h-12 w-12 text-accent animate-spin mx-auto" />
-                        <div>
-                          <p className="font-medium text-lg">Processando QR Code...</p>
-                          <p className="text-sm text-muted-foreground mt-2">Aguarde...</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {!rotaSelecionada && rotas.length > 0 && (
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Selecione uma rota acima para começar a escanear QR Codes
                     </AlertDescription>
                   </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loadingData && entregasEmTriagem.length > 0 && (
+          <Card className="mt-4 border-l-4 border-l-amber-600">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Scale className="h-5 w-5 text-amber-600" />
+                Aguardando Triagem ({entregasEmTriagem.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
+                {entregasEmTriagem.map((entrega) => (
+                  <Alert key={entrega.id} className="bg-amber-50 border-amber-200">
+                    <User className="h-4 w-4 text-amber-600" />
+                    <AlertDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{entrega.usuario_nome || 'Usuário'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Enviado {formatDistanceToNow(new Date(entrega.data_envio_triagem), { locale: ptBR, addSuffix: true })}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+                          {entrega.tipo_material || 'Diversos'}
+                        </Badge>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

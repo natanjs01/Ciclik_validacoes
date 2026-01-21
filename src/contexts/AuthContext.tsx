@@ -190,9 +190,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
+      // Preservar flags de tour completado antes de limpar
+      const tourKeys = Object.keys(localStorage).filter(key => key.startsWith('tour_completed_'));
+      const toursCompleted: Record<string, string> = {};
+      tourKeys.forEach(key => {
+        toursCompleted[key] = localStorage.getItem(key) || '';
+      });
+      
       // Limpar storage local de forma mais completa
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restaurar flags de tour completado
+      Object.entries(toursCompleted).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
       
       // Redirecionar para a página de login
       navigate('/auth', { replace: true });
@@ -203,8 +215,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setUserRole(null);
       setProfile(null);
+      
+      // Preservar flags de tour completado antes de limpar (no catch também)
+      const tourKeys = Object.keys(localStorage).filter(key => key.startsWith('tour_completed_'));
+      const toursCompleted: Record<string, string> = {};
+      tourKeys.forEach(key => {
+        toursCompleted[key] = localStorage.getItem(key) || '';
+      });
+      
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restaurar flags de tour completado
+      Object.entries(toursCompleted).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
       navigate('/auth', { replace: true });
     }
   };

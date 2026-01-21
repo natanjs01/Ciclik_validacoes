@@ -112,16 +112,50 @@ const AdminCDVReconciliationManual = () => {
     }
   }, [selectedProjeto]);
 
-  const fetchData = async () => {
+  const fetchData = async (forceRefresh = false) => {
     setLoading(true);
     try {
+      // 🔍 Forçar nova consulta sem cache
+      const timestamp = new Date().getTime();
+      console.log(`[${timestamp}] 🔄 Buscando dados atualizados... ${forceRefresh ? '(FORÇA REFRESH)' : ''}`);
+      
+      // 🔍 DIAGNÓSTICO: Buscar dados SEM filtros para ver o total real
+      const { data: allUIBs, error: allError } = await supabase
+        .from('uib')
+        .select('tipo, status', { count: 'exact', head: false });
+      
+      if (!allError && allUIBs) {
+        const diagnostico = allUIBs.reduce((acc: any, uib: any) => {
+          const key = `${uib.tipo}_${uib.status}`;
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('🔍 DIAGNÓSTICO - Todas UIBs no banco:', diagnostico);
+      }
+      
       const [resRes, eduRes, prodRes, projRes, pendentesRes] = await Promise.all([
-        supabase.from('uib').select('id', { count: 'exact' }).eq('tipo', 'residuo').eq('status', 'disponivel'),
-        supabase.from('uib').select('id', { count: 'exact' }).eq('tipo', 'educacao').eq('status', 'disponivel'),
-        supabase.from('produtos_ciclik').select('id', { count: 'exact' }), // ✅ ALTERADO: Contagem direta de produtos cadastrados
+        supabase.from('uib').select('id', { count: 'exact', head: false }).eq('tipo', 'residuo').eq('status', 'disponivel'),
+        supabase.from('uib').select('id', { count: 'exact', head: false }).eq('tipo', 'educacao').eq('status', 'disponivel'),
+        supabase.from('produtos_ciclik').select('id', { count: 'exact', head: false }), // ✅ ALTERADO: Contagem direta de produtos cadastrados
         supabase.from('cdv_projetos').select('id, titulo').eq('status', 'ativo'),
-        supabase.from('impacto_bruto').select('id', { count: 'exact' }).eq('processado', false)
+        supabase.from('impacto_bruto').select('id', { count: 'exact', head: false }).eq('processado', false)
       ]);
+
+      console.log(`[${timestamp}] 📊 Contagens obtidas:`, {
+        residuo: resRes.count,
+        educacao: eduRes.count,
+        produto: prodRes.count,
+        erros: {
+          residuo: resRes.error?.message,
+          educacao: eduRes.error?.message,
+          produto: prodRes.error?.message
+        }
+      });
+
+      // 🔧 Verificar se há erros nas queries
+      if (resRes.error) console.error('Erro ao buscar UIBs Resíduo:', resRes.error);
+      if (eduRes.error) console.error('Erro ao buscar UIBs Educação:', eduRes.error);
+      if (prodRes.error) console.error('Erro ao buscar Produtos:', prodRes.error);
 
       setUibStock({
         residuo: resRes.count || 0,
@@ -133,7 +167,8 @@ const AdminCDVReconciliationManual = () => {
       
       // Buscar saldo parcial separadamente com tratamento de erro
       const saldoRes = await supabase.from('saldo_parcial').select('*');
-      if (saldoRes.error) {setSaldoParcial([]);
+      if (saldoRes.error) {
+        setSaldoParcial([]);
       } else {
         // Mapear os dados para o formato esperado, independente da estrutura
         const saldoData = (saldoRes.data || []).map((item: any) => ({
@@ -145,6 +180,7 @@ const AdminCDVReconciliationManual = () => {
       
       setImpactosPendentes(pendentesRes.count || 0);
     } catch (error: any) {
+      console.error('❌ Erro ao carregar dados:', error);
       toast({
         title: "Erro ao carregar dados",
         description: error.message,
@@ -194,17 +230,39 @@ const AdminCDVReconciliationManual = () => {
   const runMotorUIB = async () => {
     setRunningMotor(true);
     try {
+      console.log('🚀 Iniciando Motor UIB...');
       const { data, error } = await supabase.functions.invoke('motor-uib');
 
       if (error) throw error;
 
-      toast({
-        title: "✅ Motor UIB executado",
-        description: `${data.totais?.uibs_geradas || 0} UIBs geradas a partir de ${data.totais?.impactos_processados || 0} impactos`
+      console.log('📊 Resultado COMPLETO do Motor UIB:', JSON.stringify(data, null, 2));
+      console.log('📊 Resultados detalhados:', {
+        residuo: data.resultados?.residuo,
+        educacao: data.resultados?.educacao,
+        produto: data.resultados?.produto,
+        totais: data.totais
       });
 
-      await fetchData();
+      // 🔍 A notificação mostra quantas UIBs foram GERADAS AGORA, não o total disponível
+      const uibsGeradas = data.totais?.uibs_geradas || 0;
+      const impactosProcessados = data.totais?.impactos_processados || 0;
+      
+      console.log(`✅ Motor processou ${impactosProcessados} impactos e gerou ${uibsGeradas} UIBs`);
+
+      toast({
+        title: "✅ Motor UIB executado",
+        description: `${uibsGeradas} UIBs geradas a partir de ${impactosProcessados} impactos`
+      });
+
+      // ⏱️ Aguardar 1.5 segundos para garantir que o banco finalizou todas as operações
+      console.log('⏳ Aguardando banco finalizar operações...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('🔄 Atualizando dados do dashboard com FORCE REFRESH...');
+      await fetchData(true); // 🔥 Force refresh = true para quebrar cache
+      console.log('✅ Dados atualizados com sucesso!');
     } catch (error: any) {
+      console.error('❌ Erro ao executar Motor UIB:', error);
       toast({
         title: "Erro ao executar Motor UIB",
         description: error.message,

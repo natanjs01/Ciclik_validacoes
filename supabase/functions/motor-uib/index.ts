@@ -26,6 +26,18 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('🔄 Motor UIB iniciado...');
+    
+    // TESTE: Verificar se consegue acessar a tabela UIB
+    const { data: testeUIB, error: testeError } = await supabase
+      .from('uib')
+      .select('numero_sequencial')
+      .order('numero_sequencial', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    console.log('🧪 TESTE RLS - Conseguiu buscar max numero_sequencial?', !testeError);
+    console.log('🧪 TESTE RLS - Erro:', testeError);
+    console.log('🧪 TESTE RLS - Dados:', testeUIB);
 
     const tiposImpacto = ['residuo', 'educacao', 'produto'];
     const resultados = {
@@ -109,21 +121,36 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Inserir em lotes de 100
+        console.log(`📦 Preparadas ${uibsToInsert.length} UIBs para inserir (numero_sequencial será gerado pelo banco)`);
+
+        // Inserir em lotes de 100 (sem numero_sequencial, o banco gera automaticamente)
         const batchSize = 100;
+        let uibsInseridas = 0;
         for (let i = 0; i < uibsToInsert.length; i += batchSize) {
           const batch = uibsToInsert.slice(i, i + batchSize);
-          const { error: insertError } = await supabase
+          
+          console.log(`🔍 Tentando inserir batch ${i}-${i+batchSize}:`, JSON.stringify(batch[0], null, 2));
+          
+          const { data: insertData, error: insertError } = await supabase
             .from('uib')
-            .insert(batch);
+            .insert(batch)
+            .select();
 
           if (insertError) {
-            console.error(`Erro ao inserir UIBs ${tipo}:`, insertError);
+            console.error(`❌ ERRO CRÍTICO ao inserir UIBs ${tipo} (batch ${i}-${i+batchSize}):`);
+            console.error('Código do erro:', insertError.code);
+            console.error('Mensagem:', insertError.message);
+            console.error('Detalhes completos:', JSON.stringify(insertError, null, 2));
+            console.error('Exemplo de objeto que tentou inserir:', JSON.stringify(batch[0], null, 2));
+            // NÃO para a execução, mas registra o erro
+          } else {
+            uibsInseridas += insertData?.length || 0;
+            console.log(`✅ Inserido batch ${i}-${i+batchSize}: ${insertData?.length || 0} UIBs`);
           }
         }
 
-        resultados[tipo as keyof typeof resultados].uibsGeradas = uibsNovas;
-        console.log(`✅ ${uibsNovas} UIBs geradas para ${tipo}`);
+        resultados[tipo as keyof typeof resultados].uibsGeradas = uibsInseridas; // ✅ Conta apenas as realmente inseridas
+        console.log(`✅ ${uibsInseridas}/${uibsNovas} UIBs de ${tipo} inseridas com sucesso`);
       }
 
       // 6. Atualizar saldo parcial

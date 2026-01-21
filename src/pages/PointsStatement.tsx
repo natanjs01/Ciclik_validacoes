@@ -142,7 +142,7 @@ const PointsStatement = () => {
         }
       });
 
-      // 4. Entregas validadas - calcular usando fórmula oficial
+      // 4. Entregas validadas - calcular usando fórmula oficial CORRIGIDA
       const { data: entregas } = await supabase
         .from('entregas_reciclaveis')
         .select('data_validacao, peso_validado, tipo_material')
@@ -152,21 +152,25 @@ const PointsStatement = () => {
 
       const pontosEntregaPor6Kg = pontosConfig['pontos_entrega_6kg'] ?? 10;
 
-      entregas?.forEach(entrega => {
-        if (entrega.data_validacao && entrega.peso_validado && entrega.peso_validado > 0) {
-          // Fórmula oficial: floor(peso / 6) * pontos_por_6kg
-          const pontosEntrega = Math.floor(entrega.peso_validado / 6) * pontosEntregaPor6Kg;
-          if (pontosEntrega > 0) {
-            allTransactions.push({
-              date: entrega.data_validacao,
-              type: 'entrega_validada',
-              points: pontosEntrega,
-              description: 'Entrega Validada',
-              details: `${entrega.peso_validado.toFixed(2)}kg - ${entrega.tipo_material}`
-            });
-          }
+      // ✅ CORREÇÃO: Agregar peso total ANTES de calcular pontos
+      // Método correto: floor(soma_pesos / 6) * pontos
+      // Evita perda de frações ao calcular por entrega individual
+      if (entregas && entregas.length > 0) {
+        const pesoTotalValidado = entregas.reduce((acc, e) => acc + (e.peso_validado || 0), 0);
+        const pontosTotaisEntregas = Math.floor(pesoTotalValidado / 6) * pontosEntregaPor6Kg;
+        
+        // Adicionar transação consolidada de entregas
+        const dataUltimaEntrega = entregas[0]?.data_validacao;
+        if (dataUltimaEntrega && pontosTotaisEntregas > 0) {
+          allTransactions.push({
+            date: dataUltimaEntrega,
+            type: 'entrega_validada',
+            points: pontosTotaisEntregas,
+            description: 'Entregas Validadas',
+            details: `${pesoTotalValidado.toFixed(2)}kg total (${entregas.length} ${entregas.length === 1 ? 'entrega' : 'entregas'})`
+          });
         }
-      });
+      }
 
       // 5. Cupons resgatados
       const { data: cupons } = await supabase

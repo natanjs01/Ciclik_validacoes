@@ -24,8 +24,8 @@ export interface ProdutoCosmosResponse {
   ncm?: string;
   ncm_completo?: string;
   preco_medio?: number;
-  peso_liquido?: number;
-  peso_bruto?: number;
+  peso_liquido_em_gramas?: number;  // ✅ Corrigido para o nome correto
+  peso_bruto_em_gramas?: number;     // ✅ Corrigido para o nome correto
   imagem_url?: string;
   mensagem: string;
 }
@@ -162,7 +162,7 @@ export function extrairDadosParaFormulario(
   return {
     categoria: produto.categoria_api || null,
     ncm: produto.ncm || null,
-    peso_liquido: produto.peso_liquido || null,
+    peso_liquido_em_gramas: produto.peso_liquido_em_gramas || null,  // ✅ Corrigido
     descricao: produto.descricao || null,
     marca: produto.marca || null,
     imagem_url: produto.imagem_url || null

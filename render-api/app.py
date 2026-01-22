@@ -75,15 +75,47 @@ def formatar_resposta(data):
     
     # Peso em gramas (converter se necessário)
     peso_liquido = data.get('net_weight')
-    if peso_liquido and isinstance(peso_liquido, str):
-        # Tentar extrair número (ex: "1kg" -> 1000)
-        peso_liquido = peso_liquido.replace('kg', '').replace('g', '').strip()
-        try:
-            peso_liquido = float(peso_liquido)
-            if peso_liquido < 100:  # Provavelmente está em kg
-                peso_liquido = peso_liquido * 1000
-        except:
-            peso_liquido = None
+    peso_liquido_gramas = None
+    
+    if peso_liquido:
+        if isinstance(peso_liquido, str):
+            # Tentar extrair número (ex: "1kg" -> 1000, "500g" -> 500)
+            peso_str = peso_liquido.replace('kg', '').replace('g', '').strip()
+            try:
+                peso_num = float(peso_str)
+                if peso_liquido.lower().endswith('kg') or peso_num < 100:  # Está em kg
+                    peso_liquido_gramas = int(peso_num * 1000)
+                else:  # Já está em gramas
+                    peso_liquido_gramas = int(peso_num)
+            except:
+                peso_liquido_gramas = None
+        elif isinstance(peso_liquido, (int, float)):
+            # Se é número, assumir kg se < 100, senão gramas
+            if peso_liquido < 100:
+                peso_liquido_gramas = int(peso_liquido * 1000)
+            else:
+                peso_liquido_gramas = int(peso_liquido)
+    
+    # Peso bruto em gramas
+    peso_bruto = data.get('gross_weight')
+    peso_bruto_gramas = None
+    
+    if peso_bruto:
+        if isinstance(peso_bruto, str):
+            peso_str = peso_bruto.replace('kg', '').replace('g', '').strip()
+            try:
+                peso_num = float(peso_str)
+                if peso_bruto.lower().endswith('kg') or peso_num < 100:
+                    peso_bruto_gramas = int(peso_num * 1000)
+                else:
+                    peso_bruto_gramas = int(peso_num)
+            except:
+                peso_bruto_gramas = None
+        elif isinstance(peso_bruto, (int, float)):
+            if peso_bruto < 100:
+                peso_bruto_gramas = int(peso_bruto * 1000)
+            else:
+                peso_bruto_gramas = int(peso_bruto)
     
     return {
         "encontrado": True,
@@ -95,8 +127,8 @@ def formatar_resposta(data):
         "ncm": ncm_code,
         "ncm_completo": f"{ncm_code} - {data.get('ncm', {}).get('description')}" if ncm_code and data.get('ncm', {}).get('description') else None,
         "preco_medio": data.get('avg_price'),
-        "peso_liquido": peso_liquido,
-        "peso_bruto": data.get('gross_weight'),
+        "peso_liquido_em_gramas": peso_liquido_gramas,
+        "peso_bruto_em_gramas": peso_bruto_gramas,
         "imagem_url": data.get('thumbnail'),
         "mensagem": "Produto encontrado com sucesso"
     }

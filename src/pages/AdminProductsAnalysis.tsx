@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -213,9 +213,11 @@ export default function AdminProductsAnalysis() {
     setLoading(true);
     try {
       // Busca produtos em análise do banco de dados
+      // PRIORIDADE: QR Code (origem='qrcode') aparecem primeiro, depois ordenados por data
       const { data, error } = await supabase
         .from('produtos_em_analise')
         .select('*')
+        .order('origem', { ascending: false }) // 'qrcode' > 'manual' (ordem alfabética reversa)
         .order('data_ultima_deteccao', { ascending: false });
 
       if (error) throw error;
@@ -923,10 +925,13 @@ export default function AdminProductsAnalysis() {
   const getOrigemBadge = (origem: string) => {
     if (origem === 'qrcode') {
       return (
-        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-          <QrCode className="h-3 w-3 mr-1" />
-          QR Code
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+            <QrCode className="h-3 w-3 mr-1" />
+            QR Code
+          </Badge>
+          <Star className="h-4 w-4 text-amber-500 fill-amber-500" title="Prioridade Máxima" />
+        </div>
       );
     }
     return (

@@ -3,12 +3,16 @@
 // ============================================================
 // Arquivo: src/hooks/useConsultaProduto.ts
 // Descrição: Hook para gerenciar estado de consulta à API Cosmos
+// 
+// ⚠️ IMPORTANTE: Este é um arquivo de EXEMPLO
+// Copie este arquivo para: src/hooks/useConsultaProduto.ts
+// E ajuste o import abaixo conforme a estrutura do seu projeto
 
 import { useState } from 'react';
 import { 
   consultarProdutoComCache, 
   type ProdutoCosmosResponse 
-} from '../services/cosmosApi';
+} from './cosmosApi'; // ← Ajuste o caminho conforme seu projeto
 
 interface UseConsultaProdutoReturn {
   dados: ProdutoCosmosResponse | null;

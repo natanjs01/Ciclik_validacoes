@@ -3,10 +3,17 @@
 // ============================================================
 // Arquivo: src/pages/ProdutosPendentesPage.tsx (EXEMPLO)
 // Descrição: Como integrar a consulta Cosmos em tela existente
+// 
+// ⚠️ IMPORTANTE: Este é um arquivo de EXEMPLO
+// Use como referência para implementar no seu projeto React
+// Ajuste os imports conforme a estrutura do seu projeto
 
-import React, { useState } from 'react';
-import { useConsultaProduto } from '../hooks/useConsultaProduto';
-import { extrairDadosParaFormulario } from '../services/cosmosApi';
+import React, { useState, useEffect } from 'react';
+import { useConsultaProduto } from './useConsultaProduto'; // ← Ajuste o caminho
+import { extrairDadosParaFormulario } from './cosmosApi'; // ← Ajuste o caminho
+
+// Remova os imports abaixo se necessário (linha de exemplo comentada)
+// import { supabase } from '@/lib/supabase'; // ← Adicione quando integrar
 
 interface Produto {
   id: string;

@@ -3,10 +3,14 @@
 // ============================================================
 // Arquivo: src/components/BotaoConsultarCosmos.tsx
 // Descrição: Botão para consultar produto na API Cosmos
+// 
+// ⚠️ IMPORTANTE: Este é um arquivo de EXEMPLO
+// Copie este arquivo para: src/components/BotaoConsultarCosmos.tsx
+// E ajuste os imports abaixo conforme a estrutura do seu projeto
 
 import React from 'react';
-import { useConsultaProduto } from '../hooks/useConsultaProduto';
-import { extrairDadosParaFormulario } from '../services/cosmosApi';
+import { useConsultaProduto } from './useConsultaProduto'; // ← Ajuste o caminho
+import { extrairDadosParaFormulario } from './cosmosApi'; // ← Ajuste o caminho
 
 interface BotaoConsultarCosmosProps {
   gtin: string;

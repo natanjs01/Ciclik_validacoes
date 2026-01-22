@@ -637,9 +637,9 @@ export default function AdminProductsAnalysis() {
           const produto = produtos.find(p => p.id === produtoId);
           if (!produto) continue;
 
-          // 2. Consultar API OnRender (usando mock por enquanto)
+          // 2. Consultar API Cosmos (Render) - PRODUÇÃO
           const inicioConsulta = Date.now();
-          const dadosAPI = await consultarAPIMock(produto.ean_gtin);
+          const dadosAPI = await consultarAPIReal(produto.ean_gtin); // ✅ API REAL
           const tempoResposta = Date.now() - inicioConsulta;
 
           // 3. Registrar consulta no log
@@ -1825,15 +1825,98 @@ export default function AdminProductsAnalysis() {
   );
 }
 
-// ==================== FUNÇÕES MOCK DA API ====================
-// TODO: Substituir por integração real quando API OnRender estiver pronta
+// ==================== INTEGRAÇÃO COM API COSMOS (RENDER) ====================
 
 /**
- * Mock da API OnRender para consulta de produtos
- * Simula resposta da API externa com delay artificial
+ * 🚀 API REAL - Consulta produtos na API Cosmos via Render
+ * Endpoint: https://ciclik-api-produtos.onrender.com
  * 
  * @param eanGtin - Código EAN/GTIN do produto
  * @returns Promise com dados do produto ou erro
+ */
+async function consultarAPIReal(eanGtin: string): Promise<DadosAPIOnRender> {
+  const API_URL = 'https://ciclik-api-produtos.onrender.com';
+  const API_TOKEN = 'ciclik_secret_token_2026';
+  const TIMEOUT_MS = 50000; // 50 segundos (considerar cold start do Render Free)
+
+  // Produtos SEM GTIN válido não podem ser consultados
+  if (eanGtin.startsWith('SEM_GTIN_') || eanGtin === 'SEM GTIN' || !eanGtin || eanGtin.length < 13) {
+    return {
+      ean_gtin: eanGtin,
+      encontrado: false,
+      mensagem: 'Produto sem código GTIN válido - consulta impossível'
+    };
+  }
+
+  try {
+    // Configurar timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    // Chamar API do Render
+    const response = await fetch(`${API_URL}/api/produtos/${eanGtin}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Token de autenticação inválido');
+      } else if (response.status === 400) {
+        throw new Error('GTIN inválido');
+      } else if (response.status === 404) {
+        throw new Error('Produto não encontrado na API');
+      } else {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+    }
+
+    const dadosCosmos = await response.json();
+
+    // Mapear resposta da API Cosmos para o formato esperado
+    return {
+      ean_gtin: dadosCosmos.ean_gtin || eanGtin,
+      descricao: dadosCosmos.descricao || undefined,
+      marca: dadosCosmos.marca || undefined,
+      fabricante: dadosCosmos.fabricante || undefined,
+      ncm: dadosCosmos.ncm || undefined,
+      ncm_descricao: dadosCosmos.ncm_completo ? dadosCosmos.ncm_completo.split(' - ')[1] : undefined,
+      preco_medio: dadosCosmos.preco_medio || undefined,
+      peso_liquido: dadosCosmos.peso_liquido_em_gramas || undefined,
+      peso_bruto: dadosCosmos.peso_bruto_em_gramas || undefined,
+      categoria_api: dadosCosmos.categoria_api || undefined,
+      imagem_url: dadosCosmos.imagem_url || undefined,
+      encontrado: dadosCosmos.encontrado,
+      mensagem: dadosCosmos.mensagem || (dadosCosmos.encontrado ? 'Produto encontrado' : 'Produto não encontrado')
+    };
+
+  } catch (error: any) {
+    // Tratar erros específicos
+    if (error.name === 'AbortError') {
+      return {
+        ean_gtin: eanGtin,
+        encontrado: false,
+        mensagem: 'Timeout: API demorou muito para responder (cold start)'
+      };
+    }
+
+    return {
+      ean_gtin: eanGtin,
+      encontrado: false,
+      mensagem: `Erro ao consultar API: ${error.message}`
+    };
+  }
+}
+
+/**
+ * 🧪 Mock da API OnRender para testes/desenvolvimento
+ * Use consultarAPIReal() para produção
  */
 async function consultarAPIMock(eanGtin: string): Promise<DadosAPIOnRender> {
   // Simula delay de rede (500ms a 2s)

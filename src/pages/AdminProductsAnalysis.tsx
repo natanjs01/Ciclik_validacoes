@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye, Star } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye, Star, CheckCircle2, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -159,6 +159,7 @@ export default function AdminProductsAnalysis() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOrigem, setFilterOrigem] = useState<string>('all');
+  const [filterAPIStatus, setFilterAPIStatus] = useState<string>('all'); // ✅ NOVO: Filtro para status da API
   const [selectedProduct, setSelectedProduct] = useState<ProdutoEmAnalise | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'aprovar' | 'rejeitar' | 'observacao' | 'cadastrar' | null>(null);
@@ -293,7 +294,13 @@ export default function AdminProductsAnalysis() {
   };
 
   const handleCadastrarProduto = (produto: ProdutoEmAnalise) => {
-    // Abrir modal de cadastro com dados pré-preenchidos
+    // ✅ PRIORIDADE: Se produto tem dados_api, preencher automaticamente
+    if (produto.dados_api && produto.status === 'consultado') {
+      preencherFormularioComDadosAPI(produto);
+      return; // A função já abre o modal
+    }
+    
+    // Caso contrário, abrir modal com dados básicos apenas
     setProdutoParaCadastro(produto);
     setFormData({
       gtin: produto.ean_gtin,
@@ -340,7 +347,7 @@ export default function AdminProductsAnalysis() {
           observacoes: formData.observacoes || null,
           imagem_url: produtoParaCadastro?.dados_api?.imagem_url || null, // ✅ NOVO
         })
-        .select()
+        .select('id, gtin, descricao, ncm') // ✅ ESPECIFICAR COLUNAS para evitar erro de RLS/Policy
         .single();
 
       if (errorProduto) throw errorProduto;
@@ -629,9 +636,21 @@ export default function AdminProductsAnalysis() {
 
     const produtosParaConsultar = Array.from(produtosSelecionados);
     const total = produtosParaConsultar.length;
+    let consultasRealizadas = 0;
 
     try {
       for (let i = 0; i < produtosParaConsultar.length; i++) {
+        // ✅ CORREÇÃO: Verificar limite ANTES de cada consulta
+        const consultasAtuais = consultasHoje + consultasRealizadas;
+        if (consultasAtuais >= 100) {
+          toast({
+            title: 'Limite diário atingido',
+            description: `Processadas ${consultasRealizadas} consultas. Limite de 100/dia atingido.`,
+            variant: 'destructive',
+          });
+          break; // Interrompe o loop
+        }
+
         const produtoId = produtosParaConsultar[i];
         
         try {
@@ -645,10 +664,11 @@ export default function AdminProductsAnalysis() {
           const tempoResposta = Date.now() - inicioConsulta;
 
           // 3. Registrar consulta no log
+          let consultaBemSucedida = false;
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-              await supabase.from('log_consultas_api').insert({
+              const { error: logError } = await supabase.from('log_consultas_api').insert({
                 admin_id: user.id,
                 produto_id: produtoId,
                 ean_gtin: produto.ean_gtin,
@@ -658,24 +678,80 @@ export default function AdminProductsAnalysis() {
                 erro_mensagem: dadosAPI.encontrado ? null : dadosAPI.mensagem
               });
               
-              // Atualizar contador local
+              // ✅ CORREÇÃO: Se o trigger bloqueou (limite atingido), parar
+              if (logError) {
+                console.error('Erro ao registrar consulta:', logError);
+                if (logError.message.includes('Limite diário')) {
+                  toast({
+                    title: 'Limite diário atingido',
+                    description: `Processadas ${consultasRealizadas} consultas. O banco de dados bloqueou novas consultas.`,
+                    variant: 'destructive',
+                  });
+                  break; // Interrompe o loop SEM marcar como consultado
+                }
+                throw logError;
+              }
+              
+              // ✅ Consulta foi registrada com sucesso
+              consultaBemSucedida = true;
+              consultasRealizadas++;
               setConsultasHoje(prev => prev + 1);
             }
           } catch (logError) {
             console.error('Erro ao registrar consulta no log:', logError);
-            // Não bloqueia o fluxo se falhar o log
+            // Se for erro de limite, não continua
+            if (logError instanceof Error && logError.message.includes('Limite')) {
+              break; // Interrompe o loop SEM marcar como consultado
+            }
+            // Outros erros não bloqueiam o fluxo
+          }
+
+          // ✅ CORREÇÃO: Só atualiza status se consulta foi bem-sucedida
+          if (!consultaBemSucedida) {
+            console.warn('⚠️ Consulta não registrada - produto permanece pendente:', produtoId);
+            continue; // Pula para o próximo produto
           }
 
           // 4. Atualizar produto com dados da API na tabela produtos_em_analise
-          await supabase
+          // Limpar objeto para evitar dados circulares ou muito grandes
+          const dadosAPILimpos = {
+            ean_gtin: dadosAPI.ean_gtin,
+            descricao: dadosAPI.descricao,
+            marca: dadosAPI.marca,
+            fabricante: dadosAPI.fabricante,
+            ncm: dadosAPI.ncm,
+            ncm_descricao: dadosAPI.ncm_descricao,
+            preco_medio: dadosAPI.preco_medio,
+            peso_liquido: dadosAPI.peso_liquido,
+            peso_bruto: dadosAPI.peso_bruto,
+            peso_medio_gramas: dadosAPI.peso_medio_gramas,
+            categoria_api: dadosAPI.categoria_api,
+            imagem_url: dadosAPI.imagem_url,
+            tipo_embalagem: dadosAPI.tipo_embalagem,
+            reciclavel: dadosAPI.reciclavel,
+            percentual_reciclabilidade: dadosAPI.percentual_reciclabilidade,
+            encontrado: dadosAPI.encontrado,
+            mensagem: dadosAPI.mensagem
+          };
+
+          const { error: updateError } = await supabase
             .from('produtos_em_analise')
             .update({
-              dados_api: dadosAPI,
+              dados_api: dadosAPILimpos,
               consultado_em: new Date().toISOString(),
               status: 'consultado',
               updated_at: new Date().toISOString()
             })
             .eq('id', produtoId);
+
+          if (updateError) {
+            console.error('❌ Erro ao atualizar produto na base:', updateError);
+            console.error('📝 Produto ID:', produtoId);
+            console.error('📝 GTIN:', produto.ean_gtin);
+            throw new Error(`Falha ao salvar dados da API: ${updateError.message}`);
+          }
+
+          console.log('✅ Produto atualizado com sucesso:', produtoId);
 
           // 5. Decidir: cadastro automático ou revisão manual
           if (validarDadosCompletos(dadosAPI)) {
@@ -875,7 +951,11 @@ export default function AdminProductsAnalysis() {
   };
 
   const filteredProdutos = produtos
-    .filter(produto => produto.status === 'pendente' || produto.status === 'acao_manual') // Mostra produtos pendentes e ação manual
+    .filter(produto => 
+      produto.status === 'pendente' || 
+      produto.status === 'acao_manual' || 
+      produto.status === 'consultado' // ✅ INCLUIR produtos consultados para cadastro
+    )
     .filter(produto => {
       const matchesSearch = 
         produto.ean_gtin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -883,11 +963,28 @@ export default function AdminProductsAnalysis() {
       
       const matchesOrigem = filterOrigem === 'all' || produto.origem === filterOrigem;
 
-      return matchesSearch && matchesOrigem;
+      // ✅ NOVO: Filtro por status da API
+      let matchesAPIStatus = true;
+      if (filterAPIStatus === 'encontrados') {
+        matchesAPIStatus = produto.status === 'consultado' && 
+                          produto.dados_api?.encontrado === true;
+      } else if (filterAPIStatus === 'nao_encontrados') {
+        matchesAPIStatus = produto.status === 'consultado' && 
+                          produto.dados_api?.encontrado === false;
+      } else if (filterAPIStatus === 'nao_consultados') {
+        matchesAPIStatus = produto.status !== 'consultado';
+      }
+
+      return matchesSearch && matchesOrigem && matchesAPIStatus;
     });
 
   // Estatísticas - Apenas produtos PENDENTES e ACAO_MANUAL
   const produtosPendentes = produtos.filter(p => p.status === 'pendente' || p.status === 'acao_manual');
+  
+  // ✅ NOVO: Estatísticas de produtos consultados
+  const produtosConsultados = produtos.filter(p => p.status === 'consultado');
+  const produtosEncontradosAPI = produtosConsultados.filter(p => p.dados_api?.encontrado === true);
+  const produtosNaoEncontradosAPI = produtosConsultados.filter(p => p.dados_api?.encontrado === false);
   
   const stats = {
     total: produtosPendentes.length,
@@ -895,6 +992,10 @@ export default function AdminProductsAnalysis() {
     acaoManual: produtosPendentes.filter(p => p.status === 'acao_manual').length,
     qrcode: produtosPendentes.filter(p => p.origem === 'qrcode').length,
     manual: produtosPendentes.filter(p => p.origem === 'manual').length,
+    // ✅ NOVO: Estatísticas de consulta API
+    consultados: produtosConsultados.length,
+    encontradosAPI: produtosEncontradosAPI.length,
+    naoEncontradosAPI: produtosNaoEncontradosAPI.length,
     // Estatísticas de urgência (apenas QR Code pendentes)
     vencidos: produtosPendentes.filter(p => {
       const pri = getPrioridade(p);
@@ -1120,12 +1221,46 @@ export default function AdminProductsAnalysis() {
             </CardContent>
           </Card>
         )}
+
+        {/* ✅ NOVO: Card de Produtos Encontrados na API */}
+        {stats.encontradosAPI > 0 && (
+          <Card className="col-span-1 border-green-200 bg-green-50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-col">
+                <p className="text-xs text-green-700 font-medium mb-1">Encontrados na API</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold text-green-700">{stats.encontradosAPI}</p>
+                  <CheckCircle2 className="h-5 w-5 text-green-700" />
+                </div>
+                <p className="text-[10px] text-green-700/70 mt-1">Com dados completos</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ✅ NOVO: Card de Produtos Consultados (Total) */}
+        {stats.consultados > 0 && (
+          <Card className="col-span-1 border-cyan-200 bg-cyan-50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-col">
+                <p className="text-xs text-cyan-700 font-medium mb-1">Consultados</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-bold text-cyan-700">{stats.consultados}</p>
+                  <Database className="h-5 w-5 text-cyan-700" />
+                </div>
+                <p className="text-[10px] text-cyan-700/70 mt-1">
+                  {stats.encontradosAPI} encontrados, {stats.naoEncontradosAPI} não encontrados
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filtros */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="mb-2">Buscar</Label>
               <div className="relative">
@@ -1149,6 +1284,37 @@ export default function AdminProductsAnalysis() {
                   <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="qrcode">QR Code</SelectItem>
                   <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* ✅ NOVO: Filtro por status da API */}
+            <div>
+              <Label className="mb-2">Status API</Label>
+              <Select value={filterAPIStatus} onValueChange={setFilterAPIStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="encontrados">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Encontrados na API
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="nao_encontrados">
+                    <div className="flex items-center gap-2">
+                      <X className="h-4 w-4 text-red-600" />
+                      Não Encontrados
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="nao_consultados">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-gray-600" />
+                      Não Consultados
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1238,6 +1404,21 @@ export default function AdminProductsAnalysis() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Botão "Ver Dados da API" - apenas para produtos consultados COM SUCESSO */}
+                          {produto.status === 'consultado' && 
+                           produto.dados_api && 
+                           produto.dados_api.encontrado === true && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => abrirModalDadosAPI(produto)}
+                              className="bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Dados
+                            </Button>
+                          )}
+                          
                           <Button
                             size="sm"
                             variant="default"
@@ -1645,12 +1826,29 @@ export default function AdminProductsAnalysis() {
               </p>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <p className="text-sm text-amber-800 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                <strong>Limite de consultas:</strong> {consultasHoje + produtosSelecionados.size}/100 consultas hoje
-              </p>
-            </div>
+            {/* ✅ CORREÇÃO: Aviso quando exceder o limite */}
+            {consultasHoje + produtosSelecionados.size > 100 ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-800 flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <strong>Atenção: Limite será excedido!</strong>
+                </p>
+                <p className="text-sm text-red-700">
+                  Você selecionou <strong>{produtosSelecionados.size} produtos</strong>, mas só restam{' '}
+                  <strong>{Math.max(0, 100 - consultasHoje)} consultas</strong> disponíveis hoje.
+                </p>
+                <p className="text-sm text-red-700 mt-2">
+                  ⚠️ Serão processadas apenas as <strong>primeiras {Math.max(0, 100 - consultasHoje)}</strong> consultas.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <strong>Limite de consultas:</strong> {consultasHoje + produtosSelecionados.size}/100 consultas hoje
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -1831,6 +2029,162 @@ export default function AdminProductsAnalysis() {
             <Button onClick={() => setResultadosConsulta(null)}>
               Fechar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Visualização dos Dados da API */}
+      <Dialog open={modalDadosAPIOpen} onOpenChange={setModalDadosAPIOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-cyan-600" />
+              Dados Retornados da API Cosmos
+            </DialogTitle>
+            <DialogDescription>
+              Informações obtidas da consulta à API OnRender
+            </DialogDescription>
+          </DialogHeader>
+
+          {produtoComDadosAPI && produtoComDadosAPI.dados_api && (
+            <div className="space-y-4">
+              {/* Produto Base */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Produto</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><strong>EAN/GTIN:</strong> {produtoComDadosAPI.dados_api.ean_gtin}</div>
+                    <div><strong>Encontrado:</strong> {produtoComDadosAPI.dados_api.encontrado ? '✅ Sim' : '❌ Não'}</div>
+                  </div>
+                  {produtoComDadosAPI.dados_api.descricao && (
+                    <div><strong>Descrição:</strong> {produtoComDadosAPI.dados_api.descricao}</div>
+                  )}
+                  {produtoComDadosAPI.dados_api.marca && (
+                    <div><strong>Marca:</strong> {produtoComDadosAPI.dados_api.marca}</div>
+                  )}
+                  {produtoComDadosAPI.dados_api.fabricante && (
+                    <div><strong>Fabricante:</strong> {produtoComDadosAPI.dados_api.fabricante}</div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Classificação Fiscal */}
+              {(produtoComDadosAPI.dados_api.ncm || produtoComDadosAPI.dados_api.categoria_api) && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Classificação</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {produtoComDadosAPI.dados_api.ncm && (
+                      <div><strong>NCM:</strong> {produtoComDadosAPI.dados_api.ncm}</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.ncm_descricao && (
+                      <div><strong>Descrição NCM:</strong> {produtoComDadosAPI.dados_api.ncm_descricao}</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.categoria_api && (
+                      <div><strong>Categoria:</strong> {produtoComDadosAPI.dados_api.categoria_api}</div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Características Físicas */}
+              {(produtoComDadosAPI.dados_api.peso_liquido || produtoComDadosAPI.dados_api.peso_bruto || produtoComDadosAPI.dados_api.peso_medio_gramas) && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Características Físicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {produtoComDadosAPI.dados_api.peso_liquido && (
+                      <div><strong>Peso Líquido:</strong> {produtoComDadosAPI.dados_api.peso_liquido}g</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.peso_bruto && (
+                      <div><strong>Peso Bruto:</strong> {produtoComDadosAPI.dados_api.peso_bruto}g</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.peso_medio_gramas && (
+                      <div><strong>Peso Médio:</strong> {produtoComDadosAPI.dados_api.peso_medio_gramas}g</div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Embalagem */}
+              {(produtoComDadosAPI.dados_api.tipo_embalagem || produtoComDadosAPI.dados_api.reciclavel !== undefined) && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Embalagem</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {produtoComDadosAPI.dados_api.tipo_embalagem && (
+                      <div><strong>Tipo:</strong> {produtoComDadosAPI.dados_api.tipo_embalagem}</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.reciclavel !== undefined && (
+                      <div><strong>Reciclável:</strong> {produtoComDadosAPI.dados_api.reciclavel ? '✅ Sim' : '❌ Não'}</div>
+                    )}
+                    {produtoComDadosAPI.dados_api.percentual_reciclabilidade && (
+                      <div><strong>Reciclabilidade:</strong> {produtoComDadosAPI.dados_api.percentual_reciclabilidade}%</div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Preço */}
+              {produtoComDadosAPI.dados_api.preco_medio && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Precificação</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm">
+                    <div><strong>Preço Médio:</strong> R$ {produtoComDadosAPI.dados_api.preco_medio.toFixed(2)}</div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Imagem */}
+              {produtoComDadosAPI.dados_api.imagem_url && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Imagem do Produto</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <img 
+                      src={produtoComDadosAPI.dados_api.imagem_url} 
+                      alt={produtoComDadosAPI.dados_api.descricao}
+                      className="max-w-full h-auto rounded-md border"
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Mensagem */}
+              {produtoComDadosAPI.dados_api.mensagem && (
+                <div className="text-sm text-muted-foreground italic">
+                  💬 {produtoComDadosAPI.dados_api.mensagem}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setModalDadosAPIOpen(false)}
+            >
+              Fechar
+            </Button>
+            {produtoComDadosAPI && (
+              <Button 
+                onClick={() => {
+                  preencherFormularioComDadosAPI(produtoComDadosAPI);
+                  setModalDadosAPIOpen(false);
+                }}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Preencher Formulário
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

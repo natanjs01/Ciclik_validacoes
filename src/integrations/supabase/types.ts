@@ -10,10 +10,51 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      aceites_termos: {
+        Row: {
+          aceito_em: string
+          id: string
+          ip_aceite: string | null
+          termo_id: string
+          tipo_termo: string
+          user_agent: string | null
+          user_id: string
+          versao_aceita: string
+        }
+        Insert: {
+          aceito_em?: string
+          id?: string
+          ip_aceite?: string | null
+          termo_id: string
+          tipo_termo: string
+          user_agent?: string | null
+          user_id: string
+          versao_aceita: string
+        }
+        Update: {
+          aceito_em?: string
+          id?: string
+          ip_aceite?: string | null
+          termo_id?: string
+          tipo_termo?: string
+          user_agent?: string | null
+          user_id?: string
+          versao_aceita?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aceites_termos_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_uso"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ajustes_pontos_manuais: {
         Row: {
           created_at: string | null
@@ -319,42 +360,33 @@ export type Database = {
       cdv_investidores: {
         Row: {
           cnpj: string
-          convite_enviado: boolean | null
           data_cadastro: string | null
-          data_convite: string | null
           email: string
           id: string
           id_user: string
           nome_responsavel: string
-          primeiro_acesso: boolean | null
           razao_social: string
           status: string | null
           telefone: string | null
         }
         Insert: {
           cnpj: string
-          convite_enviado?: boolean | null
           data_cadastro?: string | null
-          data_convite?: string | null
           email: string
           id?: string
           id_user: string
           nome_responsavel: string
-          primeiro_acesso?: boolean | null
           razao_social: string
           status?: string | null
           telefone?: string | null
         }
         Update: {
           cnpj?: string
-          convite_enviado?: boolean | null
           data_cadastro?: string | null
-          data_convite?: string | null
           email?: string
           id?: string
           id_user?: string
           nome_responsavel?: string
-          primeiro_acesso?: boolean | null
           razao_social?: string
           status?: string | null
           telefone?: string | null
@@ -760,7 +792,9 @@ export type Database = {
           email: string | null
           id: string
           id_user: string
+          latitude: number | null
           logradouro: string | null
+          longitude: number | null
           nome_fantasia: string
           nome_responsavel: string | null
           numero: string | null
@@ -786,7 +820,9 @@ export type Database = {
           email?: string | null
           id?: string
           id_user: string
+          latitude?: number | null
           logradouro?: string | null
+          longitude?: number | null
           nome_fantasia: string
           nome_responsavel?: string | null
           numero?: string | null
@@ -812,7 +848,9 @@ export type Database = {
           email?: string | null
           id?: string
           id_user?: string
+          latitude?: number | null
           logradouro?: string | null
+          longitude?: number | null
           nome_fantasia?: string
           nome_responsavel?: string | null
           numero?: string | null
@@ -939,8 +977,8 @@ export type Database = {
       emails_cooperativas: {
         Row: {
           assunto: string
-          created_at: string
-          data_envio: string
+          created_at: string | null
+          data_envio: string | null
           email_destino: string
           id: string
           id_cooperativa: string
@@ -951,8 +989,8 @@ export type Database = {
         }
         Insert: {
           assunto: string
-          created_at?: string
-          data_envio?: string
+          created_at?: string | null
+          data_envio?: string | null
           email_destino: string
           id?: string
           id_cooperativa: string
@@ -963,8 +1001,8 @@ export type Database = {
         }
         Update: {
           assunto?: string
-          created_at?: string
-          data_envio?: string
+          created_at?: string | null
+          data_envio?: string | null
           email_destino?: string
           id?: string
           id_cooperativa?: string
@@ -1068,68 +1106,103 @@ export type Database = {
       }
       entregas_reciclaveis: {
         Row: {
+          data_envio_triagem: string | null
           data_geracao: string | null
+          data_inicio_triagem: string | null
           data_recebimento: string | null
           data_validacao: string | null
           hash_qrcode: string | null
           id: string
+          id_adesao_rota: string | null
           id_cooperativa: string
+          id_rota: string | null
           id_usuario: string
           itens_vinculados: Json | null
+          observacoes_triagem: string | null
           peso_estimado: number | null
           peso_rejeito_kg: number | null
           peso_validado: number | null
           qrcode_id: string
+          qrcode_triagem: string | null
           status: Database["public"]["Enums"]["status_entrega"] | null
           status_promessa:
             | Database["public"]["Enums"]["status_promessa_entrega"]
             | null
+          tipo_entrega: string | null
           tipo_material: string
         }
         Insert: {
+          data_envio_triagem?: string | null
           data_geracao?: string | null
+          data_inicio_triagem?: string | null
           data_recebimento?: string | null
           data_validacao?: string | null
           hash_qrcode?: string | null
           id?: string
+          id_adesao_rota?: string | null
           id_cooperativa: string
+          id_rota?: string | null
           id_usuario: string
           itens_vinculados?: Json | null
+          observacoes_triagem?: string | null
           peso_estimado?: number | null
           peso_rejeito_kg?: number | null
           peso_validado?: number | null
           qrcode_id: string
+          qrcode_triagem?: string | null
           status?: Database["public"]["Enums"]["status_entrega"] | null
           status_promessa?:
             | Database["public"]["Enums"]["status_promessa_entrega"]
             | null
+          tipo_entrega?: string | null
           tipo_material: string
         }
         Update: {
+          data_envio_triagem?: string | null
           data_geracao?: string | null
+          data_inicio_triagem?: string | null
           data_recebimento?: string | null
           data_validacao?: string | null
           hash_qrcode?: string | null
           id?: string
+          id_adesao_rota?: string | null
           id_cooperativa?: string
+          id_rota?: string | null
           id_usuario?: string
           itens_vinculados?: Json | null
+          observacoes_triagem?: string | null
           peso_estimado?: number | null
           peso_rejeito_kg?: number | null
           peso_validado?: number | null
           qrcode_id?: string
+          qrcode_triagem?: string | null
           status?: Database["public"]["Enums"]["status_entrega"] | null
           status_promessa?:
             | Database["public"]["Enums"]["status_promessa_entrega"]
             | null
+          tipo_entrega?: string | null
           tipo_material?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "entregas_reciclaveis_id_adesao_rota_fkey"
+            columns: ["id_adesao_rota"]
+            isOneToOne: false
+            referencedRelation: "usuarios_rotas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "entregas_reciclaveis_id_cooperativa_fkey"
             columns: ["id_cooperativa"]
             isOneToOne: false
             referencedRelation: "cooperativas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_reciclaveis_id_rota_fkey"
+            columns: ["id_rota"]
+            isOneToOne: false
+            referencedRelation: "rotas_coleta"
             referencedColumns: ["id"]
           },
         ]
@@ -1338,6 +1411,7 @@ export type Database = {
           processado: boolean | null
           submaterial: string | null
           tipo: string
+          updated_at: string | null
           valor_bruto: number
           video_id: string | null
         }
@@ -1355,6 +1429,7 @@ export type Database = {
           processado?: boolean | null
           submaterial?: string | null
           tipo: string
+          updated_at?: string | null
           valor_bruto: number
           video_id?: string | null
         }
@@ -1372,6 +1447,7 @@ export type Database = {
           processado?: boolean | null
           submaterial?: string | null
           tipo?: string
+          updated_at?: string | null
           valor_bruto?: number
           video_id?: string | null
         }
@@ -1455,6 +1531,41 @@ export type Database = {
           },
         ]
       }
+      interesses_funcionalidades: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          estado: string | null
+          funcionalidade: string
+          id: string
+          id_usuario: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          funcionalidade: string
+          id?: string
+          id_usuario?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          funcionalidade?: string
+          id?: string
+          id_usuario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interesses_funcionalidades_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpis: {
         Row: {
           cooperativas_ativas: number | null
@@ -1496,6 +1607,50 @@ export type Database = {
           usuarios_totais?: number | null
         }
         Relationships: []
+      }
+      log_consultas_api: {
+        Row: {
+          admin_id: string
+          ean_gtin: string
+          erro_mensagem: string | null
+          id: string
+          produto_id: string | null
+          resposta_api: Json | null
+          sucesso: boolean
+          tempo_resposta_ms: number | null
+          timestamp: string | null
+        }
+        Insert: {
+          admin_id: string
+          ean_gtin: string
+          erro_mensagem?: string | null
+          id?: string
+          produto_id?: string | null
+          resposta_api?: Json | null
+          sucesso: boolean
+          tempo_resposta_ms?: number | null
+          timestamp?: string | null
+        }
+        Update: {
+          admin_id?: string
+          ean_gtin?: string
+          erro_mensagem?: string | null
+          id?: string
+          produto_id?: string | null
+          resposta_api?: Json | null
+          sucesso?: boolean
+          tempo_resposta_ms?: number | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "log_consultas_api_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_em_analise"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       materiais_coletados_detalhado: {
         Row: {
@@ -1634,13 +1789,6 @@ export type Database = {
             | null
         }
         Relationships: [
-          {
-            foreignKeyName: "materiais_reciclaveis_usuario_id_entrega_fkey"
-            columns: ["id_entrega"]
-            isOneToOne: false
-            referencedRelation: "entregas_reciclaveis"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "materiais_reciclaveis_usuario_id_nota_fiscal_fkey"
             columns: ["id_nota_fiscal"]
@@ -1935,6 +2083,108 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          enable_email: boolean | null
+          enable_in_app: boolean | null
+          enable_push: boolean | null
+          id: string
+          notify_achievements: boolean | null
+          notify_new_coleta: boolean | null
+          notify_new_message: boolean | null
+          notify_status_change: boolean | null
+          notify_system_updates: boolean | null
+          push_subscription: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enable_email?: boolean | null
+          enable_in_app?: boolean | null
+          enable_push?: boolean | null
+          id?: string
+          notify_achievements?: boolean | null
+          notify_new_coleta?: boolean | null
+          notify_new_message?: boolean | null
+          notify_status_change?: boolean | null
+          notify_system_updates?: boolean | null
+          push_subscription?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enable_email?: boolean | null
+          enable_in_app?: boolean | null
+          enable_push?: boolean | null
+          id?: string
+          notify_achievements?: boolean | null
+          notify_new_coleta?: boolean | null
+          notify_new_message?: boolean | null
+          notify_status_change?: boolean | null
+          notify_system_updates?: boolean | null
+          push_subscription?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          created_at: string | null
+          expires_at: string | null
+          icon: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean | null
+          read_at: string | null
+          scheduled_for: string | null
+          title: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          icon?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean | null
+          read_at?: string | null
+          scheduled_for?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          icon?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean | null
+          read_at?: string | null
+          scheduled_for?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pontos_mensais_usuarios: {
         Row: {
           created_at: string | null
@@ -2008,11 +2258,14 @@ export type Database = {
       }
       produtos_ciclik: {
         Row: {
+          categoria_api: string | null
           data_atualizacao: string | null
           data_cadastro: string | null
           descricao: string
           gtin: string
           id: string
+          imagem_url: string | null
+          marca: string | null
           ncm: string
           observacoes: string | null
           percentual_reciclabilidade: number | null
@@ -2021,11 +2274,14 @@ export type Database = {
           tipo_embalagem: Database["public"]["Enums"]["tipo_embalagem_enum"]
         }
         Insert: {
+          categoria_api?: string | null
           data_atualizacao?: string | null
           data_cadastro?: string | null
           descricao: string
           gtin: string
           id?: string
+          imagem_url?: string | null
+          marca?: string | null
           ncm: string
           observacoes?: string | null
           percentual_reciclabilidade?: number | null
@@ -2034,17 +2290,74 @@ export type Database = {
           tipo_embalagem: Database["public"]["Enums"]["tipo_embalagem_enum"]
         }
         Update: {
+          categoria_api?: string | null
           data_atualizacao?: string | null
           data_cadastro?: string | null
           descricao?: string
           gtin?: string
           id?: string
+          imagem_url?: string | null
+          marca?: string | null
           ncm?: string
           observacoes?: string | null
           percentual_reciclabilidade?: number | null
           peso_medio_gramas?: number | null
           reciclavel?: boolean
           tipo_embalagem?: Database["public"]["Enums"]["tipo_embalagem_enum"]
+        }
+        Relationships: []
+      }
+      produtos_em_analise: {
+        Row: {
+          consultado_em: string | null
+          created_at: string
+          dados_api: Json | null
+          data_primeira_deteccao: string
+          data_ultima_deteccao: string
+          descricao: string
+          ean_gtin: string
+          id: string
+          observacoes: string | null
+          origem: Database["public"]["Enums"]["origem_produto_enum"]
+          quantidade_ocorrencias: number
+          status: Database["public"]["Enums"]["status_analise_enum"]
+          updated_at: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          consultado_em?: string | null
+          created_at?: string
+          dados_api?: Json | null
+          data_primeira_deteccao?: string
+          data_ultima_deteccao?: string
+          descricao: string
+          ean_gtin: string
+          id?: string
+          observacoes?: string | null
+          origem?: Database["public"]["Enums"]["origem_produto_enum"]
+          quantidade_ocorrencias?: number
+          status?: Database["public"]["Enums"]["status_analise_enum"]
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          consultado_em?: string | null
+          created_at?: string
+          dados_api?: Json | null
+          data_primeira_deteccao?: string
+          data_ultima_deteccao?: string
+          descricao?: string
+          ean_gtin?: string
+          id?: string
+          observacoes?: string | null
+          origem?: Database["public"]["Enums"]["origem_produto_enum"]
+          quantidade_ocorrencias?: number
+          status?: Database["public"]["Enums"]["status_analise_enum"]
+          updated_at?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
         }
         Relationships: []
       }
@@ -2056,52 +2369,68 @@ export type Database = {
           cidade: string | null
           cnpj: string | null
           codigo_indicacao: string | null
+          codigo_indicador: string | null
           complemento: string | null
           cpf: string | null
+          created_at: string | null
           creditos_resgate: number | null
           cupons_resgatados: number | null
           data_cadastro: string | null
           email: string
           id: string
+          indicado_por: string | null
           instagram_handle: string | null
+          latitude: number | null
           linkedin_profile: string | null
           logradouro: string | null
+          longitude: number | null
           missoes_concluidas: number | null
           nivel: Database["public"]["Enums"]["nivel_usuario"] | null
           nome: string
+          nome_completo: string | null
           numero: string | null
+          role: string
           score_verde: number | null
           telefone: string | null
           tipo_pessoa: Database["public"]["Enums"]["tipo_pessoa"]
           tipo_pj: Database["public"]["Enums"]["tipo_pj_enum"] | null
           uf: string | null
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           bairro?: string | null
-          cep: string
+          cep?: string
           cidade?: string | null
           cnpj?: string | null
           codigo_indicacao?: string | null
+          codigo_indicador?: string | null
           complemento?: string | null
           cpf?: string | null
+          created_at?: string | null
           creditos_resgate?: number | null
           cupons_resgatados?: number | null
           data_cadastro?: string | null
           email: string
           id: string
+          indicado_por?: string | null
           instagram_handle?: string | null
+          latitude?: number | null
           linkedin_profile?: string | null
           logradouro?: string | null
+          longitude?: number | null
           missoes_concluidas?: number | null
           nivel?: Database["public"]["Enums"]["nivel_usuario"] | null
           nome: string
+          nome_completo?: string | null
           numero?: string | null
+          role?: string
           score_verde?: number | null
           telefone?: string | null
-          tipo_pessoa: Database["public"]["Enums"]["tipo_pessoa"]
+          tipo_pessoa?: Database["public"]["Enums"]["tipo_pessoa"]
           tipo_pj?: Database["public"]["Enums"]["tipo_pj_enum"] | null
           uf?: string | null
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -2110,27 +2439,43 @@ export type Database = {
           cidade?: string | null
           cnpj?: string | null
           codigo_indicacao?: string | null
+          codigo_indicador?: string | null
           complemento?: string | null
           cpf?: string | null
+          created_at?: string | null
           creditos_resgate?: number | null
           cupons_resgatados?: number | null
           data_cadastro?: string | null
           email?: string
           id?: string
+          indicado_por?: string | null
           instagram_handle?: string | null
+          latitude?: number | null
           linkedin_profile?: string | null
           logradouro?: string | null
+          longitude?: number | null
           missoes_concluidas?: number | null
           nivel?: Database["public"]["Enums"]["nivel_usuario"] | null
           nome?: string
+          nome_completo?: string | null
           numero?: string | null
+          role?: string
           score_verde?: number | null
           telefone?: string | null
           tipo_pessoa?: Database["public"]["Enums"]["tipo_pessoa"]
           tipo_pj?: Database["public"]["Enums"]["tipo_pj_enum"] | null
           uf?: string | null
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_indicado_por"
+            columns: ["indicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       questoes_missao: {
         Row: {
@@ -2224,24 +2569,289 @@ export type Database = {
           },
         ]
       }
+      rotas_areas_cobertura: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string
+          complemento_endereco: string | null
+          created_at: string | null
+          id: string
+          id_dia_coleta: string | null
+          id_rota: string
+          logradouro: string | null
+          uf: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade: string
+          complemento_endereco?: string | null
+          created_at?: string | null
+          id?: string
+          id_dia_coleta?: string | null
+          id_rota: string
+          logradouro?: string | null
+          uf: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string
+          complemento_endereco?: string | null
+          created_at?: string | null
+          id?: string
+          id_dia_coleta?: string | null
+          id_rota?: string
+          logradouro?: string | null
+          uf?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotas_areas_cobertura_id_dia_coleta_fkey"
+            columns: ["id_dia_coleta"]
+            isOneToOne: false
+            referencedRelation: "rotas_dias_coleta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotas_areas_cobertura_id_rota_fkey"
+            columns: ["id_rota"]
+            isOneToOne: false
+            referencedRelation: "rotas_coleta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rotas_coleta: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          id_operador: string | null
+          nome: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          id_operador?: string | null
+          nome: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          id_operador?: string | null
+          nome?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotas_coleta_id_operador_fkey"
+            columns: ["id_operador"]
+            isOneToOne: false
+            referencedRelation: "cooperativas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rotas_dias_coleta: {
+        Row: {
+          created_at: string | null
+          dia_semana: number
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          id_rota: string
+        }
+        Insert: {
+          created_at?: string | null
+          dia_semana: number
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          id_rota: string
+        }
+        Update: {
+          created_at?: string | null
+          dia_semana?: number
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          id_rota?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotas_dias_coleta_id_rota_fkey"
+            columns: ["id_rota"]
+            isOneToOne: false
+            referencedRelation: "rotas_coleta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saldo_parcial: {
         Row: {
           id: string
-          saldo: number | null
+          saldo: number
           tipo: string
           updated_at: string | null
         }
         Insert: {
           id?: string
-          saldo?: number | null
+          saldo?: number
           tipo: string
           updated_at?: string | null
         }
         Update: {
           id?: string
-          saldo?: number | null
+          saldo?: number
           tipo?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      termos_uso: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          conteudo_html: string | null
+          criado_em: string
+          criado_por: string | null
+          id: string
+          obrigatorio: boolean
+          pdf_path: string
+          pdf_url: string
+          resumo: string | null
+          roles_aplicaveis: string[] | null
+          tipo: string
+          titulo: string
+          versao: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo_html?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          obrigatorio?: boolean
+          pdf_path: string
+          pdf_url: string
+          resumo?: string | null
+          roles_aplicaveis?: string[] | null
+          tipo: string
+          titulo: string
+          versao: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo_html?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          obrigatorio?: boolean
+          pdf_path?: string
+          pdf_url?: string
+          resumo?: string | null
+          roles_aplicaveis?: string[] | null
+          tipo?: string
+          titulo?: string
+          versao?: string
+        }
+        Relationships: []
+      }
+      triagem_alteracoes: {
+        Row: {
+          created_at: string | null
+          data_alteracao: string | null
+          id: string
+          id_entrega: string
+          id_material_coletado: string | null
+          motivo: string | null
+          peso_anterior: number | null
+          peso_novo: number | null
+          realizado_por: string | null
+          tipo_alteracao: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_alteracao?: string | null
+          id?: string
+          id_entrega: string
+          id_material_coletado?: string | null
+          motivo?: string | null
+          peso_anterior?: number | null
+          peso_novo?: number | null
+          realizado_por?: string | null
+          tipo_alteracao: string
+        }
+        Update: {
+          created_at?: string | null
+          data_alteracao?: string | null
+          id?: string
+          id_entrega?: string
+          id_material_coletado?: string | null
+          motivo?: string | null
+          peso_anterior?: number | null
+          peso_novo?: number | null
+          realizado_por?: string | null
+          tipo_alteracao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triagem_alteracoes_id_entrega_fkey"
+            columns: ["id_entrega"]
+            isOneToOne: false
+            referencedRelation: "entregas_reciclaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "triagem_alteracoes_id_material_coletado_fkey"
+            columns: ["id_material_coletado"]
+            isOneToOne: false
+            referencedRelation: "materiais_coletados_detalhado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trigger_logs: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          error_detail: string | null
+          error_message: string | null
+          event_type: string | null
+          id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          error_detail?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          error_detail?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2287,7 +2897,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_uib_cdv_novo"
+            foreignKeyName: "uib_id_cdv_novo_fkey"
             columns: ["id_cdv_novo"]
             isOneToOne: false
             referencedRelation: "cdv_novo"
@@ -2318,7 +2928,79 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuarios_rotas: {
+        Row: {
+          data_adesao: string | null
+          endereco_coleta: string
+          hash_qrcode: string
+          id: string
+          id_area: string | null
+          id_rota: string
+          id_usuario: string
+          observacoes: string | null
+          qrcode_adesao: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          data_adesao?: string | null
+          endereco_coleta: string
+          hash_qrcode: string
+          id?: string
+          id_area?: string | null
+          id_rota: string
+          id_usuario: string
+          observacoes?: string | null
+          qrcode_adesao: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          data_adesao?: string | null
+          endereco_coleta?: string
+          hash_qrcode?: string
+          id?: string
+          id_area?: string | null
+          id_rota?: string
+          id_usuario?: string
+          observacoes?: string | null
+          qrcode_adesao?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_rotas_id_area_fkey"
+            columns: ["id_area"]
+            isOneToOne: false
+            referencedRelation: "rotas_areas_cobertura"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_rotas_id_rota_fkey"
+            columns: ["id_rota"]
+            isOneToOne: false
+            referencedRelation: "rotas_coleta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_rotas_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       variacoes_peso_entrega: {
         Row: {
@@ -2374,13 +3056,6 @@ export type Database = {
             referencedRelation: "entregas_reciclaveis"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "variacoes_peso_entrega_id_usuario_fkey"
-            columns: ["id_usuario"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
@@ -2395,6 +3070,19 @@ export type Database = {
       atualizar_status_maturacao_cdv_quotas: {
         Args: { p_id_projeto?: string }
         Returns: number
+      }
+      buscar_termos_pendentes: {
+        Args: { p_user_id: string }
+        Returns: {
+          conteudo_html: string
+          id: string
+          obrigatorio: boolean
+          pdf_url: string
+          resumo: string
+          tipo: string
+          titulo: string
+          versao: string
+        }[]
       }
       calcular_pontos_entrega_finalizada: {
         Args: { p_id_entrega: string }
@@ -2413,18 +3101,96 @@ export type Database = {
           variacao_percentual: number
         }[]
       }
+      calcular_uib_educacao_mes_atual: {
+        Args: { p_usuario_id: string }
+        Returns: number
+      }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
       conceder_pontos_missao: {
         Args: { p_missao_id: string; p_usuario_id: string }
+        Returns: Json
+      }
+      confirmar_email_usuario: {
+        Args: { usuario_id: string }
+        Returns: undefined
+      }
+      contar_consultas_hoje: { Args: never; Returns: number }
+      create_notification: {
+        Args: {
+          p_action_label?: string
+          p_action_url?: string
+          p_icon?: string
+          p_message: string
+          p_metadata?: Json
+          p_title: string
+          p_type?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      create_user_profile_and_role: {
+        Args: {
+          p_bairro: string
+          p_cep: string
+          p_cidade: string
+          p_cnpj: string
+          p_codigo_indicador: string
+          p_complemento: string
+          p_cpf: string
+          p_email: string
+          p_logradouro: string
+          p_nome: string
+          p_numero: string
+          p_telefone: string
+          p_tipo_pessoa: Database["public"]["Enums"]["tipo_pessoa"]
+          p_tipo_pj: Database["public"]["Enums"]["tipo_pj_enum"]
+          p_uf: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      criar_usuario_completo: {
+        Args: {
+          bairro: string
+          cep: string
+          cidade: string
+          cnpj?: string
+          codigo_indicador?: string
+          complemento?: string
+          cpf?: string
+          email: string
+          logradouro: string
+          nome: string
+          numero: string
+          password: string
+          telefone: string
+          tipo_pessoa: string
+          tipo_pj?: string
+          uf: string
+        }
         Returns: Json
       }
       distribuir_datas_maturacao_quotas: {
         Args: { p_id_projeto: string }
         Returns: number
       }
+      estatisticas_aceites_termo: {
+        Args: { p_termo_id: string }
+        Returns: {
+          pendentes: number
+          percentual_aceites: number
+          total_aceites: number
+          total_usuarios: number
+        }[]
+      }
       expirar_promessas_antigas: { Args: never; Returns: undefined }
-      expirar_promessas_antigas_v2: { Args: never; Returns: undefined }
       gerar_codigo_indicacao: { Args: never; Returns: string }
       gerar_numero_cdv: { Args: never; Returns: string }
+      gerar_qrcode_adesao_rota: { Args: never; Returns: string }
+      gerar_url_assinada_termo: {
+        Args: { p_expires_in?: number; p_path: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2432,55 +3198,175 @@ export type Database = {
         }
         Returns: boolean
       }
+      listar_arquivos_termos: {
+        Args: never
+        Returns: {
+          created_at: string
+          last_accessed_at: string
+          name: string
+          size: number
+          updated_at: string
+        }[]
+      }
       marcar_cupons_expirados: { Args: never; Returns: undefined }
+      mark_all_notifications_as_read: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
+      mark_notification_as_read: {
+        Args: { notification_id: string }
+        Returns: undefined
+      }
+      processar_indicacao_assincrona: {
+        Args: { p_codigo_indicacao: string; p_user_id: string }
+        Returns: Json
+      }
+      processar_pontuacao_retroativa_produto_manual: {
+        Args: {
+          p_produto: Database["public"]["Tables"]["produtos_ciclik"]["Row"]
+        }
+        Returns: undefined
+      }
+      reenviar_email_confirmacao_admin: {
+        Args: { usuario_email: string }
+        Returns: Json
+      }
+      register_user_complete: {
+        Args: {
+          p_bairro: string
+          p_cep: string
+          p_cidade: string
+          p_cnpj?: string
+          p_codigo_indicador?: string
+          p_complemento?: string
+          p_cpf?: string
+          p_email: string
+          p_logradouro: string
+          p_nome: string
+          p_numero: string
+          p_password: string
+          p_telefone: string
+          p_tipo_pessoa: string
+          p_tipo_pj?: string
+          p_uf: string
+        }
+        Returns: Json
+      }
       registrar_indicacao: {
         Args: { p_codigo_indicacao: string; p_usuario_novo_id: string }
         Returns: Json
+      }
+      registrar_produto_em_analise: {
+        Args: {
+          p_descricao: string
+          p_ean_gtin: string
+          p_origem?: string
+          p_usuario_id?: string
+          p_usuario_nome?: string
+        }
+        Returns: string
+      }
+      registrar_usuario_completo: {
+        Args: {
+          p_bairro?: string
+          p_cep?: string
+          p_cidade?: string
+          p_cnpj?: string
+          p_codigo_indicador?: string
+          p_complemento?: string
+          p_cpf?: string
+          p_email: string
+          p_logradouro?: string
+          p_nome: string
+          p_numero?: string
+          p_telefone: string
+          p_tipo_pessoa: string
+          p_tipo_pj?: string
+          p_uf?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      reprocessar_produto_existente: {
+        Args: { p_gtin: string }
+        Returns: string
       }
       resgatar_cupom: {
         Args: { p_cupom_id: string; p_usuario_id: string }
         Returns: Json
       }
+      tem_termos_pendentes: { Args: { p_user_id: string }; Returns: boolean }
       validar_nota_fiscal: {
         Args: { p_nota_id: string; p_usuario_id: string }
         Returns: Json
       }
+      validar_path_termo: { Args: { p_path: string }; Returns: boolean }
+      verificar_status_email: { Args: { usuario_email: string }; Returns: Json }
+      verificar_status_email_frontend: {
+        Args: { usuario_id: string }
+        Returns: Json
+      }
     }
     Enums: {
-      app_role: "usuario" | "cooperativa" | "admin" | "empresa" | "investidor"
-      nivel_selo: "Bronze" | "Prata" | "Ouro" | "Nenhum"
+      app_role:
+        | "admin"
+        | "usuario"
+        | "cooperativa"
+        | "empresa"
+        | "cdv_investidor"
+        | "vendedor"
+        | "investidor"
+      nivel_selo: "Nenhum" | "Bronze" | "Prata" | "Ouro" | "Diamante"
       nivel_usuario: "Iniciante" | "Ativo" | "Guardiao Verde"
-      status_cooperativa: "pendente_aprovacao" | "aprovada" | "suspensa"
-      status_cupom: "disponivel" | "reservado" | "usado"
-      status_entrega: "gerada" | "recebida" | "validada" | "fechada"
-      status_missao: "ativa" | "inativa"
+      origem_produto_enum: "qrcode" | "manual"
+      status_analise_enum:
+        | "pendente"
+        | "em_analise"
+        | "aprovado"
+        | "rejeitado"
+        | "acao_manual"
+        | "consultado"
+      status_cooperativa:
+        | "pendente_aprovacao"
+        | "aprovada"
+        | "suspensa"
+        | "inativa"
+      status_cupom: "disponivel" | "resgatado" | "usado" | "expirado"
+      status_entrega:
+        | "gerada"
+        | "recebida"
+        | "em_coleta"
+        | "validada"
+        | "expirada"
+        | "finalizada"
+      status_missao: "ativa" | "inativa" | "rascunho"
       status_promessa_entrega:
         | "ativa"
-        | "em_coleta"
-        | "finalizada"
+        | "cumprida"
         | "expirada"
-        | "cancelada"
-      status_validacao: "pendente" | "validada" | "reprovada"
+        | "finalizada"
+        | "em_coleta"
+        | "em_triagem"
+      status_validacao: "pendente" | "validada" | "rejeitada"
       tipo_embalagem_enum:
-        | "vidro"
         | "plastico"
         | "papel"
-        | "papelao"
-        | "aluminio"
-        | "laminado"
+        | "vidro"
+        | "metal"
+        | "tetrapack"
         | "misto"
-      tipo_empresa:
-        | "Industria"
-        | "Comercio_Online"
-        | "Comercio_Fisico"
-        | "Servico"
-      tipo_missao: "estudo" | "quiz" | "nota_fiscal" | "entrega_reciclaveis"
+        | "outros"
+      tipo_empresa: "fabricante" | "varejista" | "distribuidora"
+      tipo_missao: "video" | "quiz" | "estudo"
       tipo_operador_logistico:
         | "cooperativa"
         | "rota_ciclik"
         | "operador_parceiro"
       tipo_pessoa: "PF" | "PJ"
       tipo_pj_enum:
+        | "empresa"
+        | "cooperativa"
+        | "cdv_investidor"
         | "Condominio"
         | "Restaurante"
         | "Comercio"
@@ -2489,25 +3375,27 @@ export type Database = {
         | "Outro"
       tipo_submaterial:
         | "PET"
-        | "PP"
         | "PEAD"
-        | "PEBD"
         | "PVC"
+        | "PEBD"
+        | "PP"
         | "PS"
         | "OUTROS_PLASTICOS"
-        | "VIDRO_TRANSPARENTE"
-        | "VIDRO_COLORIDO"
-        | "VIDRO_TEMPERADO"
+        | "PAPELAO"
         | "PAPEL_BRANCO"
-        | "PAPEL_COLORIDO"
-        | "PAPELAO_ONDULADO"
-        | "ALUMINIO_LATA"
-        | "ALUMINIO_PERFIL"
+        | "PAPEL_MISTO"
+        | "JORNAL"
+        | "REVISTA"
+        | "VIDRO_INCOLOR"
+        | "VIDRO_VERDE"
+        | "VIDRO_AMBAR"
+        | "ALUMINIO"
         | "ACO"
-        | "LAMINADO_CAFE"
-        | "LAMINADO_SALGADINHO"
-        | "LAMINADO_OUTROS"
+        | "COBRE"
+        | "OUTROS_METAIS"
+        | "TETRAPACK"
         | "REJEITO"
+        | "PAPELAO_ONDULADO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2635,37 +3523,62 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["usuario", "cooperativa", "admin", "empresa", "investidor"],
-      nivel_selo: ["Bronze", "Prata", "Ouro", "Nenhum"],
+      app_role: [
+        "admin",
+        "usuario",
+        "cooperativa",
+        "empresa",
+        "cdv_investidor",
+        "vendedor",
+        "investidor",
+      ],
+      nivel_selo: ["Nenhum", "Bronze", "Prata", "Ouro", "Diamante"],
       nivel_usuario: ["Iniciante", "Ativo", "Guardiao Verde"],
-      status_cooperativa: ["pendente_aprovacao", "aprovada", "suspensa"],
-      status_cupom: ["disponivel", "reservado", "usado"],
-      status_entrega: ["gerada", "recebida", "validada", "fechada"],
-      status_missao: ["ativa", "inativa"],
+      origem_produto_enum: ["qrcode", "manual"],
+      status_analise_enum: [
+        "pendente",
+        "em_analise",
+        "aprovado",
+        "rejeitado",
+        "acao_manual",
+        "consultado",
+      ],
+      status_cooperativa: [
+        "pendente_aprovacao",
+        "aprovada",
+        "suspensa",
+        "inativa",
+      ],
+      status_cupom: ["disponivel", "resgatado", "usado", "expirado"],
+      status_entrega: [
+        "gerada",
+        "recebida",
+        "em_coleta",
+        "validada",
+        "expirada",
+        "finalizada",
+      ],
+      status_missao: ["ativa", "inativa", "rascunho"],
       status_promessa_entrega: [
         "ativa",
-        "em_coleta",
-        "finalizada",
+        "cumprida",
         "expirada",
-        "cancelada",
+        "finalizada",
+        "em_coleta",
+        "em_triagem",
       ],
-      status_validacao: ["pendente", "validada", "reprovada"],
+      status_validacao: ["pendente", "validada", "rejeitada"],
       tipo_embalagem_enum: [
-        "vidro",
         "plastico",
         "papel",
-        "papelao",
-        "aluminio",
-        "laminado",
+        "vidro",
+        "metal",
+        "tetrapack",
         "misto",
+        "outros",
       ],
-      tipo_empresa: [
-        "Industria",
-        "Comercio_Online",
-        "Comercio_Fisico",
-        "Servico",
-      ],
-      tipo_missao: ["estudo", "quiz", "nota_fiscal", "entrega_reciclaveis"],
+      tipo_empresa: ["fabricante", "varejista", "distribuidora"],
+      tipo_missao: ["video", "quiz", "estudo"],
       tipo_operador_logistico: [
         "cooperativa",
         "rota_ciclik",
@@ -2673,6 +3586,9 @@ export const Constants = {
       ],
       tipo_pessoa: ["PF", "PJ"],
       tipo_pj_enum: [
+        "empresa",
+        "cooperativa",
+        "cdv_investidor",
         "Condominio",
         "Restaurante",
         "Comercio",
@@ -2682,25 +3598,27 @@ export const Constants = {
       ],
       tipo_submaterial: [
         "PET",
-        "PP",
         "PEAD",
-        "PEBD",
         "PVC",
+        "PEBD",
+        "PP",
         "PS",
         "OUTROS_PLASTICOS",
-        "VIDRO_TRANSPARENTE",
-        "VIDRO_COLORIDO",
-        "VIDRO_TEMPERADO",
+        "PAPELAO",
         "PAPEL_BRANCO",
-        "PAPEL_COLORIDO",
-        "PAPELAO_ONDULADO",
-        "ALUMINIO_LATA",
-        "ALUMINIO_PERFIL",
+        "PAPEL_MISTO",
+        "JORNAL",
+        "REVISTA",
+        "VIDRO_INCOLOR",
+        "VIDRO_VERDE",
+        "VIDRO_AMBAR",
+        "ALUMINIO",
         "ACO",
-        "LAMINADO_CAFE",
-        "LAMINADO_SALGADINHO",
-        "LAMINADO_OUTROS",
+        "COBRE",
+        "OUTROS_METAIS",
+        "TETRAPACK",
         "REJEITO",
+        "PAPELAO_ONDULADO",
       ],
     },
   },

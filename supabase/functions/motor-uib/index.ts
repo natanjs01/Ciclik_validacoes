@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('🔄 Motor UIB iniciado...');
+    console.log('🔍 DEBUG - Service Key presente?', !!supabaseServiceKey);
+    console.log('🔍 DEBUG - Service Key length:', supabaseServiceKey?.length || 0);
     
     // TESTE: Verificar se consegue acessar a tabela UIB
     const { data: testeUIB, error: testeError } = await supabase

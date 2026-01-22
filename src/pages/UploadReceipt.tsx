@@ -185,7 +185,7 @@ export default function UploadReceipt() {
       } else {
         // Produto não encontrado - registrar na tabela de análise
         try {
-          await supabase.rpc('registrar_produto_em_analise', {
+          const { data, error } = await supabase.rpc('registrar_produto_em_analise', {
             p_ean_gtin: gtin.trim(),
             p_descricao: novoItemDescricao || 'Produto sem descrição',
             p_origem: 'manual',
@@ -193,13 +193,19 @@ export default function UploadReceipt() {
             p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
           });
           
+          if (error) {
+            console.error('🚨 Erro ao registrar produto em análise (Manual):', error);
+          } else {
+            console.log('✅ Produto manual registrado para análise:', gtin, data);
+          }
+          
           toast({
             title: 'Produto não cadastrado',
             description: 'Este produto foi enviado para análise administrativa.',
             variant: 'destructive'
           });
         } catch (error) {
-          // console.error('Erro ao registrar produto em análise:', error);
+          console.error('🚨 EXCEÇÃO ao registrar produto em análise (Manual):', error);
         }
       }
     } catch (error) {
@@ -301,15 +307,20 @@ export default function UploadReceipt() {
                 } else {
                   // Produto não encontrado - registrar na tabela de análise
                   try {
-                    await supabase.rpc('registrar_produto_em_analise', {
+                    const { data, error } = await supabase.rpc('registrar_produto_em_analise', {
                       p_ean_gtin: item.gtin.trim(),
                       p_descricao: item.descricao || 'Produto sem descrição',
                       p_origem: 'qrcode',
                       p_usuario_id: user?.id || null,
                       p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
                     });
+                    if (error) {
+                      console.error('🚨 Erro ao registrar produto em análise (SEFAZ):', error);
+                    } else {
+                      console.log('✅ Produto SEFAZ registrado para análise:', item.gtin, data);
+                    }
                   } catch (error) {
-                    // console.error('Erro ao registrar produto em análise:', error);
+                    console.error('🚨 EXCEÇÃO ao registrar produto em análise (SEFAZ):', error);
                   }
                 }
               }
@@ -461,30 +472,43 @@ export default function UploadReceipt() {
                 } else {
                   // Produto não encontrado - registrar na tabela de análise
                   try {
-                    await supabase.rpc('registrar_produto_em_analise', {
+                    const { data, error } = await supabase.rpc('registrar_produto_em_analise', {
                       p_ean_gtin: item.ean.trim(),
                       p_descricao: item.nome || 'Produto sem descrição',
                       p_origem: 'qrcode',
                       p_usuario_id: user?.id || null,
                       p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
                     });
+                    if (error) {
+                      console.error('🚨 Erro ao registrar produto em análise (QR Code):', error);
+                      console.log('📦 Produto:', { ean: item.ean, nome: item.nome });
+                    } else {
+                      console.log('✅ Produto registrado para análise:', item.ean, data);
+                    }
                   } catch (error) {
-                    // console.error('Erro ao registrar produto em análise:', error);
+                    console.error('🚨 EXCEÇÃO ao registrar produto em análise (QR Code):', error);
+                    console.log('📦 Produto:', { ean: item.ean, nome: item.nome });
                   }
                 }
               } else if (isSemGtin || !item.ean) {
                 // Produto SEM GTIN ou sem código - TAMBÉM registrar para análise
                 try {
-                  await supabase.rpc('registrar_produto_em_analise', {
+                  const { data, error } = await supabase.rpc('registrar_produto_em_analise', {
                     p_ean_gtin: item.ean || 'SEM GTIN',
                     p_descricao: item.nome || 'Produto sem descrição',
                     p_origem: 'qrcode',
                     p_usuario_id: user?.id || null,
                     p_usuario_nome: user?.user_metadata?.nome_completo || user?.email || 'Usuário desconhecido'
                   });
-                  // console.log('📦 Produto SEM GTIN enviado para análise:', item.nome);
+                  if (error) {
+                    console.error('🚨 Erro ao registrar produto SEM GTIN:', error);
+                    console.log('📦 Produto SEM GTIN:', item.nome);
+                  } else {
+                    console.log('✅ Produto SEM GTIN registrado para análise:', item.nome, data);
+                  }
                 } catch (error) {
-                  // console.error('Erro ao registrar produto SEM GTIN em análise:', error);
+                  console.error('🚨 EXCEÇÃO ao registrar produto SEM GTIN:', error);
+                  console.log('📦 Produto:', item.nome);
                 }
               }
               

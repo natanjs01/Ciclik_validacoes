@@ -53,8 +53,13 @@ COMMENT ON COLUMN log_consultas_api.tempo_resposta_ms IS
 -- ============================================
 
 -- Índice para busca rápida por admin e data (ESSENCIAL para o trigger)
+-- Usando timestamp diretamente ao invés de DATE() para evitar erro IMMUTABLE
 CREATE INDEX IF NOT EXISTS idx_log_consultas_admin_data 
-ON log_consultas_api(admin_id, DATE(timestamp));
+ON log_consultas_api(admin_id, timestamp);
+
+-- Índice adicional para data truncada (usando CAST que é IMMUTABLE)
+CREATE INDEX IF NOT EXISTS idx_log_consultas_admin_dia
+ON log_consultas_api(admin_id, (timestamp::date));
 
 -- Índice para busca por timestamp
 CREATE INDEX IF NOT EXISTS idx_log_consultas_api_timestamp 

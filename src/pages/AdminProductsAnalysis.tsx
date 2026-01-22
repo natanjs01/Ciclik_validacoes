@@ -666,8 +666,16 @@ export default function AdminProductsAnalysis() {
             // Não bloqueia o fluxo se falhar o log
           }
 
-          // 4. Atualizar produto com dados da API (simulado - será real depois)
-          // await atualizarProdutoComDadosAPI(produtoId, dadosAPI);
+          // 4. Atualizar produto com dados da API na tabela produtos_em_analise
+          await supabase
+            .from('produtos_em_analise')
+            .update({
+              dados_api: dadosAPI,
+              consultado_em: new Date().toISOString(),
+              status: 'consultado',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', produtoId);
 
           // 5. Decidir: cadastro automático ou revisão manual
           if (validarDadosCompletos(dadosAPI)) {
@@ -677,11 +685,9 @@ export default function AdminProductsAnalysis() {
             resultados.autoCadastrados.push(produto.descricao);
           } else if (dadosAPI.encontrado) {
             // DADOS INCOMPLETOS - revisão manual
-            // await handleUpdateStatus(produtoId, 'consultado');
             resultados.precisamRevisao.push(produto.descricao);
           } else {
             // NÃO ENCONTRADO
-            // await handleUpdateStatus(produtoId, 'consultado');
             resultados.naoEncontrados.push(produto.descricao);
           }
         } catch (error: any) {
@@ -930,7 +936,9 @@ export default function AdminProductsAnalysis() {
             <QrCode className="h-3 w-3 mr-1" />
             QR Code
           </Badge>
-          <Star className="h-4 w-4 text-amber-500 fill-amber-500" title="Prioridade Máxima" />
+          <div title="Prioridade Máxima">
+            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+          </div>
         </div>
       );
     }

@@ -448,9 +448,10 @@ export default function CooperativeTriagem() {
       m.id.startsWith('temp_add_')
     ).length;
 
-    // 💰 CALCULAR PONTOS - Fórmula: floor(peso_valido / 6) * pontos_por_6kg
+    // 💰 CALCULAR PONTOS - Fórmula: (peso_valido / 6) * pontos_por_6kg
     // Busca valor configurável de 'pontos_base_entrega_6kg' na tabela configuracoes_sistema
-    const pontosCalculados = Math.floor(pesoValido / 6) * pontosPor6Kg;
+    // ⚠️ MANTÉM DECIMAIS - apenas na criação da UIB que será arredondado
+    const pontosCalculados = (pesoValido / 6) * pontosPor6Kg;
 
     return {
       pesoColeta,

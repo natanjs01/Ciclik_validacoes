@@ -201,7 +201,8 @@ export default function ValidateDelivery() {
         .single();
 
       const pontosPor6kg = pontuacaoData?.pontos_por_6kg || 20;
-      const pontosBase = Math.round((pesoValidado * pontosPor6kg) / 6);
+      // ⚠️ MANTÉM DECIMAIS - apenas na criação da UIB que será arredondado
+      const pontosBase = (pesoValidado * pontosPor6kg) / 6;
 
       // Calcular variação percentual absoluta
       const variacaoPct = Math.abs((pesoValidado - pesoEstimado) / pesoEstimado) * 100;
@@ -214,7 +215,8 @@ export default function ValidateDelivery() {
       if (!dentroMargem) {
         // Variação > 10%: redução proporcional
         fatorPontuacao = Math.max(0, 1 - ((variacaoPct - 10) / 100));
-        pontosFinal = Math.round(pontosBase * fatorPontuacao);
+        // ⚠️ MANTÉM DECIMAIS - apenas na criação da UIB que será arredondado
+        pontosFinal = pontosBase * fatorPontuacao;
       }
 
       setVariacaoInfo({

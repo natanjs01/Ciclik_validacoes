@@ -450,7 +450,7 @@ export default function CooperativeTriagem() {
 
     // 💰 CALCULAR PONTOS - Fórmula: (peso_valido / 6) * pontos_por_6kg
     // Busca valor configurável de 'pontos_base_entrega_6kg' na tabela configuracoes_sistema
-    // ⚠️ MANTÉM DECIMAIS - apenas na criação da UIB que será arredondado
+    // ✅ MANTÉM DECIMAIS para cálculo preciso - arredonda apenas na exibição
     const pontosCalculados = (pesoValido / 6) * pontosPor6Kg;
 
     return {
@@ -653,7 +653,7 @@ export default function CooperativeTriagem() {
               <div>
                 <p className="text-sm text-muted-foreground">Data da Coleta</p>
                 <p className="font-medium">
-                  {new Date(entrega.data_recebimento).toLocaleString('pt-BR')}
+                  {new Date(entrega.data_recebimento || entrega.data_geracao || entrega.created_at).toLocaleString('pt-BR')}
                 </p>
               </div>
             </div>

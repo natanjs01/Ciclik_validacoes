@@ -91,6 +91,8 @@ export default function CooperativeDashboard() {
   ];
 
   useEffect(() => {
+    if (!user) return;
+    
     // Carrega tudo em paralelo
     loadCooperativa();
     loadStats();
@@ -100,7 +102,10 @@ export default function CooperativeDashboard() {
     loadEntregasRealizadas();
     
     // Atualizar a cada 30 segundos para garantir dados frescos
-    const interval = setInterval(() => {
+    // IMPORTANTE: Usar um timeout de 30s + cleanup para evitar múltiplos intervals
+    const intervalId = setInterval(() => {
+      if (document.hidden) return; // Não atualizar se aba estiver em background
+      
       loadStats();
       loadEntregasPrevistas();
       loadEntregasEmColeta();
@@ -108,8 +113,10 @@ export default function CooperativeDashboard() {
       loadEntregasRealizadas();
     }, 30000);
     
-    return () => clearInterval(interval);
-  }, [user, periodFilter, materialFilter]);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user?.id, periodFilter, materialFilter]); // ✅ Usar user.id ao invés de user inteiro
 
   // Iniciar tour apenas quando cooperativa estiver carregada
   useEffect(() => {

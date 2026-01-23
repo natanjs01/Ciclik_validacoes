@@ -346,11 +346,12 @@ export function useGamificationProgress(): GamificationProgress & { loading: boo
     } finally {
       setLoading(false);
     }
-  }, [user, profile, pontosMes]);
+  }, [user?.id, profile?.id, pontosMes]); // ✅ CORRIGIDO: user.id e profile.id ao invés dos objetos inteiros
 
   useEffect(() => {
     fetchProgress();
-  }, [fetchProgress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, profile?.id, pontosMes]); // ✅ CORRIGIDO: Não depender de fetchProgress
 
   return { ...progress, loading, refetch: fetchProgress };
 }

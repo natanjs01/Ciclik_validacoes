@@ -153,11 +153,10 @@ const PointsStatement = () => {
       const pontosEntregaPor6Kg = pontosConfig['pontos_base_entrega_6kg'] ?? 20;
 
       // ✅ CORREÇÃO: Agregar peso total ANTES de calcular pontos
-      // Método correto: floor(soma_pesos / 6) * pontos
-      // Evita perda de frações ao calcular por entrega individual
+      // Fórmula correta: (soma_pesos / 6) * pontos - MANTÉM DECIMAIS
       if (entregas && entregas.length > 0) {
         const pesoTotalValidado = entregas.reduce((acc, e) => acc + (e.peso_validado || 0), 0);
-        const pontosTotaisEntregas = Math.floor(pesoTotalValidado / 6) * pontosEntregaPor6Kg;
+        const pontosTotaisEntregas = Math.round((pesoTotalValidado / 6) * pontosEntregaPor6Kg);
         
         // Adicionar transação consolidada de entregas
         const dataUltimaEntrega = entregas[0]?.data_validacao;

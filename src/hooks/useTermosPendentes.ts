@@ -108,7 +108,8 @@ export function useTermosPendentes(
     if (autoCheck) {
       verificar();
     }
-  }, [autoCheck, verificar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheck]); // ✅ Remover 'verificar' para evitar loop
 
   // Verificação periódica (polling)
   useEffect(() => {
@@ -117,13 +118,16 @@ export function useTermosPendentes(
     }
 
     const timer = setInterval(() => {
-      verificar();
+      if (!document.hidden) { // Não verificar se aba estiver em background
+        verificar();
+      }
     }, interval);
 
     return () => {
       clearInterval(timer);
     };
-  }, [interval, verificar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interval]); // ✅ Remover 'verificar' para evitar recriar interval
 
   return {
     termosPendentes,

@@ -69,12 +69,16 @@ export default function RedeemCoupons() {
   });
 
   useEffect(() => {
-    if (user) {
-      loadCupons();
-      loadMeusCupons();
-      setupRealtimeSubscription();
-    }
-  }, [user]);
+    if (!user) return;
+    
+    loadCupons();
+    loadMeusCupons();
+    
+    // ✅ CORRIGIDO: Capturar a função de cleanup e executá-la no return
+    const cleanup = setupRealtimeSubscription();
+    
+    return cleanup;
+  }, [user?.id]); // ✅ Usar user.id ao invés de user inteiro
 
   const setupRealtimeSubscription = () => {
     const channel = supabase

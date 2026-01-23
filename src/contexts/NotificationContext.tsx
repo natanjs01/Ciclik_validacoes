@@ -252,7 +252,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications, fetchPreferences, preferences?.enable_push]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // ✅ CORRIGIDO: Apenas user.id, não as funções que mudam toda hora
 
   const value: NotificationContextType = {
     notifications,

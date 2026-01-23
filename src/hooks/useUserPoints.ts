@@ -130,8 +130,8 @@ export function useUserPoints(): UseUserPointsReturn {
         }
       });
       
-      // Fórmula oficial: floor(peso_total / 6) * pontos_por_6kg
-      newBreakdown.entregasValidadas = Math.floor(pesoTotalValidado / 6) * pontosEntregaPor6Kg;
+      // Fórmula oficial: (peso_total / 6) * pontos_por_6kg - MANTÉM DECIMAIS
+      newBreakdown.entregasValidadas = Math.round((pesoTotalValidado / 6) * pontosEntregaPor6Kg);
       totalPontos += newBreakdown.entregasValidadas;
 
       // 5. Indicações
@@ -181,11 +181,12 @@ export function useUserPoints(): UseUserPointsReturn {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // ✅ CORRIGIDO: Apenas user.id, não o objeto user inteiro
 
   useEffect(() => {
     calculatePoints();
-  }, [calculatePoints]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // ✅ CORRIGIDO: Depender apenas de user.id, não de calculatePoints
 
   return {
     pontos,

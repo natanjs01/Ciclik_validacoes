@@ -709,24 +709,26 @@ export default function CooperativeRegisterMaterials() {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
                 Cancelar Coleta?
               </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-3">
-                <p>
-                  Esta ação irá cancelar completamente o processo de coleta e reverter a entrega 
-                  para o status de <strong>promessa ativa</strong>.
-                </p>
-                {materiaisRegistrados.length > 0 && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>{materiaisRegistrados.length}</strong> {materiaisRegistrados.length === 1 ? 'material registrado' : 'materiais registrados'} {materiaisRegistrados.length === 1 ? 'será removido' : 'serão removidos'}
-                      <br />
-                      <span className="text-sm">Peso total: {formatWeight(materiaisRegistrados.reduce((sum, m) => sum + m.peso_kg, 0))}</span>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <p className="text-sm">
-                  Tem certeza que deseja continuar?
-                </p>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <div>
+                    Esta ação irá cancelar completamente o processo de coleta e reverter a entrega 
+                    para o status de <strong>promessa ativa</strong>.
+                  </div>
+                  {materiaisRegistrados.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>{materiaisRegistrados.length}</strong> {materiaisRegistrados.length === 1 ? 'material registrado' : 'materiais registrados'} {materiaisRegistrados.length === 1 ? 'será removido' : 'serão removidos'}
+                        <br />
+                        <span className="text-sm">Peso total: {formatWeight(materiaisRegistrados.reduce((sum, m) => sum + m.peso_kg, 0))}</span>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="text-sm">
+                    Tem certeza que deseja continuar?
+                  </div>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

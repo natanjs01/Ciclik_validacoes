@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',
         orientation: 'any',
         scope: mode === 'production' ? '/Ciclik_validacoes/' : '/',
-        start_url: mode === 'production' ? '/Ciclik_validacoes/?source=pwa' : '/?source=pwa',
+        start_url: mode === 'production' ? '/Ciclik_validacoes/' : '/',
         icons: [
           {
             src: 'pwa-icon-192.png',

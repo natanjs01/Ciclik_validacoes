@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico de Loop - Ciclik</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #e74c3c;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .alert {
+      background: #ffe6e6;
+      border-left: 4px solid #e74c3c;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      color: #c0392b;
+    }
+
+    .instructions {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .instructions li {
+      margin: 10px 0;
+      line-height: 1.6;
+    }
+
+    .code-box {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: 15px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .button {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin: 20px 0;
+      transition: transform 0.2s;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .button-secondary {
+      background: #95a5a6;
+    }
+
+    .results {
+      display: none;
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      min-height: 200px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+
+    .success {
+      color: #27ae60;
+      font-weight: bold;
+    }
+
+    .warning {
+      color: #f39c12;
+      font-weight: bold;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #4a5568;
+    }
+
+    .metric:last-child {
+      border-bottom: none;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #e74c3c;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚨 Diagnóstico de Loop Infinito</h1>
+    
+    <div class="alert">
+      <strong>⚠️ ATENÇÃO:</strong> Esta ferramenta irá monitorar a página por 5 segundos para detectar a causa do loop infinito.
+    </div>
+
+    <div class="instructions">
+      <strong>📋 Instruções:</strong>
+      <ol>
+        <li>Abra a página do Ciclik com problema em outra aba</li>
+        <li>Pressione <strong>F12</strong> para abrir DevTools</li>
+        <li>Clique na aba <strong>Console</strong></li>
+        <li>Clique no botão abaixo para copiar o código</li>
+        <li>Cole o código no Console e pressione Enter</li>
+        <li>Aguarde 5 segundos</li>
+        <li>Copie o resultado e me envie</li>
+      </ol>
+    </div>
+
+    <button class="button" onclick="copyCode()">
+      📋 Copiar Código de Diagnóstico
+    </button>
+
+    <div class="code-box" id="diagnosticCode">// ═══════════════════════════════════════
+// DIAGNÓSTICO: Detectar Causa do Loop
+// ═══════════════════════════════════════
+
+(function() {
+  console.clear();
+  console.log('%c🔍 DIAGNÓSTICO INICIADO', 'font-size: 16px; font-weight: bold; color: #e74c3c;');
+  console.log('Monitorando por 5 segundos...\n');
+
+  let renderCount = 0;
+  let effectCount = 0;
+  let navigateCount = 0;
+  let requestCount = 0;
+  let stateUpdateCount = 0;
+  const requestUrls = [];
+  const consoleMessages = [];
+
+  // Interceptar console
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+
+  console.log = function(...args) {
+    const message = String(args[0] || '');
+    consoleMessages.push(message);
+    
+    if (message.includes('render') || message.includes('Render')) renderCount++;
+    if (message.includes('useEffect') || message.includes('effect')) effectCount++;
+    if (message.includes('navigate') || message.includes('Navigate')) navigateCount++;
+    if (message.includes('setState') || message.includes('set')) stateUpdateCount++;
+    
+    originalLog.apply(console, args);
+  };
+
+  // Interceptar fetch
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    requestCount++;
+    const url = String(args[0]);
+    requestUrls.push(url);
+    return originalFetch.apply(this, args);
+  };
+
+  // Resultado após 5 segundos
+  setTimeout(() => {
+    // Restaurar funções originais
+    console.log = originalLog;
+    console.warn = originalWarn;
+    console.error = originalError;
+    window.fetch = originalFetch;
+
+    console.log('\n═══════════════════════════════════════');
+    console.log('%c📊 RESULTADO DO DIAGNÓSTICO', 'font-size: 16px; font-weight: bold; color: #3498db;');
+    console.log('═══════════════════════════════════════\n');
+
+    console.log(`URL: ${window.location.href}`);
+    console.log(`Navegador: ${navigator.userAgent.split(' ').slice(-2).join(' ')}`);
+    console.log(`Timestamp: ${new Date().toLocaleString('pt-BR')}\n`);
+
+    // Métricas
+    const isLooping = renderCount > 100 || effectCount > 100 || requestCount > 50;
+    
+    console.log('📈 MÉTRICAS (5 segundos):');
+    console.log(`   🔄 Re-renders: ${renderCount} ${renderCount > 100 ? '🚨 LOOP!' : '✅'}`);
+    console.log(`   ⚡ useEffect: ${effectCount} ${effectCount > 100 ? '🚨 LOOP!' : '✅'}`);
+    console.log(`   🧭 Navegações: ${navigateCount} ${navigateCount > 10 ? '🚨 LOOP!' : '✅'}`);
+    console.log(`   🌐 HTTP Requests: ${requestCount} ${requestCount > 50 ? '🚨 LOOP!' : '✅'}`);
+    console.log(`   📝 State Updates: ${stateUpdateCount}\n`);
+
+    // Diagnóstico
+    if (isLooping) {
+      console.log('%c🚨 LOOP INFINITO DETECTADO!', 'font-size: 14px; font-weight: bold; color: #e74c3c; background: #ffe6e6; padding: 10px;');
+      
+      if (renderCount > 100) {
+        console.log('%c⚠️ CAUSA: Loop de Re-render', 'color: #e74c3c; font-weight: bold;');
+        console.log('   Componente está re-renderizando infinitamente.');
+        console.log('   Verifique: useState, useEffect, props mudando constantemente.\n');
+      }
+      
+      if (effectCount > 100) {
+        console.log('%c⚠️ CAUSA: Loop de useEffect', 'color: #e74c3c; font-weight: bold;');
+        console.log('   useEffect disparando infinitamente.');
+        console.log('   Verifique: Dependências do useEffect incluem funções ou objetos.\n');
+      }
+      
+      if (requestCount > 50) {
+        console.log('%c⚠️ CAUSA: Loop de Requests', 'color: #e74c3c; font-weight: bold;');
+        console.log('   Requests HTTP em loop.');
+        console.log('   Endpoints mais chamados:');
+        
+        // Contar requests duplicados
+        const urlCounts = {};
+        requestUrls.forEach(url => {
+          const shortUrl = url.split('?')[0].substring(0, 80);
+          urlCounts[shortUrl] = (urlCounts[shortUrl] || 0) + 1;
+        });
+        
+        Object.entries(urlCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .forEach(([url, count]) => {
+            console.log(`      ${count}x - ${url}`);
+          });
+        console.log('');
+      }
+    } else {
+      console.log('%c✅ NENHUM LOOP DETECTADO', 'font-size: 14px; font-weight: bold; color: #27ae60; background: #d5f4e6; padding: 10px;');
+      console.log('   As métricas estão normais.\n');
+    }
+
+    // Mensagens suspeitas
+    const suspiciousMessages = consoleMessages.filter(msg => 
+      msg.includes('erro') || 
+      msg.includes('error') || 
+      msg.includes('warning') ||
+      msg.includes('loop') ||
+      msg.includes('infinite')
+    );
+
+    if (suspiciousMessages.length > 0) {
+      console.log('⚠️ MENSAGENS SUSPEITAS NO CONSOLE:');
+      suspiciousMessages.slice(0, 10).forEach(msg => {
+        console.log(`   - ${msg.substring(0, 100)}...`);
+      });
+      console.log('');
+    }
+
+    console.log('═══════════════════════════════════════');
+    console.log('%c📋 COPIE ESTE RESULTADO COMPLETO', 'font-size: 14px; font-weight: bold; color: #3498db;');
+    console.log('═══════════════════════════════════════\n');
+
+    // Gerar resumo copyable
+    const summary = `
+DIAGNÓSTICO CICLIK - ${new Date().toLocaleString('pt-BR')}
+URL: ${window.location.href}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MÉTRICAS (5 segundos):
+  Re-renders: ${renderCount}
+  useEffect: ${effectCount}
+  Navegações: ${navigateCount}
+  HTTP Requests: ${requestCount}
+  State Updates: ${stateUpdateCount}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATUS: ${isLooping ? '🚨 LOOP DETECTADO' : '✅ NORMAL'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `.trim();
+
+    console.log(summary);
+
+  }, 5000);
+
+  console.log('⏳ Monitorando... (aguarde 5 segundos)\n');
+})();
+</div>
+
+    <button class="button button-secondary" onclick="openCiclikSite()">
+      🌐 Abrir Site do Ciclik
+    </button>
+
+    <div id="results" class="results"></div>
+
+    <div class="instructions" style="margin-top: 30px;">
+      <strong>🆘 PRECISA DE AJUDA?</strong>
+      <p style="margin-top: 10px; line-height: 1.6;">
+        Se tiver dificuldades, tire um <strong>screenshot</strong> do Console após executar o código e me envie!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function copyCode() {
+      const code = document.getElementById('diagnosticCode').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Código Copiado!';
+        btn.style.background = '#27ae60';
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 2000);
+      });
+    }
+
+    function openCiclikSite() {
+      window.open('https://natanjs01.github.io/Ciclik_validacoes/', '_blank');
+    }
+  </script>
+</body>
+</html>

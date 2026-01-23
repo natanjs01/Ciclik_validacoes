@@ -1008,7 +1008,7 @@ export default function CooperativeTriagem() {
                   <div className="border-t border-border pt-3">
                     <div className="flex items-center gap-2 text-base font-semibold text-green-600">
                       <span>💰</span>
-                      <span>Pontos a Creditar: {resumo.pontosCalculados} pontos</span>
+                      <span>Pontos a Creditar: {resumo.pontosCalculados.toFixed(2)} pontos</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Baseado em {formatWeight(resumo.pesoValido)} de materiais válidos (sem rejeitos)

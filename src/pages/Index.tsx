@@ -20,7 +20,8 @@ const Index = () => {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ✅ CORRIGIDO: Executar apenas uma vez ao montar
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center overflow-hidden">

@@ -189,7 +189,8 @@ export function useHasTermosPendentes(autoCheck: boolean = true) {
     if (autoCheck) {
       verificar();
     }
-  }, [autoCheck, verificar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheck, user?.id]); // ✅ CORRIGIDO: user?.id ao invés de verificar
 
   return {
     temPendentes,

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpeza de Cache - Ciclik</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .status {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border-left: 4px solid #667eea;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .icon.pending {
+      background: #ffc107;
+    }
+
+    .icon.success {
+      background: #28a745;
+    }
+
+    .icon.error {
+      background: #dc3545;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #856404;
+    }
+
+    .success-message {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      color: #155724;
+    }
+
+    .success-message h3 {
+      margin-bottom: 10px;
+      color: #28a745;
+    }
+
+    .log {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Limpeza de Cache - Ciclik</h1>
+    <p class="subtitle">Ferramenta de diagnóstico e limpeza para resolver loops infinitos</p>
+
+    <div class="warning">
+      <strong>⚠️ Atenção:</strong> Esta ferramenta irá limpar todos os dados salvos localmente (cache, Service Worker, localStorage). Você precisará fazer login novamente após a limpeza.
+    </div>
+
+    <div class="status" id="status">
+      <div class="status-item">
+        <span class="icon pending" id="icon-sw"></span>
+        <span id="status-sw">Service Worker: Verificando...</span>
+      </div>
+      <div class="status-item">
+        <span class="icon pending" id="icon-cache"></span>
+        <span id="status-cache">Caches: Verificando...</span>
+      </div>
+      <div class="status-item">
+        <span class="icon pending" id="icon-storage"></span>
+        <span id="status-storage">Storage: Verificando...</span>
+      </div>
+    </div>
+
+    <button id="cleanBtn" onclick="cleanAll()">
+      🧹 Limpar Tudo e Atualizar
+    </button>
+
+    <div id="successMessage" style="display: none;" class="success-message">
+      <h3>✅ Limpeza Concluída!</h3>
+      <p>A página será recarregada em <span id="countdown">3</span> segundos...</p>
+      <p style="margin-top: 10px; font-size: 12px;">Se o problema persistir, entre em contato com o suporte técnico.</p>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    let logMessages = [];
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('pt-BR');
+      const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+      const logMessage = `[${timestamp}] ${prefix} ${message}`;
+      logMessages.push(logMessage);
+      document.getElementById('log').textContent = logMessages.join('\n');
+      console.log(logMessage);
+    }
+
+    function updateStatus(component, status, message) {
+      const icon = document.getElementById(`icon-${component}`);
+      const statusEl = document.getElementById(`status-${component}`);
+      
+      icon.className = `icon ${status}`;
+      statusEl.textContent = message;
+    }
+
+    async function checkServiceWorkers() {
+      if (!('serviceWorker' in navigator)) {
+        updateStatus('sw', 'success', 'Service Worker: Não suportado');
+        log('Service Worker não é suportado neste navegador');
+        return 0;
+      }
+
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      const count = registrations.length;
+      
+      if (count > 0) {
+        updateStatus('sw', 'pending', `Service Worker: ${count} ativo(s)`);
+        log(`${count} Service Worker(s) encontrado(s)`);
+      } else {
+        updateStatus('sw', 'success', 'Service Worker: Nenhum ativo');
+        log('Nenhum Service Worker ativo');
+      }
+      
+      return count;
+    }
+
+    async function checkCaches() {
+      if (!('caches' in window)) {
+        updateStatus('cache', 'success', 'Caches: Não suportado');
+        log('Cache API não é suportada neste navegador');
+        return 0;
+      }
+
+      const cacheNames = await caches.keys();
+      const count = cacheNames.length;
+      
+      if (count > 0) {
+        updateStatus('cache', 'pending', `Caches: ${count} encontrado(s)`);
+        log(`${count} cache(s) encontrado(s): ${cacheNames.join(', ')}`);
+      } else {
+        updateStatus('cache', 'success', 'Caches: Nenhum encontrado');
+        log('Nenhum cache encontrado');
+      }
+      
+      return count;
+    }
+
+    function checkStorage() {
+      const localStorageCount = localStorage.length;
+      const sessionStorageCount = sessionStorage.length;
+      const total = localStorageCount + sessionStorageCount;
+      
+      if (total > 0) {
+        updateStatus('storage', 'pending', `Storage: ${total} item(s)`);
+        log(`localStorage: ${localStorageCount} item(s)`);
+        log(`sessionStorage: ${sessionStorageCount} item(s)`);
+      } else {
+        updateStatus('storage', 'success', 'Storage: Vazio');
+        log('Storage vazio');
+      }
+      
+      return total;
+    }
+
+    async function cleanAll() {
+      const button = document.getElementById('cleanBtn');
+      button.disabled = true;
+      button.textContent = '🔄 Limpando...';
+      
+      log('═══════════════════════════════════════');
+      log('Iniciando limpeza completa...');
+      log('═══════════════════════════════════════');
+
+      try {
+        // 1. Limpar Service Workers
+        log('Passo 1/3: Desregistrando Service Workers...');
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            log(`Service Worker desregistrado: ${registration.scope}`, 'success');
+          }
+          updateStatus('sw', 'success', 'Service Worker: Limpo ✅');
+        }
+
+        // 2. Limpar Caches
+        log('Passo 2/3: Removendo caches...');
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          for (let name of cacheNames) {
+            await caches.delete(name);
+            log(`Cache removido: ${name}`, 'success');
+          }
+          updateStatus('cache', 'success', 'Caches: Limpo ✅');
+        }
+
+        // 3. Limpar Storage
+        log('Passo 3/3: Limpando storage...');
+        const localStorageKeys = Object.keys(localStorage);
+        const sessionStorageKeys = Object.keys(sessionStorage);
+        
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        log(`${localStorageKeys.length} item(s) removidos do localStorage`, 'success');
+        log(`${sessionStorageKeys.length} item(s) removidos do sessionStorage`, 'success');
+        updateStatus('storage', 'success', 'Storage: Limpo ✅');
+
+        log('═══════════════════════════════════════');
+        log('✅ Limpeza concluída com sucesso!', 'success');
+        log('Recarregando página em 3 segundos...', 'success');
+        log('═══════════════════════════════════════');
+
+        // Mostrar mensagem de sucesso
+        document.getElementById('successMessage').style.display = 'block';
+        
+        // Countdown
+        let countdown = 3;
+        const countdownEl = document.getElementById('countdown');
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          countdownEl.textContent = countdown;
+          if (countdown === 0) {
+            clearInterval(countdownInterval);
+            window.location.href = 'https://natanjs01.github.io/Ciclik_validacoes/';
+          }
+        }, 1000);
+
+      } catch (error) {
+        log(`Erro durante a limpeza: ${error.message}`, 'error');
+        updateStatus('sw', 'error', 'Erro na limpeza');
+        updateStatus('cache', 'error', 'Erro na limpeza');
+        updateStatus('storage', 'error', 'Erro na limpeza');
+        button.disabled = false;
+        button.textContent = '🔄 Tentar Novamente';
+      }
+    }
+
+    // Verificação inicial ao carregar a página
+    window.addEventListener('load', async () => {
+      log('Verificando estado atual...');
+      await checkServiceWorkers();
+      await checkCaches();
+      checkStorage();
+      log('Verificação concluída. Clique no botão para limpar.');
+    });
+  </script>
+</body>
+</html>

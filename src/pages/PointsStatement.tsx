@@ -150,7 +150,7 @@ const PointsStatement = () => {
         .eq('status', 'validada')
         .order('data_validacao', { ascending: false });
 
-      const pontosEntregaPor6Kg = pontosConfig['pontos_entrega_6kg'] ?? 10;
+      const pontosEntregaPor6Kg = pontosConfig['pontos_base_entrega_6kg'] ?? 20;
 
       // ✅ CORREÇÃO: Agregar peso total ANTES de calcular pontos
       // Método correto: floor(soma_pesos / 6) * pontos

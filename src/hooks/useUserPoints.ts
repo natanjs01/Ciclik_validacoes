@@ -121,7 +121,7 @@ export function useUserPoints(): UseUserPointsReturn {
         .eq('id_usuario', user.id)
         .eq('status', 'validada');
 
-      const pontosEntregaPor6Kg = pontosConfig['pontos_entrega_6kg'] ?? 10;
+      const pontosEntregaPor6Kg = pontosConfig['pontos_base_entrega_6kg'] ?? 20;
       let pesoTotalValidado = 0;
       
       entregas?.forEach(entrega => {

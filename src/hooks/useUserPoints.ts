@@ -37,6 +37,23 @@ export function useUserPoints(): UseUserPointsReturn {
       return;
     }
 
+    // Cache de 30 segundos para evitar cálculos excessivos em mobile
+    const cacheKey = `points_cache_${user.id}`;
+    const lastCalcKey = `points_last_calc_${user.id}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    const lastCalc = sessionStorage.getItem(lastCalcKey);
+    
+    if (cached && lastCalc) {
+      const cacheAge = Date.now() - parseInt(lastCalc);
+      if (cacheAge < 30000) { // 30 segundos
+        const cachedData = JSON.parse(cached);
+        setPontos(cachedData.pontos);
+        setBreakdown(cachedData.breakdown);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
 
@@ -151,6 +168,14 @@ export function useUserPoints(): UseUserPointsReturn {
 
       setPontos(totalPontos);
       setBreakdown(newBreakdown);
+      
+      // Salvar no cache
+      if (user) {
+        const cacheKey = `points_cache_${user.id}`;
+        const lastCalcKey = `points_last_calc_${user.id}`;
+        sessionStorage.setItem(cacheKey, JSON.stringify({ pontos: totalPontos, breakdown: newBreakdown }));
+        sessionStorage.setItem(lastCalcKey, Date.now().toString());
+      }
     } catch (error) {
       console.error('Erro ao calcular pontos:', error);
     } finally {

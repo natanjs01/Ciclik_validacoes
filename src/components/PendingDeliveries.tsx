@@ -39,8 +39,13 @@ export const PendingDeliveries = () => {
     if (user) {
       loadPendingDeliveries();
       
-      const interval = setInterval(loadPendingDeliveries, 60000);
-      return () => clearInterval(interval);
+      // Polling apenas em desktop - mobile usa pull-to-refresh ou atualização manual
+      // para economizar bateria e dados móveis
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) {
+        const interval = setInterval(loadPendingDeliveries, 60000);
+        return () => clearInterval(interval);
+      }
     }
   }, [user]);
 

@@ -87,6 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
+        // Ignorar eventos de token refresh que acontecem frequentemente em mobile
+        const ignoredEvents = ['TOKEN_REFRESHED', 'INITIAL_SESSION'];
+        if (ignoredEvents.includes(event)) {
+          return;
+        }
+        
         // Only handle actual auth changes, not token refreshes or focus events
         const isActualAuthChange = event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED';
         const isNewUser = newSession?.user?.id !== currentUserId;

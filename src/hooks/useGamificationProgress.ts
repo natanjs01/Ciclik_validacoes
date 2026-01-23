@@ -183,6 +183,22 @@ export function useGamificationProgress(): GamificationProgress & { loading: boo
       return;
     }
 
+    // Cache de 45 segundos para evitar múltiplas consultas em mobile
+    const cacheKey = `gamification_cache_${user.id}`;
+    const lastFetchKey = `gamification_last_fetch_${user.id}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    const lastFetch = sessionStorage.getItem(lastFetchKey);
+    
+    if (cached && lastFetch) {
+      const cacheAge = Date.now() - parseInt(lastFetch);
+      if (cacheAge < 45000) { // 45 segundos
+        const cachedData = JSON.parse(cached);
+        setProgress(cachedData);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       const nivelConfig = getNivelConfig(profile?.nivel || 'Iniciante');
@@ -300,7 +316,7 @@ export function useGamificationProgress(): GamificationProgress & { loading: boo
         diasRestantesMes
       );
 
-      setProgress({
+      const finalProgress = {
         ...progressData as GamificationProgress,
         pontosMes,
         nivel,
@@ -313,7 +329,17 @@ export function useGamificationProgress(): GamificationProgress & { loading: boo
         expressaoAssistente: expressao,
         metaEmRisco,
         metaProxima,
-      });
+      };
+
+      setProgress(finalProgress);
+      
+      // Salvar no cache
+      if (user) {
+        const cacheKey = `gamification_cache_${user.id}`;
+        const lastFetchKey = `gamification_last_fetch_${user.id}`;
+        sessionStorage.setItem(cacheKey, JSON.stringify(finalProgress));
+        sessionStorage.setItem(lastFetchKey, Date.now().toString());
+      }
 
     } catch (error) {
       console.error('Erro ao buscar progresso de gamificação:', error);

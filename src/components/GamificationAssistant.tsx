@@ -109,10 +109,25 @@ export default function GamificationAssistant({ compact = false, onClose }: Gami
   });
 
   useEffect(() => {
+    // Pausar animações quando página não está visível (background)
+    const handleVisibilityChange = () => {
+      // O interval será gerenciado pelo efeito principal
+      return;
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     const interval = setInterval(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % CYCLE_TIPS.length);
+      // Só atualizar dicas se a página estiver visível
+      if (!document.hidden) {
+        setCurrentTipIndex((prev) => (prev + 1) % CYCLE_TIPS.length);
+      }
     }, 8000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const currentTip = CYCLE_TIPS[currentTipIndex];

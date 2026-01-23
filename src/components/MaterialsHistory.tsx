@@ -48,6 +48,9 @@ const MaterialsHistory = ({ userId }: { userId: string }) => {
   useEffect(() => {
     loadMateriais();
     
+    // Throttle para evitar reloads excessivos em mobile (conexão instável)
+    let reloadTimeout: NodeJS.Timeout;
+    
     const channel = supabase
       .channel('materiais-changes')
       .on(
@@ -59,12 +62,17 @@ const MaterialsHistory = ({ userId }: { userId: string }) => {
           filter: `id_usuario=eq.${userId}`
         },
         () => {
-          loadMateriais();
+          // Debounce de 1 segundo para evitar múltiplas recargas
+          clearTimeout(reloadTimeout);
+          reloadTimeout = setTimeout(() => {
+            loadMateriais();
+          }, 1000);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(reloadTimeout);
       supabase.removeChannel(channel);
     };
   }, [userId]);

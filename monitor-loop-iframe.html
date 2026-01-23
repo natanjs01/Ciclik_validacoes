@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor de Loop - Ciclik</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #e74c3c;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .warning {
+      background: #c0392b;
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .input-group {
+      margin: 30px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #3498db;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #3498db;
+      border-radius: 8px;
+      background: #16213e;
+      color: white;
+      font-size: 16px;
+    }
+
+    input::placeholder {
+      color: #7f8c8d;
+    }
+
+    .button {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      border: none;
+      padding: 20px 40px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin: 20px 0;
+      transition: transform 0.2s;
+    }
+
+    .button:hover {
+      transform: scale(1.02);
+    }
+
+    .button:disabled {
+      background: #7f8c8d;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .results {
+      background: #16213e;
+      padding: 30px;
+      border-radius: 10px;
+      margin: 30px 0;
+      display: none;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      border-bottom: 1px solid #2c3e50;
+      font-size: 16px;
+    }
+
+    .metric:last-child {
+      border-bottom: none;
+    }
+
+    .metric-value {
+      font-weight: bold;
+      color: #3498db;
+    }
+
+    .metric-value.danger {
+      color: #e74c3c;
+    }
+
+    .metric-value.success {
+      color: #27ae60;
+    }
+
+    .diagnosis {
+      background: #c0392b;
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-size: 16px;
+      display: none;
+    }
+
+    .diagnosis h3 {
+      margin-bottom: 10px;
+    }
+
+    .diagnosis ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .diagnosis li {
+      margin: 5px 0;
+    }
+
+    .instructions {
+      background: #16213e;
+      padding: 25px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+      margin-top: 15px;
+    }
+
+    .instructions li {
+      margin: 10px 0;
+      font-size: 15px;
+    }
+
+    .code {
+      background: #0f1419;
+      color: #27ae60;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: 3px solid #3498db;
+      border-radius: 10px;
+      margin: 20px 0;
+      display: none;
+    }
+
+    .spinner {
+      border: 4px solid #2c3e50;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 30px auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .step {
+      background: #2c3e50;
+      padding: 15px;
+      border-left: 4px solid #3498db;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+
+    .step strong {
+      color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Monitor de Loop Infinito - Ciclik</h1>
+
+    <div class="warning">
+      ⚠️ DIAGNÓSTICO: Página recarrega antes de executar o código
+      <br><br>
+      <strong>Isso confirma: LOOP DE NAVEGAÇÃO/REDIRECIONAMENTO!</strong>
+    </div>
+
+    <div class="instructions">
+      <h2>📋 Como Usar Esta Ferramenta</h2>
+      <ol>
+        <li>Cole a <strong>URL completa</strong> da página com problema no campo abaixo</li>
+        <li>Clique em <strong>"Monitorar Página"</strong></li>
+        <li>A página será carregada em um <strong>iframe isolado</strong></li>
+        <li>O monitor coletará dados por <strong>10 segundos</strong></li>
+        <li>Os resultados aparecerão automaticamente</li>
+      </ol>
+    </div>
+
+    <div class="input-group">
+      <label for="urlInput">🌐 URL da Página com Problema:</label>
+      <input 
+        type="url" 
+        id="urlInput" 
+        placeholder="https://natanjs01.github.io/Ciclik_validacoes/" 
+        value="https://natanjs01.github.io/Ciclik_validacoes/"
+      >
+    </div>
+
+    <button class="button" onclick="startMonitoring()" id="startBtn">
+      🔍 Monitorar Página
+    </button>
+
+    <div class="spinner" id="spinner"></div>
+
+    <iframe id="monitorFrame"></iframe>
+
+    <div class="results" id="results">
+      <h2>📊 Resultados do Monitoramento</h2>
+      <div class="metric">
+        <span>⏱️ Tempo de Monitoramento:</span>
+        <span class="metric-value" id="monitorTime">-</span>
+      </div>
+      <div class="metric">
+        <span>🔄 Recarregamentos Detectados:</span>
+        <span class="metric-value" id="reloadCount">-</span>
+      </div>
+      <div class="metric">
+        <span>🧭 Mudanças de URL:</span>
+        <span class="metric-value" id="urlChanges">-</span>
+      </div>
+      <div class="metric">
+        <span>📄 Histórico de URLs:</span>
+        <span class="metric-value" id="urlHistory">-</span>
+      </div>
+    </div>
+
+    <div class="diagnosis" id="diagnosis">
+      <h3>🎯 DIAGNÓSTICO</h3>
+      <div id="diagnosisContent"></div>
+    </div>
+
+    <div class="instructions" style="margin-top: 40px;">
+      <h2>🔧 Solução Alternativa: Inspecionar Network</h2>
+      
+      <div class="step">
+        <strong>Passo 1:</strong> Abra a página com problema
+      </div>
+      
+      <div class="step">
+        <strong>Passo 2:</strong> Pressione F12 → Aba <span class="code">Network</span>
+      </div>
+      
+      <div class="step">
+        <strong>Passo 3:</strong> Ative <span class="code">Preserve log</span> (importante!)
+      </div>
+      
+      <div class="step">
+        <strong>Passo 4:</strong> Recarregue a página e observe:
+        <ul>
+          <li>Quantos requests são feitos?</li>
+          <li>Há requests repetindo infinitamente?</li>
+          <li>Qual é a URL que fica recarregando?</li>
+        </ul>
+      </div>
+      
+      <div class="step">
+        <strong>Passo 5:</strong> Tire um <strong>screenshot</strong> do Network tab e me envie
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let monitoringInterval;
+    let urlHistory = [];
+    let reloadCount = 0;
+    let startTime;
+
+    function startMonitoring() {
+      const url = document.getElementById('urlInput').value;
+      
+      if (!url) {
+        alert('Por favor, insira uma URL válida');
+        return;
+      }
+
+      // Reset
+      urlHistory = [];
+      reloadCount = 0;
+      startTime = Date.now();
+
+      // UI
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('startBtn').textContent = '⏳ Monitorando... (10 segundos)';
+      document.getElementById('spinner').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('diagnosis').style.display = 'none';
+
+      // Load iframe
+      const iframe = document.getElementById('monitorFrame');
+      iframe.style.display = 'block';
+      
+      // Monitor URL changes
+      let lastUrl = url;
+      urlHistory.push({ time: 0, url: url });
+
+      monitoringInterval = setInterval(() => {
+        try {
+          const currentUrl = iframe.contentWindow.location.href;
+          
+          if (currentUrl !== lastUrl) {
+            const elapsed = Date.now() - startTime;
+            urlHistory.push({ time: elapsed, url: currentUrl });
+            
+            // Detect reload to same URL
+            if (currentUrl === url || urlHistory.filter(h => h.url === currentUrl).length > 1) {
+              reloadCount++;
+            }
+            
+            lastUrl = currentUrl;
+          }
+        } catch (e) {
+          // Cross-origin - can't access iframe
+          console.warn('Não foi possível acessar o iframe (cross-origin)');
+        }
+      }, 100);
+
+      // Load page
+      iframe.src = url;
+
+      // Stop after 10 seconds
+      setTimeout(() => {
+        stopMonitoring();
+      }, 10000);
+    }
+
+    function stopMonitoring() {
+      clearInterval(monitoringInterval);
+      
+      const elapsed = Date.now() - startTime;
+      
+      // Display results
+      document.getElementById('monitorTime').textContent = `${(elapsed / 1000).toFixed(1)}s`;
+      document.getElementById('reloadCount').textContent = reloadCount;
+      document.getElementById('urlChanges').textContent = urlHistory.length - 1;
+      
+      // URL history
+      const urlHistoryHtml = urlHistory.map((h, i) => {
+        const shortUrl = h.url.split('/').slice(-2).join('/') || h.url.split('/').pop() || h.url;
+        return `${i}: ${shortUrl} (${h.time}ms)`;
+      }).join('<br>');
+      document.getElementById('urlHistory').innerHTML = urlHistoryHtml;
+
+      // Diagnosis
+      let diagnosisHtml = '';
+      
+      if (reloadCount > 5) {
+        diagnosisHtml += `
+          <p style="font-size: 18px; margin-bottom: 15px;">
+            🚨 <strong>LOOP DE REDIRECIONAMENTO CONFIRMADO!</strong>
+          </p>
+          <p>A página recarregou <strong>${reloadCount} vezes</strong> em 10 segundos.</p>
+          <br>
+          <p><strong>Causa Provável:</strong></p>
+          <ul>
+            <li><code>&lt;Navigate&gt;</code> em loop no React Router</li>
+            <li><code>useEffect</code> disparando <code>navigate()</code> repetidamente</li>
+            <li>Lógica de autenticação redirecionando infinitamente</li>
+          </ul>
+          <br>
+          <p><strong>Páginas Envolvidas no Loop:</strong></p>
+          <ul>
+            ${[...new Set(urlHistory.map(h => h.url))].map(url => 
+              `<li>${url.replace('https://natanjs01.github.io/Ciclik_validacoes', '')}</li>`
+            ).join('')}
+          </ul>
+        `;
+      } else if (urlHistory.length > 10) {
+        diagnosisHtml += `
+          <p style="font-size: 18px; margin-bottom: 15px;">
+            ⚠️ <strong>MÚLTIPLAS NAVEGAÇÕES DETECTADAS</strong>
+          </p>
+          <p>A página mudou de URL <strong>${urlHistory.length - 1} vezes</strong> em 10 segundos.</p>
+          <br>
+          <p><strong>Possível Causa:</strong> Lógica de roteamento problemática</p>
+        `;
+      } else {
+        diagnosisHtml += `
+          <p style="font-size: 18px; margin-bottom: 15px;">
+            ✅ <strong>Comportamento Normal (neste teste)</strong>
+          </p>
+          <p>Nenhum loop de redirecionamento óbvio detectado neste teste de 10 segundos.</p>
+          <br>
+          <p><strong>Nota:</strong> O problema pode estar em uma página específica ou acontecer apenas após login.</p>
+        `;
+      }
+
+      document.getElementById('diagnosisContent').innerHTML = diagnosisHtml;
+
+      // Show results
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('diagnosis').style.display = 'block';
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('startBtn').textContent = '🔍 Monitorar Novamente';
+      
+      // Highlight problematic metrics
+      if (reloadCount > 5) {
+        document.getElementById('reloadCount').classList.add('danger');
+      } else {
+        document.getElementById('reloadCount').classList.add('success');
+      }
+      
+      if (urlHistory.length > 10) {
+        document.getElementById('urlChanges').classList.add('danger');
+      } else {
+        document.getElementById('urlChanges').classList.add('success');
+      }
+    }
+  </script>
+</body>
+</html>

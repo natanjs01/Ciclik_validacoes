@@ -23,98 +23,106 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png'],
-      manifest: {
-        name: 'Ciclik - Recicle e Ganhe',
-        short_name: 'Ciclik',
-        description: 'A plataforma de benefícios onde você recicla e todos ganham. Transforme seus resíduos em pontos e troque por produtos e serviços.',
-        theme_color: '#8CC63F',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'any',
-        scope: mode === 'production' ? '/Ciclik_validacoes/' : '/',
-        start_url: mode === 'production' ? '/Ciclik_validacoes/' : '/',
-        icons: [
-          {
-            src: 'pwa-icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'pwa-icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: 'icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ],
-        categories: ['lifestyle', 'utilities']
-      },
-      workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        globIgnores: ['**/logo_qrcod.png'], // Ignorar logo grande
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
-              },
-              networkTimeoutSeconds: 10
-            }
-          }
-        ]
-      },
-      devOptions: {
-        enabled: false
-      }
-    })
+    // Desabilitar PWA temporariamente para diagnosticar conflito com extensão Tactiq
+    // VitePWA({
+    //   registerType: 'autoUpdate',
+    //   includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-icon-192.png', 'pwa-icon-512.png'],
+    //   manifest: {
+    //     name: 'Ciclik - Recicle e Ganhe',
+    //     short_name: 'Ciclik',
+    //     description: 'A plataforma de benefícios onde você recicla e todos ganham. Transforme seus resíduos em pontos e troque por produtos e serviços.',
+    //     theme_color: '#8CC63F',
+    //     background_color: '#ffffff',
+    //     display: 'standalone',
+    //     orientation: 'any',
+    //     scope: mode === 'production' ? '/Ciclik_validacoes/' : '/',
+    //     start_url: mode === 'production' ? '/Ciclik_validacoes/' : '/',
+    //     icons: [
+    //       {
+    //         src: 'pwa-icon-192.png',
+    //         sizes: '192x192',
+    //         type: 'image/png',
+    //         purpose: 'any'
+    //       },
+    //       {
+    //         src: 'pwa-icon-512.png',
+    //         sizes: '512x512',
+    //         type: 'image/png',
+    //         purpose: 'any'
+    //       },
+    //       {
+    //         src: 'icon-192.png',
+    //         sizes: '192x192',
+    //         type: 'image/png',
+    //         purpose: 'maskable'
+    //       },
+    //       {
+    //         src: 'icon-512.png',
+    //         sizes: '512x512',
+    //         type: 'image/png',
+    //         purpose: 'maskable'
+    //       }
+    //     ],
+    //     categories: ['lifestyle', 'utilities']
+    //   },
+    //   workbox: {
+    //     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+    //     globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+    //     globIgnores: ['**/logo_qrcod.png'], // Ignorar logo grande
+    //     // Ignorar requisições de extensões do navegador
+    //     navigateFallbackDenylist: [
+    //       /\/proxy\?sessionId=/,  // Tactiq extension
+    //       /^chrome-extension:\/\//,
+    //       /^moz-extension:\/\//,
+    //       /^ms-browser-extension:\/\//
+    //     ],
+    //     runtimeCaching: [
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'google-fonts-cache',
+    //           expiration: {
+    //             maxEntries: 10,
+    //             maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
+    //           },
+    //           cacheableResponse: {
+    //             statuses: [0, 200]
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'gstatic-fonts-cache',
+    //           expiration: {
+    //             maxEntries: 10,
+    //             maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
+    //           },
+    //           cacheableResponse: {
+    //             statuses: [0, 200]
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+    //         handler: 'NetworkFirst',
+    //         options: {
+    //           cacheName: 'supabase-cache',
+    //           expiration: {
+    //             maxEntries: 50,
+    //             maxAgeSeconds: 60 * 60 * 24 // 24 horas
+    //           },
+    //           networkTimeoutSeconds: 10
+    //         }
+    //       }
+    //     ]
+    //   },
+    //   devOptions: {
+    //     enabled: false
+    //   }
+    // })
   ].filter(Boolean),
   resolve: {
     alias: {

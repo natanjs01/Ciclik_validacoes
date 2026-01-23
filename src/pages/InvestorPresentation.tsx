@@ -61,11 +61,11 @@ const AnimatedCounter = ({ end, suffix = "", duration = 2 }: { end: number; suff
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
   const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const hasAnimated = useRef(false); // ✅ CORRIGIDO: usar useRef ao invés de useState
 
   useEffect(() => {
-    if (isInView && !hasAnimated) {
-      setHasAnimated(true);
+    if (isInView && !hasAnimated.current) {
+      hasAnimated.current = true; // ✅ CORRIGIDO: usar .current
       let start = 0;
       const increment = end / (duration * 60);
       const timer = setInterval(() => {
@@ -80,7 +80,8 @@ const AnimatedCounter = ({ end, suffix = "", duration = 2 }: { end: number; suff
 
       return () => clearInterval(timer);
     }
-  }, [isInView, hasAnimated, end, duration]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInView, end, duration]); // ✅ CORRIGIDO: removido hasAnimated das dependências
 
   return <span ref={ref}>{count.toLocaleString('pt-BR')}{suffix}</span>;
 };

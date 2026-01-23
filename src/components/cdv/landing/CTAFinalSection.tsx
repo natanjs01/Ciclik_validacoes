@@ -52,30 +52,12 @@ export function CTAFinalSection() {
       ref={ref}
     >
       {/* Animated gradient background */}
-      <motion.div 
-        className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80"
-        animate={{
-          background: [
-            'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.9) 50%, hsl(var(--primary)/0.8) 100%)',
-            'linear-gradient(135deg, hsl(var(--primary)/0.8) 0%, hsl(var(--primary)) 50%, hsl(var(--primary)/0.9) 100%)',
-            'linear-gradient(135deg, hsl(var(--primary)/0.9) 0%, hsl(var(--primary)/0.8) 50%, hsl(var(--primary)) 100%)',
-          ]
-        }}
-        transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-      />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
 
       {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute -bottom-20 -right-20 w-96 h-96 rounded-full bg-white/10 blur-3xl"
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.1, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl opacity-10" />
+        <div className="absolute -bottom-20 -right-20 w-96 h-96 rounded-full bg-white/10 blur-3xl opacity-15" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -87,14 +69,10 @@ export function CTAFinalSection() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white/90 text-sm mb-6"
-              animate={{ scale: [1, 1.02, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white/90 text-sm mb-6">
               <Leaf className="w-4 h-4" />
               Comece a gerar impacto hoje
-            </motion.div>
+            </div>
             
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
               Transforme Investimento

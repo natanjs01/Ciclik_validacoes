@@ -90,7 +90,7 @@ export default function Auth() {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [user, navigate, processingInvite]);
+  }, [user, processingInvite]); // Removido navigate para evitar re-renders no mobile
 
   // Processar tokens de convite/magic link na URL
   useEffect(() => {
@@ -167,7 +167,8 @@ export default function Auth() {
     };
 
     processAuthTokens();
-  }, [searchParams, navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Removido navigate e toast para evitar re-renders no mobile
 
   const fetchCEP = async (cep: string) => {
     try {

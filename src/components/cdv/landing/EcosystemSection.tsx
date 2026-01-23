@@ -140,13 +140,9 @@ export function EcosystemSection() {
               </div>
 
               {/* Arrow */}
-              <motion.div 
-                className="hidden md:block text-primary/40"
-                animate={{ x: [0, 8, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              >
+              <div className="hidden md:block text-primary/40">
                 <ArrowRight className="w-6 h-6" />
-              </motion.div>
+              </div>
 
               {/* Step 2 */}
               <div className="text-center flex-1">
@@ -158,13 +154,9 @@ export function EcosystemSection() {
               </div>
 
               {/* Arrow */}
-              <motion.div 
-                className="hidden md:block text-primary/40"
-                animate={{ x: [0, 8, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-              >
+              <div className="hidden md:block text-primary/40">
                 <ArrowRight className="w-6 h-6" />
-              </motion.div>
+              </div>
 
               {/* Step 3 */}
               <div className="text-center flex-1">
@@ -176,13 +168,9 @@ export function EcosystemSection() {
               </div>
 
               {/* Arrow */}
-              <motion.div 
-                className="hidden md:block text-primary/40"
-                animate={{ x: [0, 8, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-              >
+              <div className="hidden md:block text-primary/40">
                 <ArrowRight className="w-6 h-6" />
-              </motion.div>
+              </div>
 
               {/* Step 4 - Final */}
               <div className="text-center flex-1">

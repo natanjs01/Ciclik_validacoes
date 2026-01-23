@@ -148,13 +148,11 @@ export function ImpactMetrics() {
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
               {/* Icon */}
-              <motion.div
+              <div
                 className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${metric.color} flex items-center justify-center mx-auto mb-6 shadow-lg`}
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity, delay: index * 0.5 }}
               >
                 <metric.icon className="w-10 h-10 text-white" />
-              </motion.div>
+              </div>
 
               {/* Value */}
               <div className="text-6xl md:text-7xl font-bold mb-2">
@@ -192,12 +190,9 @@ export function ImpactMetrics() {
                 animate={isInView ? { opacity: 1, scale: 1 } : {}}
                 transition={{ delay: 0.8 + index * 0.1, duration: 0.4 }}
               >
-                <motion.div
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-                >
+                <div>
                   <impact.icon className={`w-12 h-12 mx-auto mb-3 ${impact.color}`} />
-                </motion.div>
+                </div>
                 <div className="text-3xl font-bold">
                   <AnimatedCounter end={impact.value} suffix={impact.suffix} duration={2.5} />
                 </div>

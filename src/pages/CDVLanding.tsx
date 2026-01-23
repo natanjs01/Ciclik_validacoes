@@ -54,29 +54,19 @@ const CDVLanding = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-secondary/10 overflow-hidden">
-      {/* Decorative leaves */}
+      {/* Decorative leaves - estáticas para performance */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(12)].map((_, i) => (
-          <motion.div
+        {[...Array(8)].map((_, i) => (
+          <div
             key={i}
-            className="absolute"
+            className="absolute opacity-20"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
-            animate={{
-              y: [0, -20, 0],
-              rotate: [0, 360],
-              opacity: [0.1, 0.3, 0.1],
-            }}
-            transition={{
-              duration: 5 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
           >
             <Leaf className="w-6 h-6 text-primary/20" />
-          </motion.div>
+          </div>
         ))}
       </div>
 

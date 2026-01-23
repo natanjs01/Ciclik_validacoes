@@ -114,28 +114,20 @@ const InvestorPresentation = () => {
 
       {/* Slide 1: Hero para Investidores */}
       <AnimatedSlide id="hero" className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 relative">
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
+        {/* REMOVIDO ANIMAÇÕES INFINITAS DE FOLHAS - Causavam re-renders constantes em mobile */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div
               key={i}
               className="absolute"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                rotate: [0, 360],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{
-                duration: 4 + Math.random() * 3,
-                repeat: Infinity,
-                delay: Math.random() * 2,
+                opacity: 0.3,
               }}
             >
               <Leaf className="w-6 h-6 text-primary/30" />
-            </motion.div>
+            </div>
           ))}
         </div>
         
@@ -228,14 +220,13 @@ const InvestorPresentation = () => {
             </Button>
           </motion.div>
 
-          <motion.div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
+          {/* Scroll indicator - REMOVIDO ANIMAÇÃO INFINITA */}
+          <div
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
             onClick={() => scrollToNext('oque')}
           >
             <ChevronDown className="w-8 h-8 text-muted-foreground" />
-          </motion.div>
+          </div>
         </div>
       </AnimatedSlide>
 

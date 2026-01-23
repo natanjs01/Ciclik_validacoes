@@ -24,29 +24,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center overflow-hidden">
-      {/* Folhas decorativas animadas */}
+      {/* Folhas decorativas - REMOVIDO ANIMAÇÕES INFINITAS */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(10)].map((_, i) => (
-          <motion.div
+        {[...Array(6)].map((_, i) => (
+          <div
             key={i}
             className="absolute"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -20, 0],
-              rotate: [0, 360],
-              opacity: [0.2, 0.5, 0.2],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 2,
+              opacity: 0.3,
             }}
           >
             <Leaf className="w-8 h-8 text-primary/30" />
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -116,18 +107,9 @@ const Index = () => {
         >
           <div className="flex gap-2">
             {[0, 1, 2].map((i) => (
-              <motion.div
+              <div
                 key={i}
-                className="w-3 h-3 rounded-full bg-primary"
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
+                className="w-3 h-3 rounded-full bg-primary opacity-70"
               />
             ))}
           </div>

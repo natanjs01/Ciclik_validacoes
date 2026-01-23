@@ -148,13 +148,9 @@ export function BenefitsSection() {
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               {/* Icon */}
               <div className="flex-shrink-0">
-                <motion.div
-                  className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 6, repeat: Infinity }}
-                >
+                <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <Award className="w-12 h-12 text-white" />
-                </motion.div>
+                </div>
               </div>
 
               {/* Content */}

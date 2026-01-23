@@ -7,9 +7,9 @@ interface HeroSectionProps {
   onCtaClick: () => void;
 }
 
-// Partículas flutuantes estilo Ciclik - orgânicas e leves
-const FloatingLeaf = ({ delay, duration, x, y, size }: { delay: number; duration: number; x: number; y: number; size: number }) => (
-  <motion.div
+// Partículas flutuantes estilo Ciclik - orgânicas e leves (estáticas para performance mobile)
+const FloatingLeaf = ({ x, y, size }: { x: number; y: number; size: number }) => (
+  <div
     className="absolute rounded-full"
     style={{ 
       left: `${x}%`, 
@@ -17,19 +17,7 @@ const FloatingLeaf = ({ delay, duration, x, y, size }: { delay: number; duration
       width: size,
       height: size,
       background: 'linear-gradient(135deg, hsl(76, 72%, 44%, 0.15), hsl(76, 72%, 44%, 0.05))',
-    }}
-    animate={{
-      y: [0, -20, 0],
-      x: [0, 10, 0],
-      opacity: [0.3, 0.6, 0.3],
-      scale: [1, 1.1, 1],
-      rotate: [0, 15, 0],
-    }}
-    transition={{
-      duration,
-      delay,
-      repeat: Infinity,
-      ease: "easeInOut",
+      opacity: 0.4
     }}
   />
 );

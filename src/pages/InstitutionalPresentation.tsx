@@ -72,18 +72,10 @@ const InstitutionalPresentation = () => {
 
       {/* ===== SEÇÃO 1: HERO ===== */}
       <section className="relative py-20 px-4 md:px-8 overflow-hidden bg-gradient-to-b from-primary/5 to-background">
-        {/* Decorative background */}
+        {/* Decorative background - REMOVIDO ANIMAÇÕES INFINITAS */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity }}
-          />
-          <motion.div
-            className="absolute -bottom-20 -left-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-          />
+          <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-40" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl opacity-30" />
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10">

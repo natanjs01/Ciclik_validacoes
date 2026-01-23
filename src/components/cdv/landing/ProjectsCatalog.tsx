@@ -160,11 +160,7 @@ export function ProjectsCatalog({ onInvestClick }: ProjectsCatalogProps) {
                       <div className="relative">
                         <Progress value={progressPercent} className="h-2" />
                         {progressPercent > 70 && (
-                          <motion.div
-                            className="absolute inset-0 bg-primary/20 rounded-full"
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          />
+                          <div className="absolute inset-0 bg-primary/20 rounded-full opacity-70" />
                         )}
                       </div>
                     </div>

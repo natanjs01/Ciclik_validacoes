@@ -658,10 +658,19 @@ export default function AdminProductsAnalysis() {
           const produto = produtos.find(p => p.id === produtoId);
           if (!produto) continue;
 
+          // ⏱️ DELAY entre consultas para evitar sobrecarga na API
+          // Aguarda 1.5 segundos entre cada consulta (exceto na primeira)
+          if (i > 0) {
+            console.log(`⏳ Aguardando 1.5s antes da próxima consulta...`);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+
           // 2. Consultar API Cosmos (Render) - PRODUÇÃO
+          console.log(`📡 Iniciando consulta ${i + 1}/${total} - GTIN: ${produto.ean_gtin}`);
           const inicioConsulta = Date.now();
           const dadosAPI = await consultarAPIReal(produto.ean_gtin); // ✅ API REAL
           const tempoResposta = Date.now() - inicioConsulta;
+          console.log(`⏱️ Consulta concluída em ${(tempoResposta / 1000).toFixed(2)}s`);
 
           // 3. Registrar consulta no log
           let consultaBemSucedida = false;
@@ -853,6 +862,49 @@ export default function AdminProductsAnalysis() {
     setActionType(action);
     setObservacoes(produto.observacoes || '');
     setDialogOpen(true);
+  };
+
+  // 🔄 Função para reverter produto de "consultado" para "pendente"
+  const handleReverterConsulta = async (produto: ProdutoEmAnalise) => {
+    if (produto.status !== 'consultado') {
+      toast({
+        title: 'Ação inválida',
+        description: 'Apenas produtos consultados podem ser revertidos.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('produtos_em_analise')
+        .update({
+          status: 'pendente',
+          dados_api: null, // Limpa os dados da API
+          consultado_em: null, // Limpa a data de consulta
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', produto.id);
+
+      if (error) throw error;
+
+      toast({
+        title: '🔄 Status revertido!',
+        description: `Produto ${produto.ean_gtin} voltou para PENDENTE. Você pode consultá-lo novamente.`,
+      });
+
+      await loadProdutos();
+    } catch (error: any) {
+      console.error('Erro ao reverter status:', error);
+      toast({
+        title: 'Erro ao reverter',
+        description: error.message || 'Não foi possível reverter o status do produto.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Função para calcular a prioridade baseada no tempo (72 horas para produtos QR Code)
@@ -1404,6 +1456,22 @@ export default function AdminProductsAnalysis() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* 🔄 Botão "Reverter Consulta" - apenas para produtos consultados SEM sucesso */}
+                          {produto.status === 'consultado' && 
+                           (!produto.dados_api || produto.dados_api.encontrado !== true) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReverterConsulta(produto)}
+                              disabled={processing}
+                              className="bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                              title="Reverter para Pendente e consultar novamente"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              Reverter
+                            </Button>
+                          )}
+                          
                           {/* Botão "Ver Dados da API" - apenas para produtos consultados COM SUCESSO */}
                           {produto.status === 'consultado' && 
                            produto.dados_api && 
@@ -2204,7 +2272,8 @@ export default function AdminProductsAnalysis() {
 async function consultarAPIReal(eanGtin: string): Promise<DadosAPIOnRender> {
   const API_URL = 'https://ciclik-api-produtos.onrender.com';
   const API_TOKEN = 'ciclik_secret_token_2026';
-  const TIMEOUT_MS = 50000; // 50 segundos (considerar cold start do Render Free)
+  const TIMEOUT_MS = 90000; // ⚡ AUMENTADO: 90 segundos (cold start do Render pode demorar até 60s)
+  const MAX_RETRIES = 2; // 🔄 NOVO: Máximo de tentativas em caso de timeout/erro
 
   // Produtos SEM GTIN válido não podem ser consultados
   if (eanGtin.startsWith('SEM_GTIN_') || eanGtin === 'SEM GTIN' || !eanGtin || eanGtin.length < 13) {
@@ -2215,22 +2284,43 @@ async function consultarAPIReal(eanGtin: string): Promise<DadosAPIOnRender> {
     };
   }
 
-  try {
-    // Configurar timeout
+  // 🔄 Função auxiliar para fazer a requisição com retry
+  const fazerRequisicao = async (tentativa: number = 1): Promise<Response> => {
+    console.log(`🔍 Consultando GTIN ${eanGtin} (tentativa ${tentativa}/${MAX_RETRIES})...`);
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    // Chamar API do Render
-    const response = await fetch(`${API_URL}/api/produtos/${eanGtin}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      signal: controller.signal
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/produtos/${eanGtin}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${API_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+      return response;
+
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      
+      // Se for timeout e ainda tem tentativas, tenta novamente
+      if (error.name === 'AbortError' && tentativa < MAX_RETRIES) {
+        console.warn(`⏱️ Timeout na tentativa ${tentativa}. Tentando novamente...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Aguarda 2s antes de retry
+        return fazerRequisicao(tentativa + 1);
+      }
+      
+      throw error; // Propaga o erro se esgotou as tentativas
+    }
+  };
+
+  try {
+    // Fazer requisição com retry automático
+    const response = await fazerRequisicao();
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -2238,13 +2328,19 @@ async function consultarAPIReal(eanGtin: string): Promise<DadosAPIOnRender> {
       } else if (response.status === 400) {
         throw new Error('GTIN inválido');
       } else if (response.status === 404) {
-        throw new Error('Produto não encontrado na API');
+        // 404 não é erro - produto simplesmente não existe na base
+        return {
+          ean_gtin: eanGtin,
+          encontrado: false,
+          mensagem: 'Produto não encontrado na base Cosmos'
+        };
       } else {
         throw new Error(`Erro na API: ${response.status}`);
       }
     }
 
     const dadosCosmos = await response.json();
+    console.log(`✅ GTIN ${eanGtin} consultado com sucesso!`, dadosCosmos.encontrado ? '(encontrado)' : '(não encontrado)');
 
     // Mapear resposta da API Cosmos para o formato esperado
     return {
@@ -2264,12 +2360,14 @@ async function consultarAPIReal(eanGtin: string): Promise<DadosAPIOnRender> {
     };
 
   } catch (error: any) {
+    console.error(`❌ Erro ao consultar GTIN ${eanGtin}:`, error);
+    
     // Tratar erros específicos
     if (error.name === 'AbortError') {
       return {
         ean_gtin: eanGtin,
         encontrado: false,
-        mensagem: 'Timeout: API demorou muito para responder (cold start)'
+        mensagem: `Timeout após ${MAX_RETRIES} tentativas - API pode estar sobrecarregada ou em cold start`
       };
     }
 

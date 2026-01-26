@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye, Star, CheckCircle2, Database } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Search, Package, QrCode, Edit, Check, X, ExternalLink, Loader2, TrendingUp, Clock, AlertTriangle, Upload, Download, FileSpreadsheet, RefreshCw, Eye, Star, CheckCircle2, Database, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -184,6 +184,12 @@ export default function AdminProductsAnalysis() {
   
   // Contador de consultas API realizadas hoje
   const [consultasHoje, setConsultasHoje] = useState(0);
+  const [resetConsultasDialogOpen, setResetConsultasDialogOpen] = useState(false);
+  const [consultasParaResetar, setConsultasParaResetar] = useState({
+    total: 0,
+    sucesso: 0,
+    falhas: 0,
+  });
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -233,6 +239,143 @@ export default function AdminProductsAnalysis() {
     } catch (error) {
       console.error('Erro ao carregar contador de consultas:', error);
       // Em caso de erro, mantém 0 (não bloqueia a interface)
+    }
+  };
+
+  /**
+   * 🔄 Calcular consultas para reset
+   * Conta apenas consultas bem-sucedidas (produto encontrado) para manter no contador
+   */
+  const calcularConsultasParaReset = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const hoje = new Date().toISOString().split('T')[0];
+
+      // Contar TOTAL de consultas hoje
+      const { count: totalCount } = await supabase
+        .from('log_consultas_api')
+        .select('*', { count: 'exact', head: true })
+        .eq('admin_id', user.id)
+        .gte('timestamp', `${hoje}T00:00:00`)
+        .lte('timestamp', `${hoje}T23:59:59`);
+
+      // Contar consultas BEM-SUCEDIDAS (produto encontrado)
+      const { data: consultasSucesso } = await supabase
+        .from('log_consultas_api')
+        .select('resposta_api')
+        .eq('admin_id', user.id)
+        .eq('sucesso', true)
+        .gte('timestamp', `${hoje}T00:00:00`)
+        .lte('timestamp', `${hoje}T23:59:59`);
+
+      // Filtrar apenas as que ENCONTRARAM o produto
+      const sucessoComProduto = consultasSucesso?.filter(c => {
+        const resposta = c.resposta_api as any;
+        return resposta?.encontrado === true;
+      }).length || 0;
+
+      const falhas = (totalCount || 0) - sucessoComProduto;
+
+      setConsultasParaResetar({
+        total: totalCount || 0,
+        sucesso: sucessoComProduto,
+        falhas: falhas,
+      });
+
+      setResetConsultasDialogOpen(true);
+
+    } catch (error) {
+      console.error('Erro ao calcular consultas:', error);
+      toast({
+        title: 'Erro ao calcular consultas',
+        description: 'Não foi possível obter os dados das consultas.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  /**
+   * 🗑️ Resetar contador de consultas
+   * Remove do log apenas as consultas que falharam ou não encontraram produtos
+   */
+  const resetarContadorConsultas = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const hoje = new Date().toISOString().split('T')[0];
+
+      // Buscar IDs das consultas para deletar (falhas + não encontrados)
+      const { data: consultasParaDeletar } = await supabase
+        .from('log_consultas_api')
+        .select('id, resposta_api, sucesso')
+        .eq('admin_id', user.id)
+        .gte('timestamp', `${hoje}T00:00:00`)
+        .lte('timestamp', `${hoje}T23:59:59`);
+
+      if (!consultasParaDeletar) {
+        throw new Error('Nenhuma consulta encontrada');
+      }
+
+      // Filtrar IDs das consultas que NÃO encontraram produto ou falharam
+      const idsParaDeletar = consultasParaDeletar
+        .filter(c => {
+          // Se falhou (sucesso=false), deletar
+          if (!c.sucesso) return true;
+          
+          // Se não encontrou produto, deletar
+          const resposta = c.resposta_api as any;
+          if (resposta?.encontrado !== true) return true;
+          
+          // Caso contrário, manter
+          return false;
+        })
+        .map(c => c.id);
+
+      if (idsParaDeletar.length === 0) {
+        toast({
+          title: 'Nenhuma consulta para resetar',
+          description: 'Todas as consultas de hoje foram bem-sucedidas!',
+        });
+        setResetConsultasDialogOpen(false);
+        return;
+      }
+
+      // Deletar consultas em lote
+      const { error: deleteError } = await supabase
+        .from('log_consultas_api')
+        .delete()
+        .in('id', idsParaDeletar);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // ⏱️ Aguardar 500ms para garantir que o banco processou a deleção
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 🔄 Recarregar contador (força nova consulta ao banco)
+      await loadConsultasHoje();
+
+      // 🔄 Atualizar estado diretamente também (garantia dupla)
+      setConsultasHoje(consultasParaResetar.sucesso);
+
+      toast({
+        title: '✅ Contador resetado com sucesso!',
+        description: `${idsParaDeletar.length} consultas removidas. ${consultasParaResetar.sucesso} consultas bem-sucedidas mantidas.`,
+      });
+
+      setResetConsultasDialogOpen(false);
+
+    } catch (error: any) {
+      console.error('Erro ao resetar contador:', error);
+      toast({
+        title: 'Erro ao resetar contador',
+        description: error.message || 'Ocorreu um erro ao resetar o contador.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -641,17 +784,13 @@ export default function AdminProductsAnalysis() {
           const produto = produtos.find(p => p.id === produtoId);
           if (!produto) continue;
 
-          // ⏱️ DELAY entre consultas para evitar sobrecarga na API
-          // Aguarda 2 segundos entre cada consulta (exceto na primeira)
-          if (i > 0) {
-            console.log(`⏳ Aguardando 2s antes da próxima consulta...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-
           // 2. Consultar API Cosmos usando o serviço aprimorado
+          // ⚠️ O rate limiting já está incluído no serviço - não precisa de delay aqui!
           console.log(`📡 Iniciando consulta ${i + 1}/${total} - GTIN: ${produto.ean_gtin}`);
           const inicioConsulta = Date.now();
-          const dadosAPI = await consultarAPIProdutos(produto.ean_gtin); // ✅ Serviço com cache + circuit breaker
+          // ✅ Passar flag de primeira requisição para acordar Render.com
+          const isFirstRequest = i === 0;
+          const dadosAPI = await consultarAPIProdutos(produto.ean_gtin, isFirstRequest);
           const tempoResposta = Date.now() - inicioConsulta;
           console.log(`⏱️ Consulta concluída em ${(tempoResposta / 1000).toFixed(2)}s`);
 
@@ -763,6 +902,26 @@ export default function AdminProductsAnalysis() {
             resultados.naoEncontrados.push(produto.descricao);
           }
         } catch (error: any) {
+          // 🚫 Verificar se é erro de rate limit (limite diário Bluesoft)
+          if (error.message && error.message.includes('RATE_LIMIT')) {
+            toast({
+              title: '🚫 Limite Diário Atingido',
+              description: 'A API Bluesoft Cosmos bloqueou novas consultas. O processamento foi interrompido. Aguarde até meia-noite (00:00) para continuar.',
+              variant: 'destructive',
+              duration: 10000,
+            });
+            
+            // Registrar erro específico
+            resultados.erros.push({ 
+              id: produtoId, 
+              erro: '🚫 LIMITE DIÁRIO ATINGIDO - API Bluesoft bloqueou consultas. Aguarde até 00:00.'
+            });
+            
+            // INTERROMPER PROCESSAMENTO IMEDIATAMENTE
+            break;
+          }
+          
+          // Outros erros
           resultados.erros.push({ 
             id: produtoId, 
             erro: error.message 
@@ -1140,12 +1299,36 @@ export default function AdminProductsAnalysis() {
         </div>
 
         {/* Contador de Consultas API */}
-        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 mt-2 text-sm">
           <Badge variant={consultasHoje >= 100 ? "destructive" : "outline"}>
             {consultasHoje}/100 consultas hoje
           </Badge>
           {consultasHoje >= 100 && (
             <span className="text-red-600">Limite diário atingido</span>
+          )}
+          
+          {/* Botão de Atualizar Contador */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadConsultasHoje}
+            className="h-7 px-2 text-xs gap-1 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+            title="Atualizar contador"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+          
+          {/* Botão de Reset do Contador */}
+          {consultasHoje > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={calcularConsultasParaReset}
+              className="h-7 text-xs gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Resetar Contador
+            </Button>
           )}
         </div>
       </div>
@@ -2240,6 +2423,106 @@ export default function AdminProductsAnalysis() {
                 Preencher Formulário
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Reset do Contador */}
+      <Dialog open={resetConsultasDialogOpen} onOpenChange={setResetConsultasDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-blue-600" />
+              Resetar Contador de Consultas
+            </DialogTitle>
+            <DialogDescription>
+              Analise cuidadosamente os dados antes de confirmar
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Estatísticas */}
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total de consultas hoje:</span>
+                  <Badge variant="outline" className="text-base">
+                    {consultasParaResetar.total}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-green-700">
+                    ✅ Bem-sucedidas (produto encontrado):
+                  </span>
+                  <Badge className="bg-green-100 text-green-800 border-green-300 text-base">
+                    {consultasParaResetar.sucesso}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-red-700">
+                    ❌ Falhas/Não encontrados:
+                  </span>
+                  <Badge variant="destructive" className="text-base">
+                    {consultasParaResetar.falhas}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Explicação */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+              <p className="text-sm font-medium text-blue-900">
+                🔄 O que será feito:
+              </p>
+              <ul className="text-xs text-blue-800 space-y-1 ml-4">
+                <li>✅ <strong>Manter:</strong> {consultasParaResetar.sucesso} consultas que encontraram produtos</li>
+                <li>❌ <strong>Remover:</strong> {consultasParaResetar.falhas} consultas com falha ou produto não encontrado</li>
+                <li>🔓 <strong>Liberar:</strong> {consultasParaResetar.falhas} slots para novas consultas</li>
+              </ul>
+            </div>
+
+            {/* Aviso */}
+            {consultasParaResetar.falhas === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm text-amber-800">
+                  ⚠️ Todas as consultas de hoje foram bem-sucedidas. Não há nada para resetar.
+                </p>
+              </div>
+            )}
+
+            {/* Novo contador */}
+            {consultasParaResetar.falhas > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-green-900">
+                  📊 Novo contador após reset:
+                </p>
+                <p className="text-2xl font-bold text-green-700 text-center mt-2">
+                  {consultasParaResetar.sucesso}/100
+                </p>
+                <p className="text-xs text-green-600 text-center mt-1">
+                  ({consultasParaResetar.falhas} slots liberados)
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setResetConsultasDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={resetarContadorConsultas}
+              disabled={consultasParaResetar.falhas === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Confirmar Reset
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

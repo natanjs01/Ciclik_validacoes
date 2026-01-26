@@ -15,12 +15,21 @@
 export const API_CONFIG = {
   URL: 'https://ciclik-api-produtos.onrender.com',
   TOKEN: 'ciclik_secret_token_2026',
-  TIMEOUT_MS: 30000, // 30s (reduzido - se não responder em 30s, está com problema)
-  MAX_RETRIES: 1, // Apenas 1 retry (reduzido para evitar espera excessiva)
-  RETRY_DELAY_MS: 3000, // 3s entre tentativas
+  TIMEOUT_MS: 120000, // ✅ 120s - Render free tier pode demorar no cold start
+  MAX_RETRIES: 2, // ✅ 2 retries para lidar com timeouts de cold start
+  RETRY_DELAY_MS: 5000, // ✅ 5s entre tentativas (cold start precisa de tempo)
   CACHE_DURATION_MS: 24 * 60 * 60 * 1000, // 24h de cache
-  CIRCUIT_BREAKER_THRESHOLD: 3, // Após 3 falhas consecutivas, para temporariamente
-  CIRCUIT_BREAKER_TIMEOUT_MS: 60000, // 1 minuto de pausa após circuit breaker
+  CIRCUIT_BREAKER_THRESHOLD: 10, // ✅ 10 falhas consecutivas (render pode falhar várias vezes no início)
+  CIRCUIT_BREAKER_TIMEOUT_MS: 120000, // ✅ 2 minutos de pausa (dar tempo pro render acordar)
+  
+  // 🚦 RATE LIMITING - Render.com free tier
+  // Baseado em: https://render.com/docs/free#free-web-services
+  // Free tier: 100 req/min, 750h/mês, cold start após 15min inativo
+  MAX_REQUESTS_PER_MINUTE: 30, // ✅ 30 req/min (MUITO CONSERVADOR - render free é limitado)
+  MAX_CONCURRENT_REQUESTS: 2, // ✅ Máximo de 2 requisições simultâneas (render free tem pouca RAM)
+  DELAY_BETWEEN_REQUESTS_MS: 3000, // ✅ 3s entre requisições (20 req/min efetivo)
+  COLD_START_DELAY_MS: 15000, // ✅ 15s para primeira requisição (WAKE UP do render)
+  COLD_START_EXTRA_TIMEOUT_MS: 180000, // ✅ 3min timeout extra APENAS na primeira requisição
 };
 
 // Interface para resposta da API
@@ -100,6 +109,116 @@ class CircuitBreaker {
 }
 
 const circuitBreaker = new CircuitBreaker();
+
+// 🚦 Rate Limiter - Controle de requisições por minuto
+class RateLimiter {
+  private requestTimestamps: number[] = [];
+  private activeRequests = 0;
+  private isFirstRequest = true;
+
+  /**
+   * Aguarda até que seja seguro fazer uma nova requisição
+   * Retorna o tempo de espera em ms
+   */
+  async waitForSlot(): Promise<number> {
+    const now = Date.now();
+    
+    // Limpar timestamps antigos (> 1 minuto)
+    this.requestTimestamps = this.requestTimestamps.filter(
+      ts => now - ts < 60000
+    );
+
+    // ⏰ Verificar se é primeira requisição (cold start)
+    if (this.isFirstRequest) {
+      this.isFirstRequest = false;
+      console.log('🥶 COLD START DETECTADO - Acordando Render.com...');
+      console.log('⏰ Aguardando 15s para o servidor inicializar...');
+      await this.sleep(API_CONFIG.COLD_START_DELAY_MS);
+      console.log('✅ Render.com deve estar acordado - iniciando consultas');
+    }
+
+    // 🚦 Verificar requisições concorrentes
+    while (this.activeRequests >= API_CONFIG.MAX_CONCURRENT_REQUESTS) {
+      console.log(`⏳ Aguardando slot livre (${this.activeRequests}/${API_CONFIG.MAX_CONCURRENT_REQUESTS} ativas)...`);
+      await this.sleep(1000);
+    }
+
+    // 🚦 Verificar requisições por minuto
+    if (this.requestTimestamps.length >= API_CONFIG.MAX_REQUESTS_PER_MINUTE) {
+      const oldestRequest = this.requestTimestamps[0];
+      const timeToWait = 60000 - (now - oldestRequest);
+      
+      if (timeToWait > 0) {
+        console.warn(`⚠️ Rate limit: ${this.requestTimestamps.length} req/min. Aguardando ${Math.ceil(timeToWait / 1000)}s...`);
+        await this.sleep(timeToWait);
+        return timeToWait;
+      }
+    }
+
+    // ⏱️ Delay mínimo entre requisições
+    if (this.requestTimestamps.length > 0) {
+      const lastRequest = this.requestTimestamps[this.requestTimestamps.length - 1];
+      const timeSinceLastRequest = now - lastRequest;
+      
+      if (timeSinceLastRequest < API_CONFIG.DELAY_BETWEEN_REQUESTS_MS) {
+        const delay = API_CONFIG.DELAY_BETWEEN_REQUESTS_MS - timeSinceLastRequest;
+        await this.sleep(delay);
+        return delay;
+      }
+    }
+
+    return 0;
+  }
+
+  /**
+   * Registra início de uma requisição
+   */
+  startRequest() {
+    this.requestTimestamps.push(Date.now());
+    this.activeRequests++;
+    console.log(`📊 Requisições: ${this.activeRequests} ativas, ${this.requestTimestamps.length} no último minuto`);
+  }
+
+  /**
+   * Registra fim de uma requisição
+   */
+  endRequest() {
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+  }
+
+  /**
+   * Retorna estatísticas do rate limiter
+   */
+  getStats() {
+    const now = Date.now();
+    this.requestTimestamps = this.requestTimestamps.filter(
+      ts => now - ts < 60000
+    );
+
+    return {
+      activeRequests: this.activeRequests,
+      requestsLastMinute: this.requestTimestamps.length,
+      maxPerMinute: API_CONFIG.MAX_REQUESTS_PER_MINUTE,
+      maxConcurrent: API_CONFIG.MAX_CONCURRENT_REQUESTS,
+    };
+  }
+
+  /**
+   * Reseta o rate limiter
+   */
+  reset() {
+    this.requestTimestamps = [];
+    this.activeRequests = 0;
+    this.isFirstRequest = true;
+    console.log('🔄 Rate limiter resetado');
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+const rateLimiter = new RateLimiter();
 
 // 💾 Sistema de Cache Local
 class APICache {
@@ -228,12 +347,13 @@ function validarENormalizarGTIN(gtin: string): { valido: boolean; gtinNormalizad
 }
 
 /**
- * �🔌 Consultar API de Produtos com proteções e otimizações
+ * 🔌 Consultar API de Produtos com proteções e otimizações
  * 
  * @param eanGtin - Código GTIN/EAN do produto
+ * @param isFirstInBatch - Se é a primeira requisição do lote (para cold start)
  * @returns Promise com dados do produto ou erro tratado
  */
-export async function consultarAPIProdutos(eanGtin: string): Promise<DadosAPIOnRender> {
+export async function consultarAPIProdutos(eanGtin: string, isFirstInBatch = false): Promise<DadosAPIOnRender> {
   // 1. Validação e normalização do GTIN
   if (!eanGtin || eanGtin.startsWith('SEM_GTIN_') || eanGtin === 'SEM GTIN') {
     return {
@@ -270,10 +390,13 @@ export async function consultarAPIProdutos(eanGtin: string): Promise<DadosAPIOnR
     };
   }
 
-  // 4. Fazer a requisição com retry
-  const resultado = await fazerRequisicaoComRetry(gtinNormalizado);
+  // 4. 🚦 Aguardar slot de rate limiting
+  await rateLimiter.waitForSlot();
+
+  // 5. Fazer a requisição com retry (passando flag de primeira requisição)
+  const resultado = await fazerRequisicaoComRetry(gtinNormalizado, isFirstInBatch);
   
-  // 5. Salvar resultado em cache (mesmo se não encontrado)
+  // 6. Salvar resultado em cache (mesmo se não encontrado)
   if (resultado.encontrado !== undefined) {
     apiCache.set(gtinNormalizado, resultado);
   }
@@ -284,138 +407,138 @@ export async function consultarAPIProdutos(eanGtin: string): Promise<DadosAPIOnR
 /**
  * 🔄 Fazer requisição com retry automático
  */
-async function fazerRequisicaoComRetry(eanGtin: string): Promise<DadosAPIOnRender> {
+async function fazerRequisicaoComRetry(eanGtin: string, isFirstRequest = false): Promise<DadosAPIOnRender> {
   let lastError: any;
 
-  for (let tentativa = 1; tentativa <= API_CONFIG.MAX_RETRIES + 1; tentativa++) {
-    try {
-      console.log(`🔍 Tentativa ${tentativa}/${API_CONFIG.MAX_RETRIES + 1} - GTIN: ${eanGtin}`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
+  // 🚦 Registrar início da requisição
+  rateLimiter.startRequest();
 
-      const response = await fetch(`${API_CONFIG.URL}/api/produtos/${eanGtin}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${API_CONFIG.TOKEN}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        signal: controller.signal
-      });
+  try {
+    for (let tentativa = 1; tentativa <= API_CONFIG.MAX_RETRIES + 1; tentativa++) {
+      try {
+        console.log(`🔍 Tentativa ${tentativa}/${API_CONFIG.MAX_RETRIES + 1} - GTIN: ${eanGtin}`);
+        
+        const controller = new AbortController();
+        // ✅ Timeout especial para primeira requisição (cold start)
+        const timeout = isFirstRequest && tentativa === 1 
+          ? API_CONFIG.COLD_START_EXTRA_TIMEOUT_MS 
+          : API_CONFIG.TIMEOUT_MS;
+        
+        if (isFirstRequest && tentativa === 1) {
+          console.log(`⏰ Timeout estendido para primeira requisição: ${timeout / 1000}s (cold start)`);
+        }
+        
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      clearTimeout(timeoutId);
+        const response = await fetch(`${API_CONFIG.URL}/api/produtos/${eanGtin}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${API_CONFIG.TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          signal: controller.signal
+        });
 
-      // Processar resposta
-      if (!response.ok) {
-        if (response.status === 404) {
-          // 404 não é erro - produto simplesmente não existe
-          circuitBreaker.recordSuccess();
-          return {
-            ean_gtin: eanGtin,
-            encontrado: false,
-            mensagem: 'Produto não encontrado na base de dados'
-          };
-        } else if (response.status === 401) {
+        clearTimeout(timeoutId);
+
+        // Processar resposta
+        if (!response.ok) {
+          if (response.status === 404) {
+            // 404 não é erro - produto simplesmente não existe
+            circuitBreaker.recordSuccess();
+            console.log(`✅ Sucesso - GTIN: ${eanGtin} (não encontrado)`);
+            return {
+              ean_gtin: eanGtin,
+              encontrado: false,
+              mensagem: 'Produto não encontrado na base Cosmos'
+            };
+          } else if (response.status === 429) {
+            // ✅ 429 = Rate Limit da API Bluesoft Cosmos
+            console.error('🚫 LIMITE DIÁRIO ATINGIDO: API Bluesoft Cosmos bloqueou novas consultas');
+            throw new Error('RATE_LIMIT: Limite diário da API Bluesoft atingido. Aguarde até meia-noite (00:00) para continuar.');
+          } else if (response.status === 401) {
+            circuitBreaker.recordFailure();
+            throw new Error('Token de autenticação inválido');
+          } else if (response.status === 400) {
+            circuitBreaker.recordFailure();
+            throw new Error('GTIN inválido');
+          } else if (response.status === 500 || response.status === 503) {
+            // ⚠️ WORKAROUND: Verificar se é erro 429 disfarçado de 500
+            try {
+              const errorData = await response.json();
+              if (errorData.mensagem && errorData.mensagem.includes('429')) {
+                console.error('🚫 LIMITE DIÁRIO ATINGIDO: Erro 429 detectado em resposta 500');
+                throw new Error('RATE_LIMIT: Limite diário da API Bluesoft atingido. Aguarde até meia-noite (00:00) para continuar.');
+              }
+            } catch (jsonError) {
+              // Se não conseguir parsear JSON, continua com tratamento normal de 500
+            }
+            
+            // ✅ 500/503 = servidor sobrecarregado no Render.com free tier
+            circuitBreaker.recordFailure();
+            throw new Error(`Servidor sobrecarregado (${response.status}) - Render.com acordando...`);
+          } else {
+            circuitBreaker.recordFailure();
+            throw new Error(`Erro HTTP ${response.status}`);
+          }
+        }
+
+        // Sucesso!
+        const data = await response.json();
+        circuitBreaker.recordSuccess();
+        console.log(`✅ Sucesso - GTIN: ${eanGtin} (encontrado)`);
+        return data;
+
+      } catch (error: any) {
+        lastError = error;
+
+        // 🚫 Se for rate limit, NÃO FAZER RETRY - parar imediatamente
+        if (error.message && error.message.includes('RATE_LIMIT')) {
+          console.error('🚫 LIMITE DIÁRIO ATINGIDO - Interrompendo processamento');
+          // NÃO incrementar circuit breaker (não é falha de servidor)
+          throw error; // Propagar erro para interromper batch
+        }
+
+        // Se for timeout e ainda tem tentativas, aguarda e tenta novamente
+        if (error.name === 'AbortError' && tentativa < API_CONFIG.MAX_RETRIES + 1) {
+          const isFirstTimeout = isFirstRequest && tentativa === 1;
+          if (isFirstTimeout) {
+            console.warn(`⏱️ Timeout na primeira requisição após ${API_CONFIG.COLD_START_EXTRA_TIMEOUT_MS / 1000}s - Render.com pode estar frio demais`);
+          } else {
+            console.warn(`⏱️ Timeout na tentativa ${tentativa}`);
+          }
           circuitBreaker.recordFailure();
-          throw new Error('Token de autenticação inválido');
-        } else if (response.status === 400) {
-          return {
-            ean_gtin: eanGtin,
-            encontrado: false,
-            mensagem: 'GTIN inválido'
-          };
-        } else if (response.status >= 500) {
-          throw new Error(`Erro no servidor da API: ${response.status}`);
-        } else {
-          throw new Error(`Erro HTTP ${response.status}`);
-        }
-      }
-
-      const dadosCosmos = await response.json();
-      console.log(`✅ Sucesso - GTIN: ${eanGtin}`, dadosCosmos.encontrado ? '(encontrado)' : '(não encontrado)');
-
-      // Registrar sucesso
-      circuitBreaker.recordSuccess();
-
-      // Mapear resposta
-      return {
-        ean_gtin: dadosCosmos.ean_gtin || eanGtin,
-        descricao: dadosCosmos.descricao || undefined,
-        marca: dadosCosmos.marca || undefined,
-        fabricante: dadosCosmos.fabricante || undefined,
-        ncm: dadosCosmos.ncm || undefined,
-        ncm_descricao: dadosCosmos.ncm_completo ? dadosCosmos.ncm_completo.split(' - ')[1] : undefined,
-        preco_medio: dadosCosmos.preco_medio || undefined,
-        peso_liquido: dadosCosmos.peso_liquido_em_gramas || undefined,
-        peso_bruto: dadosCosmos.peso_bruto_em_gramas || undefined,
-        categoria_api: dadosCosmos.categoria_api || undefined,
-        imagem_url: dadosCosmos.imagem_url || undefined,
-        encontrado: dadosCosmos.encontrado,
-        mensagem: dadosCosmos.mensagem || (dadosCosmos.encontrado ? 'Produto encontrado' : 'Produto não encontrado')
-      };
-
-    } catch (error: any) {
-      lastError = error;
-      
-      // Timeout
-      if (error.name === 'AbortError') {
-        console.warn(`⏱️ Timeout na tentativa ${tentativa}`);
-        if (tentativa <= API_CONFIG.MAX_RETRIES) {
-          await delay(API_CONFIG.RETRY_DELAY_MS);
+          
+          // ✅ Espera maior após timeouts de cold start
+          const retryDelay = isFirstTimeout ? 30000 : API_CONFIG.RETRY_DELAY_MS;
+          console.log(`⏰ Aguardando ${retryDelay / 1000}s antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
-      }
-      
-      // Erros de rede
-      if (error.message && (
-        error.message.includes('fetch') || 
-        error.message.includes('network') ||
-        error.message.includes('ERR_CONNECTION') ||
-        error.message.includes('Failed to fetch')
-      )) {
-        console.warn(`🌐 Erro de rede na tentativa ${tentativa}:`, error.message);
-        if (tentativa <= API_CONFIG.MAX_RETRIES) {
-          await delay(API_CONFIG.RETRY_DELAY_MS);
+
+        // Se for erro 500/503 e ainda tem tentativas, aguarda e tenta novamente
+        if ((error.message.includes('500') || error.message.includes('503')) && tentativa < API_CONFIG.MAX_RETRIES + 1) {
+          console.warn(`⚠️ Servidor sobrecarregado na tentativa ${tentativa} - aguardando antes de retry...`);
+          // ✅ Espera progressiva: 5s, 10s, 15s...
+          const retryDelay = API_CONFIG.RETRY_DELAY_MS * tentativa;
+          console.log(`⏰ Aguardando ${retryDelay / 1000}s para Render.com se recuperar...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
+
+        // Outros erros não fazem retry
+        throw error;
       }
-      
-      // Outros erros não tentam retry
-      break;
     }
+
+    // Se chegou aqui, esgotou as tentativas
+    throw lastError;
+
+  } finally {
+    // 🚦 Sempre registrar fim da requisição
+    rateLimiter.endRequest();
   }
-
-  // Se chegou aqui, todas as tentativas falharam
-  circuitBreaker.recordFailure();
-
-  // Retornar erro tratado
-  if (lastError.name === 'AbortError') {
-    return {
-      ean_gtin: eanGtin,
-      encontrado: false,
-      mensagem: `⏱️ Timeout: API não respondeu em ${API_CONFIG.TIMEOUT_MS/1000}s`
-    };
-  }
-
-  if (lastError.message && (
-    lastError.message.includes('fetch') || 
-    lastError.message.includes('network') ||
-    lastError.message.includes('ERR_CONNECTION') ||
-    lastError.message.includes('Failed to fetch')
-  )) {
-    return {
-      ean_gtin: eanGtin,
-      encontrado: false,
-      mensagem: '🌐 API temporariamente indisponível (erro de conexão)'
-    };
-  }
-
-  return {
-    ean_gtin: eanGtin,
-    encontrado: false,
-    mensagem: `❌ Erro: ${lastError.message || 'Desconhecido'}`
-  };
 }
 
 /**
@@ -431,6 +554,7 @@ function delay(ms: number): Promise<void> {
 export function getServiceStats() {
   return {
     circuitBreaker: circuitBreaker.getStatus(),
+    rateLimiter: rateLimiter.getStats(),
     cache: apiCache.getStats()
   };
 }
@@ -440,6 +564,13 @@ export function getServiceStats() {
  */
 export function resetCircuitBreaker() {
   circuitBreaker.reset();
+}
+
+/**
+ * 🔄 Resetar rate limiter manualmente
+ */
+export function resetRateLimiter() {
+  rateLimiter.reset();
 }
 
 /**

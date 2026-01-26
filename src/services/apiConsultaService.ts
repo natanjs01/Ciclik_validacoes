@@ -3,12 +3,23 @@
  * ====================================================
  * 
  * Melhorias implementadas:
- * - ✅ Cache local (24h) para evitar consultas repetidas
+ * - ✅ Cache local (24h sucessos / 7 dias para 404) para evitar consultas repetidas
  * - ✅ Circuit Breaker para proteger contra APIs indisponíveis
  * - ✅ Retry automático com backoff
  * - ✅ Timeout reduzido e configurável
  * - ✅ Tratamento robusto de erros de rede
+ * - ✅ Detecção de HTTP 429 (rate limit) e 404 (não encontrado)
  * - ✅ Logs detalhados para debugging
+ * 
+ * ⚠️ REQUISITOS DA API BLUESOFT COSMOS:
+ * - Header obrigatório: X-Cosmos-Token (token de autenticação)
+ * - Header obrigatório: User-Agent (identificação da aplicação)
+ * - Charset: UTF-8
+ * - Formato: JSON
+ * - Rate Limit: ~100-250 consultas/dia (plano FREE)
+ * - Reset: Meia-noite (00:00)
+ * 
+ * 📚 Documentação oficial: https://cosmos.bluesoft.com.br/api
  */
 
 // ⚙️ Configurações da API
@@ -223,24 +234,31 @@ const rateLimiter = new RateLimiter();
 // 💾 Sistema de Cache Local
 class APICache {
   private readonly PREFIX = 'ciclik_api_cache_';
+  private readonly CACHE_404_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // ✅ 7 dias para produtos não encontrados
 
   get(gtin: string): DadosAPIOnRender | null {
     try {
       const cached = localStorage.getItem(`${this.PREFIX}${gtin}`);
       if (!cached) return null;
       
-      const { data, timestamp } = JSON.parse(cached);
+      const { data, timestamp, is404 } = JSON.parse(cached);
       const age = Date.now() - timestamp;
       
+      // ✅ Cache de 404 dura 7 dias (produto realmente não existe)
+      // Cache de sucessos dura 24h (dados podem mudar)
+      const maxAge = is404 ? this.CACHE_404_DURATION_MS : API_CONFIG.CACHE_DURATION_MS;
+      
       // Se cache expirou, remove e retorna null
-      if (age > API_CONFIG.CACHE_DURATION_MS) {
+      if (age > maxAge) {
         localStorage.removeItem(`${this.PREFIX}${gtin}`);
-        console.log(`🗑️ Cache expirado para GTIN ${gtin}`);
+        console.log(`🗑️ Cache expirado para GTIN ${gtin} (${is404 ? '404' : 'sucesso'})`);
         return null;
       }
       
       const ageMinutes = Math.round(age / 1000 / 60);
-      console.log(`📦 Cache HIT para GTIN ${gtin} (idade: ${ageMinutes} min)`);
+      const ageHours = Math.round(age / 1000 / 60 / 60);
+      const ageDisplay = ageHours > 0 ? `${ageHours}h` : `${ageMinutes}min`;
+      console.log(`📦 Cache HIT para GTIN ${gtin} (idade: ${ageDisplay}, tipo: ${is404 ? '404' : 'sucesso'})`);
       return data;
     } catch (error) {
       console.warn(`⚠️ Erro ao ler cache para GTIN ${gtin}:`, error);
@@ -250,11 +268,17 @@ class APICache {
   
   set(gtin: string, data: DadosAPIOnRender) {
     try {
+      // ✅ Marcar se é produto não encontrado (404) para cache mais longo
+      const is404 = !data.encontrado;
+      
       localStorage.setItem(`${this.PREFIX}${gtin}`, JSON.stringify({
         data,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        is404 // ✅ Flag para diferenciar cache de 404 vs sucesso
       }));
-      console.log(`💾 Dados salvos em cache para GTIN ${gtin}`);
+      
+      const cacheType = is404 ? '404 (7 dias)' : 'sucesso (24h)';
+      console.log(`💾 Dados salvos em cache para GTIN ${gtin} [${cacheType}]`);
     } catch (error) {
       console.warn('⚠️ Falha ao salvar cache (localStorage cheio?):', error);
       // Tentar limpar caches antigos automaticamente
@@ -283,8 +307,10 @@ class APICache {
           const item = localStorage.getItem(key);
           if (!item) return;
           
-          const { timestamp } = JSON.parse(item);
-          if (now - timestamp > API_CONFIG.CACHE_DURATION_MS) {
+          const { timestamp, is404 } = JSON.parse(item);
+          const maxAge = is404 ? this.CACHE_404_DURATION_MS : API_CONFIG.CACHE_DURATION_MS;
+          
+          if (now - timestamp > maxAge) {
             localStorage.removeItem(key);
             cleaned++;
           }

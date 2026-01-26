@@ -1,0 +1,80 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Bun lockfile (específico do ambiente, não necessário no repo)
+bun.lockb
+
+# Diretório de referência - não deve ser versionado
+eco-champion-circle-main_referencia_não_alterar_nada/
+
+# ============================================
+# DOCUMENTAÇÃO TEMPORÁRIA E SCRIPTS DE TESTE
+# ============================================
+
+# Ignorar TODOS os arquivos .md e .sql (exceto README.md)
+*.md
+!README.md
+*.sql
+
+# Arquivos de documentação de diagnóstico temporários
+DIAGNOSTICO_*.md
+DIAGNOSTICO_*.sql
+CORRECOES_APLICADAS.md
+CORRECAO_*.md
+PROBLEMA_RESOLVIDO.md
+SOLUCAO_*.md
+ANALISE_*.md
+COMPARACAO_*.md
+CHECKLIST_*.md
+INDICE_*.md
+RESUMO_*.md
+
+# Arquivos SQL de teste e manutenção
+TESTE_*.sql
+INSERIR_*_TESTE.sql
+CORRIGIR_*.sql
+VERIFICAR_*.sql
+VALIDAR_*.sql
+APLICAR_NO_SUPABASE.sql
+DELETAR_*.sql
+APLICAR_AGORA_*.sql
+URGENTE_*.sql
+
+# Guias e documentação de desenvolvimento temporária
+GUIA_*.md
+PLANO_*.md
+TABELAS_*.md
+LIMPAR_*.md
+INTEGRACAO_*.md
+PWA_GUIA.md
+LEIA_ME_PRIMEIRO.md
+
+# Migrations de debug e correção manual (manter apenas migrations oficiais com timestamp)
+supabase/migrations/debug_*.sql
+supabase/migrations/fix_*.sql
+supabase/migrations/CORRIGIR_*.sql
+supabase/migrations/URGENTE_*.sql
+supabase/migrations/APLICAR_*.sql
+supabase/migrations/verificar_*.sql

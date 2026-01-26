@@ -26,6 +26,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
+import { consultarAPIProdutos, getServiceStats, resetCircuitBreaker, clearCache, type DadosAPIOnRender as DadosAPIOnRenderImported } from '@/services/apiConsultaService';
 
 interface ProdutoEmAnalise {
   id: string;
@@ -45,48 +46,17 @@ interface ProdutoEmAnalise {
   consultado_em?: string; // Data da consulta
 }
 
-// Interface para resposta da API OnRender (placeholder)
-interface DadosAPIOnRender {
-  // Campos básicos
-  ean_gtin: string;
-  descricao?: string;
-  marca?: string;
-  fabricante?: string;
-  
-  // NCM (vem formatado: "17019900 - Outros")
-  ncm?: string;
-  ncm_descricao?: string; // Descrição do NCM
-  
-  // Preços (para análise/contexto)
-  preco_minimo?: number;
-  preco_maximo?: number;
-  preco_medio?: number;
-  
-  // Pesos (geralmente None, mas pode vir)
-  peso_liquido?: number;
-  peso_bruto?: number;
-  
-  // Categoria da API (texto livre - ex: "Açúcar Refinado")
-  categoria_api?: string;
-  
-  // Imagem oficial do produto
-  imagem_url?: string;
-  
-  // Campos que NÃO vem da API (preenchimento inteligente ou manual)
+// Interface para resposta da API OnRender - usando o tipo do serviço
+type DadosAPIOnRender = DadosAPIOnRenderImported & {
+  // Campos extras que são usados apenas localmente (não vêm da API)
   tipo_embalagem?: TipoEmbalagem;
   peso_medio_gramas?: number;
   reciclavel?: boolean;
   percentual_reciclabilidade?: number;
   observacoes?: string;
-  
-  // Controle
-  encontrado: boolean;
-  mensagem?: string;
-  
-  // Campos obsoletos (mantidos para retrocompatibilidade)
-  categoria?: string;
-  peso_gramas?: number;
-}
+  categoria?: string; // obsoleto
+  peso_gramas?: number; // obsoleto
+};
 
 // 🧠 FUNÇÃO INTELIGENTE: Inferir tipo de embalagem pela categoria/descrição da API
 function inferirTipoEmbalagem(dadosAPI: DadosAPIOnRender): TipoEmbalagem {
@@ -144,6 +114,19 @@ function estimarReciclabilidade(tipoEmbalagem: TipoEmbalagem): { reciclavel: boo
     default:
       return { reciclavel: true, percentual: 70 };  // Padrão conservador
   }
+}
+
+// 🧠 Funções auxiliares para inferir dados
+function inferirPeso(dadosAPI: DadosAPIOnRender): number | undefined {
+  return dadosAPI.peso_liquido || dadosAPI.peso_bruto || undefined;
+}
+
+function inferirReciclabilidade(tipoEmbalagem: TipoEmbalagem): boolean {
+  return estimarReciclabilidade(tipoEmbalagem).reciclavel;
+}
+
+function inferirPercentualReciclabilidade(tipoEmbalagem: TipoEmbalagem): number {
+  return estimarReciclabilidade(tipoEmbalagem).percentual;
 }
 
 // 🧠 FUNÇÃO INTELIGENTE: Extrair apenas o código NCM (remove descrição)
@@ -659,16 +642,16 @@ export default function AdminProductsAnalysis() {
           if (!produto) continue;
 
           // ⏱️ DELAY entre consultas para evitar sobrecarga na API
-          // Aguarda 1.5 segundos entre cada consulta (exceto na primeira)
+          // Aguarda 2 segundos entre cada consulta (exceto na primeira)
           if (i > 0) {
-            console.log(`⏳ Aguardando 1.5s antes da próxima consulta...`);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            console.log(`⏳ Aguardando 2s antes da próxima consulta...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
 
-          // 2. Consultar API Cosmos (Render) - PRODUÇÃO
+          // 2. Consultar API Cosmos usando o serviço aprimorado
           console.log(`📡 Iniciando consulta ${i + 1}/${total} - GTIN: ${produto.ean_gtin}`);
           const inicioConsulta = Date.now();
-          const dadosAPI = await consultarAPIReal(produto.ean_gtin); // ✅ API REAL
+          const dadosAPI = await consultarAPIProdutos(produto.ean_gtin); // ✅ Serviço com cache + circuit breaker
           const tempoResposta = Date.now() - inicioConsulta;
           console.log(`⏱️ Consulta concluída em ${(tempoResposta / 1000).toFixed(2)}s`);
 
@@ -723,6 +706,10 @@ export default function AdminProductsAnalysis() {
 
           // 4. Atualizar produto com dados da API na tabela produtos_em_analise
           // Limpar objeto para evitar dados circulares ou muito grandes
+          // Inferir dados inteligentes baseados na resposta da API
+          const tipoEmbalagemmInferido = inferirTipoEmbalagem(dadosAPI);
+          const pesoInferido = inferirPeso(dadosAPI);
+          
           const dadosAPILimpos = {
             ean_gtin: dadosAPI.ean_gtin,
             descricao: dadosAPI.descricao,
@@ -733,12 +720,12 @@ export default function AdminProductsAnalysis() {
             preco_medio: dadosAPI.preco_medio,
             peso_liquido: dadosAPI.peso_liquido,
             peso_bruto: dadosAPI.peso_bruto,
-            peso_medio_gramas: dadosAPI.peso_medio_gramas,
+            peso_medio_gramas: pesoInferido, // Inferido
             categoria_api: dadosAPI.categoria_api,
             imagem_url: dadosAPI.imagem_url,
-            tipo_embalagem: dadosAPI.tipo_embalagem,
-            reciclavel: dadosAPI.reciclavel,
-            percentual_reciclabilidade: dadosAPI.percentual_reciclabilidade,
+            tipo_embalagem: tipoEmbalagemmInferido, // Inferido
+            reciclavel: inferirReciclabilidade(tipoEmbalagemmInferido), // Inferido
+            percentual_reciclabilidade: inferirPercentualReciclabilidade(tipoEmbalagemmInferido), // Inferido
             encontrado: dadosAPI.encontrado,
             mensagem: dadosAPI.mensagem
           };

@@ -1,0 +1,67 @@
+name: 🤖 Processamento Automático de Produtos
+
+on:
+  # Executa automaticamente 3x por dia
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 AM (UTC) = 00:00 AM (BRT-3)
+    - cron: '0 11 * * *'  # 11:00 AM (UTC) = 08:00 AM (BRT-3)
+    - cron: '0 19 * * *'  # 19:00 PM (UTC) = 16:00 PM (BRT-3)
+  
+  # Permite execução manual pelo GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      limite_produtos:
+        description: 'Número máximo de produtos a processar'
+        required: false
+        default: '100'
+        type: string
+      modo_teste:
+        description: 'Modo de teste (não atualiza banco de dados)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  processar-produtos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # Timeout de segurança
+    
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: 📦 Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests python-dotenv
+      
+      - name: 🤖 Executar processamento automático
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          API_RENDER_URL: ${{ secrets.API_RENDER_URL }}
+          API_RENDER_TOKEN: ${{ secrets.API_RENDER_TOKEN }}
+          LIMITE_PRODUTOS: ${{ github.event.inputs.limite_produtos || '100' }}
+          MODO_TESTE: ${{ github.event.inputs.modo_teste || 'false' }}
+        run: |
+          python scripts/processamento-automatico/processar.py
+      
+      - name: 📊 Upload de logs (se houver erros)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-processamento-${{ github.run_number }}
+          path: scripts/processamento-automatico/*.log
+          retention-days: 7
+      
+      - name: 📧 Notificar falha (opcional)
+        if: failure()
+        run: |
+          echo "❌ Processamento falhou! Verifique os logs acima."
+          echo "🔗 Link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

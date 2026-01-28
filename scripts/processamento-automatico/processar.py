@@ -87,8 +87,34 @@ def buscar_produtos_pendentes(limite: int = 100) -> List[Dict]:
         log(f"Erro ao buscar produtos: {e}", 'ERROR')
         return []
 
+def validar_gtin(gtin: str) -> bool:
+    """Valida formato do GTIN (8, 12, 13 ou 14 dígitos numéricos)"""
+    if not gtin or not isinstance(gtin, str):
+        return False
+    
+    # Remove espaços
+    gtin = gtin.strip()
+    
+    # Verifica se é numérico
+    if not gtin.isdigit():
+        return False
+    
+    # Verifica tamanho (GTIN-8, GTIN-12, GTIN-13, GTIN-14)
+    return len(gtin) in [8, 12, 13, 14]
+
 def consultar_api_render(gtin: str, retry: int = 3) -> Optional[Dict]:
     """Consulta a API Render com retry para cold start"""
+    
+    # Validar GTIN antes de consultar
+    if not validar_gtin(gtin):
+        log(f"  ⚠️ GTIN {gtin}: Formato inválido (apenas 8, 12, 13 ou 14 dígitos)", 'WARNING')
+        return {
+            'dados': {'encontrado': False, 'mensagem': 'GTIN inválido'},
+            'tempo_resposta': 0,
+            'sucesso': False,
+            'erro': 'GTIN_INVALIDO'
+        }
+    
     url = f"{API_RENDER_URL}/api/produtos/{gtin}"
     headers = {
         'Authorization': f'Bearer {API_RENDER_TOKEN}',
@@ -98,7 +124,7 @@ def consultar_api_render(gtin: str, retry: int = 3) -> Optional[Dict]:
     for tentativa in range(1, retry + 1):
         try:
             tempo_inicio = time.time()
-            response = requests.get(url, headers=headers, timeout=60)
+            response = requests.get(url, headers=headers, timeout=90)  # 90s para cold start
             tempo_resposta = int((time.time() - tempo_inicio) * 1000)
             
             if response.status_code == 200:
@@ -161,7 +187,7 @@ def atualizar_produto_supabase(produto_id: str, dados_api: Dict, tempo_resposta:
         return False
 
 def registrar_log_consulta(admin_id: str, produto_id: str, gtin: str, sucesso: bool, tempo_resposta: int, resposta_api: Dict) -> bool:
-    """Registra consulta no log_consultas_api"""
+    """Registra consulta no log_consultas_api (ignora duplicatas silenciosamente)"""
     if MODO_TESTE:
         log(f"  [TESTE] Log seria registrado para {gtin}", 'DEBUG')
         return True
@@ -180,49 +206,71 @@ def registrar_log_consulta(admin_id: str, produto_id: str, gtin: str, sucesso: b
     
     try:
         response = requests.post(url, headers=SUPABASE_HEADERS, json=payload, timeout=30)
+        
+        # Se for 409 (Conflict), significa que já existe log para este produto
+        # Isso é NORMAL e esperado - não loga nada
+        if response.status_code == 409:
+            return True
+        
         response.raise_for_status()
         return True
     
     except requests.exceptions.RequestException as e:
+        # Apenas loga como debug se for erro diferente de 409
         log(f"  ⚠️ Erro ao registrar log para {gtin}: {e}", 'WARNING')
         return False
 
 def obter_status_tokens() -> Optional[Dict]:
-    """Consulta status dos tokens na API Render"""
+    """Consulta status dos tokens na API Render (suporta cold start)"""
     url = f"{API_RENDER_URL}/api/status/tokens"
     headers = {'Authorization': f'Bearer {API_RENDER_TOKEN}'}
     
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        # Timeout de 90s para suportar cold start (Render pode demorar 30-60s)
+        response = requests.get(url, headers=headers, timeout=90)
         response.raise_for_status()
         return response.json()
     
+    except requests.exceptions.Timeout:
+        log(f"⏱️ Timeout ao obter status dos tokens (cold start detectado - aguardando API acordar...)", 'WARNING')
+        # Não é crítico, retorna None e continua processamento
+        return None
+    
     except requests.exceptions.RequestException as e:
-        log(f"Erro ao obter status dos tokens: {e}", 'WARNING')
+        log(f"⚠️ Erro ao obter status dos tokens: {e}", 'WARNING')
+        # Não é crítico, retorna None e continua processamento
         return None
 
 def obter_admin_id() -> str:
-    """Obtém ID de um admin para registrar logs (usa o primeiro admin encontrado)"""
-    url = f"{SUPABASE_URL}/rest/v1/usuarios"
+    """
+    Obtém ID de um admin para registrar logs.
+    Usa a tabela 'profiles' (padrão Supabase Auth) ou ID genérico como fallback.
+    """
+    # Busca na tabela profiles (padrão Supabase Auth)
+    url = f"{SUPABASE_URL}/rest/v1/profiles"
     params = {
-        'role': 'eq.admin',
         'limit': 1,
         'select': 'id'
     }
     
     try:
         response = requests.get(url, headers=SUPABASE_HEADERS, params=params, timeout=30)
-        response.raise_for_status()
-        usuarios = response.json()
         
-        if usuarios and len(usuarios) > 0:
-            return usuarios[0]['id']
-        else:
-            log("Nenhum admin encontrado - usando ID genérico", 'WARNING')
-            return '00000000-0000-0000-0000-000000000000'
+        # Se a tabela existe e tem dados
+        if response.status_code == 200:
+            usuarios = response.json()
+            if usuarios and len(usuarios) > 0:
+                admin_id = usuarios[0]['id']
+                log(f"✅ Admin ID encontrado: {admin_id[:8]}...", 'DEBUG')
+                return admin_id
+        
+        # Se não encontrou ou tabela não existe, usa ID genérico
+        log("⚠️ Tabela 'profiles' não encontrada ou vazia - usando ID genérico", 'WARNING')
+        return '00000000-0000-0000-0000-000000000000'
     
     except requests.exceptions.RequestException as e:
-        log(f"Erro ao buscar admin: {e}", 'WARNING')
+        # Falha na requisição, usa ID genérico
+        log(f"⚠️ Erro ao buscar admin: {e}", 'WARNING')
         return '00000000-0000-0000-0000-000000000000'
 
 # ==================== FUNÇÃO PRINCIPAL ====================
@@ -262,6 +310,7 @@ def main():
         'sucesso': 0,
         'nao_encontrado': 0,
         'erro': 0,
+        'gtin_invalido': 0,
         'rate_limit': 0,
         'tempo_total': 0
     }
@@ -283,6 +332,13 @@ def main():
         
         if not resultado:
             estatisticas['erro'] += 1
+            continue
+        
+        # Verificar GTIN inválido
+        if resultado.get('erro') == 'GTIN_INVALIDO':
+            estatisticas['gtin_invalido'] += 1
+            # Ainda atualiza o produto para 'consultado' com erro
+            atualizar_produto_supabase(produto_id, resultado['dados'], 0)
             continue
         
         # Verificar rate limit
@@ -319,10 +375,15 @@ def main():
     log("=" * 60)
     log(f"✅ Produtos encontrados: {estatisticas['sucesso']}")
     log(f"❌ Produtos não encontrados: {estatisticas['nao_encontrado']}")
-    log(f"⚠️ Erros: {estatisticas['erro']}")
+    log(f"⚠️ GTINs inválidos: {estatisticas['gtin_invalido']}")
+    log(f"⚠️ Erros de rede/API: {estatisticas['erro']}")
     log(f"🚫 Rate limit: {estatisticas['rate_limit']}")
     log(f"⏱️ Tempo total: {tempo_total_geral:.2f}s")
-    log(f"⚡ Tempo médio por produto: {estatisticas['tempo_total'] / max(estatisticas['total'], 1):.0f}ms")
+    
+    # Calcula tempo médio apenas dos produtos que foram processados
+    processados = estatisticas['sucesso'] + estatisticas['nao_encontrado']
+    if processados > 0:
+        log(f"⚡ Tempo médio por produto: {estatisticas['tempo_total'] / processados:.0f}ms")
     
     # Status final dos tokens
     log("\n📊 Status final dos tokens:")

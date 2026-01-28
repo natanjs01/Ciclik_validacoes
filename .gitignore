@@ -78,3 +78,126 @@ supabase/migrations/CORRIGIR_*.sql
 supabase/migrations/URGENTE_*.sql
 supabase/migrations/APLICAR_*.sql
 supabase/migrations/verificar_*.sql
+
+# ============================================
+# ARQUIVOS DE TESTE E DESENVOLVIMENTO LOCAL
+# ============================================
+
+# Arquivos HTML de teste
+teste-*.html
+test-*.html
+diagnostico-*.html
+monitor-*.html
+limpar-cache.html
+
+# Scripts de teste
+teste_*.ps1
+testar_*.ps1
+diagnostico_*.ps1
+exemplo-*.js
+exemplo-*.py
+teste-*.js
+
+# Arquivos temporários
+temp_*.sql
+*.bak
+*.backup
+*.tmp
+
+# Arquivos de status e logs
+STATUS_*.md
+VITORIA_*.md
+SUCESSO_*.md
+RESPOSTA_*.md
+CONFIRMACAO_*.md
+DEPLOY_*.md
+PUBLICACAO_*.md
+RESULTADO_*.md
+
+# Arquivos de processo/implementação temporários
+IMPLEMENTACAO_*.md
+IMPLEMENTADO_*.md
+FASE_*_*.md
+PREPARACAO_*.md
+FUNCIONALIDADE_*.md
+MELHORIA_*.md
+MELHORIAS_*.md
+ADICAO_*.md
+ADICIONAR_*.md
+AJUSTE_*.md
+AJUSTES_*.md
+APLICADO_*.md
+APLICAR_*.md
+CRIAR_*.md
+EXCLUIR_*.md
+EXECUTAR_*.md
+MIGRAR_*.md
+REABILITAR_*.md
+REMOVER_*.md
+REVERTER_*.md
+
+# Arquivos de documentação específica que não são necessários no repo
+ESPECIFICACAO_*.md
+DOCUMENTACAO_*.md
+EXPLICACAO_*.md
+ORIGEM_*.md
+FLUXO_*.md
+DIAGRAMA_*.md
+QUICKSTART_*.md
+INSTRUCOES_*.md
+README_*.md
+!README.md
+
+# Arquivos JSON de teste/desenvolvimento
+API_*.json
+!package.json
+!package-lock.json
+!components.json
+!tsconfig*.json
+
+# Limpeza de arquivos de texto
+LIMPEZA_*.txt
+*.txt
+!LICENSE.txt
+!robots.txt
+
+# Arquivos de correção única (devem virar migrations oficiais)
+CORRECAO_*.sql
+FIX_*.sql
+SOLUCAO_*.sql
+RECALCULO_*.sql
+PREVENCAO_*.sql
+PROTECAO_*.sql
+ADICIONAR_*.sql
+ATUALIZAR_*.sql
+BLOQUEIO_*.sql
+COMPARAR_*.sql
+CONFIRMAR_*.sql
+CORRIGIR_*.sql
+CRIAR_*.sql
+DESABILITAR_*.sql
+DESCOBRIR_*.sql
+ENCERRAR_*.sql
+ENCONTRAR_*.sql
+ESCOLHER_*.sql
+EXCLUIR_*.sql
+EXECUTAR_*.sql
+HABILITAR_*.sql
+INSERIR_*.sql
+INVESTIGAR_*.sql
+LIMPAR_*.sql
+PREPARAR_*.sql
+RECRIAR_*.sql
+REENVIAR_*.sql
+REVERTER_*.sql
+CHECK_*.sql
+DEBUG_*.sql
+MIGRATION_*.sql
+PASSO_*.sql
+SCRIPT_*.sql
+SQL_*.sql
+TESTAR_*.sql
+TESTES_*.sql
+VER_*.sql
+VERIFICAR_*.sql
+VALIDACAO_*.sql

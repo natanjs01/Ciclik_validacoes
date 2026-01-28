@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Recuperação de Senha - Ciclik</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f5f5;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff;">
+                    
+                    <!-- Header com Logo -->
+                    <tr>
+                        <td style="padding: 40px; text-align: center; background-color: #10b981;">
+                            <h1 style="color: #ffffff; font-size: 32px; margin: 0; font-weight: 700;">
+                                🌱 CICLIK
+                            </h1>
+                            <p style="color: #ffffff; font-size: 14px; margin: 8px 0 0;">
+                                Recicle e Ganhe
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Ícone -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center;">
+                            <p style="font-size: 40px; margin: 0;">🔑</p>
+                        </td>
+                    </tr>
+
+                    <!-- Conteúdo Principal -->
+                    <tr>
+                        <td style="padding: 30px 40px;">
+                            <h1 style="margin: 0 0 16px; font-size: 28px; font-weight: 700; color: #1f2937; text-align: center;">
+                                Redefinir Senha
+                            </h1>
+                            <p style="margin: 0 0 24px; font-size: 16px; line-height: 24px; color: #6b7280; text-align: center;">
+                                Olá! Recebemos uma solicitação para redefinir a senha da sua conta Ciclik.
+                            </p>
+                            <p style="margin: 0 0 32px; font-size: 16px; line-height: 24px; color: #6b7280; text-align: center;">
+                                Clique no botão abaixo para criar uma nova senha:
+                            </p>
+
+                            <!-- Botão CTA -->
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td align="center" style="padding: 32px 0;">
+                                        <a href="{{ .ConfirmationURL }}" style="background-color: #10b981; color: #ffffff; padding: 16px 48px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+                                            Redefinir Minha Senha
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Link alternativo -->
+                            <table role="presentation" style="width: 100%; background-color: #f9fafb; padding: 20px; margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0 0 8px; font-size: 14px; color: #374151;">
+                                            Ou copie este link:
+                                        </p>
+                                        <p style="margin: 0; font-size: 14px; color: #10b981; word-break: break-all;">
+                                            {{ .ConfirmationURL }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Aviso de segurança -->
+                            <table role="presentation" style="width: 100%; background-color: #fefce8; padding: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0; font-size: 14px; color: #92400e;">
+                                            <strong>⚠️ Importante:</strong> Este link expira em 1 hora. Se você não solicitou, ignore este email.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #6b7280; text-align: center;">
+                                Se tiver dúvidas, entre em contato com nosso suporte.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280;">
+                                            🌱 <strong style="color: #10b981;">Ciclik</strong> - Recicle e Ganhe
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                                            Ajudando a construir um futuro mais sustentável
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <!-- Footer externo -->
+                <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <tr>
+                        <td style="text-align: center; padding: 0 20px;">
+                            <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 18px;">
+                                Este é um email automático, por favor não responda.<br>
+                                © 2026 Ciclik. Todos os direitos reservados.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
